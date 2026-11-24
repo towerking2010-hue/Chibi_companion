@@ -11,8 +11,27 @@ android {
         applicationId = "com.chibicompanion"
         minSdk = 26
         targetSdk = 32
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            val storePath = System.getenv("CHIBI_STORE_FILE")
+            if (!storePath.isNullOrBlank()) {
+                storeFile = file(storePath)
+                storePassword = System.getenv("CHIBI_STORE_PASSWORD")
+                keyAlias = System.getenv("CHIBI_KEY_ALIAS")
+                keyPassword = System.getenv("CHIBI_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+        }
     }
 
     compileOptions {
