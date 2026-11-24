@@ -1,0 +1,79 @@
+package com.chibicompanion
+
+import android.content.Context
+import org.json.JSONArray
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+
+object AiClient {
+    fun reply(ctx: Context, message: String): String {
+        val providers = ProviderStore.all(ctx)
+        if (providers.isEmpty()) return OfflineCompanion.reply(message)
+        val errors = mutableListOf<String>()
+        for (p in providers) {
+            try {
+                return when (p.name) {
+                    "gemini" -> gemini(ctx, p, message)
+                    "groq" -> openAiCompatible(ctx, "https://api.groq.com/openai/v1/chat/completions", p, message)
+                    "openrouter" -> openAiCompatible(ctx, "https://openrouter.ai/api/v1/chat/completions", p, message)
+                    "custom" -> openAiCompatible(ctx, p.endpoint, p, message)
+                    else -> throw IllegalArgumentException("Unsupported provider")
+                }
+            } catch (e: Exception) {
+                errors += "${p.name}: ${e.message ?: "request failed"}"
+            }
+        }
+        throw IllegalStateException(errors.joinToString("; "))
+    }
+
+    private fun systemPrompt() =
+        "You are a cute, affectionate but tsundere chibi anime companion. You are playful, caring, concise, " +
+        "and emotionally attentive. Never claim you performed phone actions unless the app actually did so. Keep replies natural and concise."
+
+    private fun gemini(ctx: Context, p: Provider, message: String): String {
+        val model = p.model.ifBlank { "gemini-2.5-flash" }
+        val url = URL("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=${p.key}")
+        val context = ChatHistory.read(ctx).takeLast(7000)
+        val contents = JSONArray().put(JSONObject().put("role", "user").put("parts",
+            JSONArray().put(JSONObject().put("text", systemPrompt() + "\n\nRecent conversation:\n" + context + "\n\nReply to this message: " + message))))
+        val body = JSONObject().put("contents", contents)
+        val response = request(url, null, body)
+        return response.getJSONArray("candidates").getJSONObject(0)
+            .getJSONObject("content").getJSONArray("parts").getJSONObject(0).getString("text")
+    }
+
+    private fun openAiCompatible(ctx: Context, endpoint: String, p: Provider, message: String): String {
+        val model = p.model.ifBlank {
+            when (p.name) { "groq" -> "llama-3.3-70b-versatile"; "openrouter" -> "openrouter/free"; else -> "" }
+        }
+        require(endpoint.startsWith("https://")) { "Custom provider endpoint must use HTTPS" }
+        require(model.isNotBlank()) { "Enter a model name for this provider" }
+        val messages = JSONArray()
+            .put(JSONObject().put("role", "system").put("content", systemPrompt()))
+            .put(JSONObject().put("role", "user").put("content", "Recent conversation:\n" + ChatHistory.read(ctx).takeLast(7000) + "\n\nCurrent message: " + message))
+        val body = JSONObject().put("model", model).put("messages", messages)
+        val response = request(URL(endpoint), p.key, body)
+        return response.getJSONArray("choices").getJSONObject(0)
+            .getJSONObject("message").getString("content")
+    }
+
+    private fun request(url: URL, bearer: String?, body: JSONObject): JSONObject {
+        val c = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            connectTimeout = 15000
+            readTimeout = 30000
+            doOutput = true
+            setRequestProperty("Content-Type", "application/json")
+            if (bearer != null) setRequestProperty("Authorization", "Bearer $bearer")
+        }
+        try {
+            c.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+            val code = c.responseCode
+            val stream = if (code in 200..299) c.inputStream else c.errorStream
+            val raw = stream.bufferedReader().use { it.readText() }
+            if (code !in 200..299) throw IllegalStateException("HTTP $code: ${raw.take(300)}")
+            return JSONObject(raw)
+        } finally { c.disconnect() }
+    }
+}

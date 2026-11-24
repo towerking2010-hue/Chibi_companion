@@ -1,0 +1,134 @@
+package com.chibicompanion
+
+import android.app.*
+import android.content.*
+import android.graphics.PixelFormat
+import android.os.Build
+import android.os.IBinder
+import android.speech.tts.TextToSpeech
+import android.view.*
+import android.view.inputmethod.InputMethodManager
+import android.widget.*
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import java.util.Locale
+import java.util.concurrent.Executors
+
+class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
+    private lateinit var wm: WindowManager
+    private var avatar: ChibiView? = null
+    private var chatPanel: LinearLayout? = null
+    private var chatParams: WindowManager.LayoutParams? = null
+    private var avatarParams: WindowManager.LayoutParams? = null
+    private var lastTap = 0L
+    private var downX = 0f; private var downY = 0f; private var originX = 0; private var originY = 0; private var dragging = false
+    private val worker = Executors.newSingleThreadExecutor()
+    private lateinit var tts: TextToSpeech
+
+    override fun onCreate() {
+        super.onCreate()
+        wm = getSystemService(WINDOW_SERVICE) as WindowManager
+        tts = TextToSpeech(this, this)
+        startForeground(41, notification())
+        showAvatar()
+    }
+
+    private fun notification(): Notification {
+        val id = "chibi_companion"
+        if (Build.VERSION.SDK_INT >= 26) getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(id, "Floating companion", NotificationManager.IMPORTANCE_LOW))
+        val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val stop = PendingIntent.getService(this, 1, Intent(this, FloatingCompanionService::class.java).setAction("STOP_COMPANION"), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        return Notification.Builder(this, id).setContentTitle("Chibi Companion is active")
+            .setContentText("Double-tap your companion to chat").setSmallIcon(android.R.drawable.sym_def_app_icon)
+            .setContentIntent(open).addAction(android.R.drawable.ic_menu_close_clear_cancel, "Turn off", stop).setOngoing(true).build()
+    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == "STOP_COMPANION") { stopSelf(); return START_NOT_STICKY }
+        return START_STICKY
+    }
+
+    private fun overlayType() = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+    private fun showAvatar() {
+        val v = ChibiView(this)
+        val lp = WindowManager.LayoutParams(112, 112, overlayType(),
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 12; y = 220 }
+        v.setOnTouchListener { _, e ->
+            when (e.action) {
+                MotionEvent.ACTION_DOWN -> { downX=e.rawX; downY=e.rawY; originX=lp.x; originY=lp.y; dragging=false; true }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx=e.rawX-downX; val dy=e.rawY-downY
+                    if (kotlin.math.abs(dx)>8 || kotlin.math.abs(dy)>8) dragging=true
+                    if (dragging) { lp.x=originX+dx.toInt(); lp.y=originY+dy.toInt(); runCatching { wm.updateViewLayout(v,lp) } }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    val now=System.currentTimeMillis()
+                    if (!dragging && now-lastTap < 420) { lastTap=0L; toggleChat() } else if (!dragging) lastTap=now
+                    true
+                }
+                else -> false
+            }
+        }
+        runCatching { wm.addView(v,lp); avatar=v; avatarParams=lp }.onFailure { stopSelf() }
+    }
+
+    private fun toggleChat() { if (chatPanel == null) showChat() else hideChat() }
+    private fun showChat() {
+        val panel = LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL; setPadding(16,14,16,12)
+            background=GradientDrawable().apply { setColor(Color.rgb(248,250,255)); cornerRadius=28f; setStroke(2,Color.rgb(174,196,239)) }
+            elevation=18f
+        }
+        val header=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
+        header.addView(TextView(this).apply { text="Mou… I was waiting. ♡"; textSize=18f; setTextColor(Color.rgb(53,70,111)) }, LinearLayout.LayoutParams(0,-2,1f))
+        header.addView(Button(this).apply { text="×"; setOnClickListener { hideChat() } })
+        panel.addView(header)
+        val transcript=TextView(this).apply { text=ChatHistory.read(this@FloatingCompanionService); textSize=15f; setTextColor(Color.DKGRAY); setPadding(4,12,4,12) }
+        val scroll=ScrollView(this).apply { addView(transcript) }
+        panel.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
+        val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
+        val input=EditText(this).apply { hint="Talk to me…"; maxLines=3; textSize=15f }
+        row.addView(input,LinearLayout.LayoutParams(0,-2,1f))
+        row.addView(Button(this).apply { text="Send"; setOnClickListener {
+            val msg=input.text.toString().trim(); if(msg.isNotEmpty()) { input.text.clear(); ChatHistory.add(this@FloatingCompanionService,"You",msg); transcript.append("\n\nYou: $msg\nHer: …"); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                worker.execute {
+                    val answer = PhoneActions.tryHandle(this@FloatingCompanionService,msg)
+                        ?: runCatching { AiClient.reply(this@FloatingCompanionService,msg) }
+                            .getOrElse { OfflineCompanion.reply(msg) }
+                    ChatHistory.add(this@FloatingCompanionService,"Her",answer)
+                    mainThread {
+                        transcript.text=ChatHistory.read(this@FloatingCompanionService)
+                        scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                        val mood = when {
+                            answer.contains("sorry",true) || answer.contains("sad",true) -> "shy"
+                            answer.contains("baka",true) || answer.contains("annoy",true) -> "angry"
+                            answer.contains("happy",true) || answer.contains("glad",true) || answer.contains("♡") -> "happy"
+                            else -> "talking"
+                        }
+                        avatar?.setMood(mood)
+                        if (::tts.isInitialized) tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"chibi-reply")
+                        android.os.Handler(mainLooper).postDelayed({ avatar?.setMood("neutral") }, 2800)
+                    }
+                }
+            }
+        } })
+        panel.addView(row)
+        val lp=WindowManager.LayoutParams((resources.displayMetrics.widthPixels-28).coerceAtLeast(280), (resources.displayMetrics.heightPixels*0.56f).toInt(), overlayType(),
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
+            PixelFormat.TRANSLUCENT).apply { gravity=Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL; y=20; softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE }
+        // ALT_FOCUSABLE_IM permits keyboard interaction for this focusable overlay.
+        lp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+        runCatching { wm.addView(panel,lp); chatPanel=panel; chatParams=lp; input.requestFocus(); input.post { (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input,InputMethodManager.SHOW_IMPLICIT) } }
+    }
+    private fun hideChat() { chatPanel?.let { runCatching { wm.removeView(it) } }; chatPanel=null; chatParams=null }
+    private fun mainThread(block:()->Unit) { android.os.Handler(mainLooper).post(block) }
+    override fun onInit(status:Int) { if(status==TextToSpeech.SUCCESS) { tts.language=Locale.getDefault(); tts.setSpeechRate(0.94f); tts.setPitch(1.12f) } }
+    override fun onDestroy() {
+        hideChat(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
+        worker.shutdownNow(); if(::tts.isInitialized) { tts.stop(); tts.shutdown() }
+        super.onDestroy()
+    }
+    override fun onBind(intent:Intent?):IBinder?=null
+}
