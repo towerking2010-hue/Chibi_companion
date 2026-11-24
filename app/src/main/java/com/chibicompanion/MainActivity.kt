@@ -50,7 +50,7 @@ class MainActivity : Activity() {
         })
         layout.addView(Button(this).apply {
             text = "Open chat and provider settings"
-            setOnClickListener { startActivity(Intent(this, ChatActivity::class.java)) }
+            setOnClickListener { startActivity(Intent(this@MainActivity, ChatActivity::class.java)) }
         })
         setContentView(ScrollView(this).apply { addView(layout) })
     }
