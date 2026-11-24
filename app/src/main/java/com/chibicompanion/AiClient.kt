@@ -27,16 +27,19 @@ object AiClient {
         throw IllegalStateException(errors.joinToString("; "))
     }
 
-    private fun systemPrompt() =
+    private fun systemPrompt(ctx: Context) =
         "You are a cute, affectionate but tsundere chibi anime companion. You are playful, caring, concise, " +
-        "and emotionally attentive. Never claim you performed phone actions unless the app actually did so. Keep replies natural and concise."
+        "and emotionally attentive. Never claim you performed phone actions unless the app actually did so. Keep replies natural and concise. " +
+        "Respect the user's privacy. Screen context is supplied only when the user asks about their screen. " +
+        "Use saved memories only when relevant; do not pretend to remember details that are not supplied.\n\nUser memories:\n" +
+        CompanionMemory.promptContext(ctx)
 
     private fun gemini(ctx: Context, p: Provider, message: String): String {
         val model = p.model.ifBlank { "gemini-2.5-flash" }
         val url = URL("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=${p.key}")
         val context = ChatHistory.read(ctx).takeLast(7000)
         val contents = JSONArray().put(JSONObject().put("role", "user").put("parts",
-            JSONArray().put(JSONObject().put("text", systemPrompt() + "\n\nRecent conversation:\n" + context + "\n\nReply to this message: " + message))))
+            JSONArray().put(JSONObject().put("text", systemPrompt(ctx) + "\n\nRecent conversation:\n" + context + "\n\nReply to this message: " + message))))
         val body = JSONObject().put("contents", contents)
         val response = request(url, null, body)
         return response.getJSONArray("candidates").getJSONObject(0)
@@ -50,7 +53,7 @@ object AiClient {
         require(endpoint.startsWith("https://")) { "Custom provider endpoint must use HTTPS" }
         require(model.isNotBlank()) { "Enter a model name for this provider" }
         val messages = JSONArray()
-            .put(JSONObject().put("role", "system").put("content", systemPrompt()))
+            .put(JSONObject().put("role", "system").put("content", systemPrompt(ctx)))
             .put(JSONObject().put("role", "user").put("content", "Recent conversation:\n" + ChatHistory.read(ctx).takeLast(7000) + "\n\nCurrent message: " + message))
         val body = JSONObject().put("model", model).put("messages", messages)
         val response = request(URL(endpoint), p.key, body)
