@@ -2,6 +2,11 @@ package com.chibicompanion
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.Manifest
+import android.content.pm.PackageManager
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import android.speech.RecognitionListener
 import android.content.Intent
 import android.provider.Settings
 import android.text.InputType
@@ -16,6 +21,8 @@ import java.util.concurrent.Executors
 
 class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var log: TextView
+    private lateinit var entry: EditText
+    private var speechRecognizer: SpeechRecognizer? = null
     private lateinit var tts: TextToSpeech
     private val worker = Executors.newSingleThreadExecutor()
 
@@ -41,7 +48,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         root.addView(chatCard, LinearLayout.LayoutParams(-1,0,1f))
         root.addView(CompanionUi.spacer(this, 12))
 
-        val entry = EditText(this).apply {
+        entry = EditText(this).apply {
             hint = "Say something to her…"
             textSize = 15f
             setTextColor(CompanionUi.ink)
@@ -50,6 +57,8 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             setPadding(CompanionUi.dp(this@ChatActivity,16), CompanionUi.dp(this@ChatActivity,13), CompanionUi.dp(this@ChatActivity,16), CompanionUi.dp(this@ChatActivity,13))
         }
         root.addView(entry)
+        root.addView(CompanionUi.spacer(this, 6))
+        root.addView(CompanionUi.button(this, "🎙  Tap to talk") { startVoiceInput() })
         root.addView(CompanionUi.spacer(this, 8))
         root.addView(CompanionUi.button(this, "Send message  ➜", true) {
             val message = entry.text.toString().trim()
@@ -199,6 +208,49 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun startVoiceInput() {
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            toast("Speech recognition is not available on this phone")
+            return
+        }
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), VOICE_PERMISSION_REQUEST)
+            return
+        }
+        val recognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        speechRecognizer?.destroy()
+        speechRecognizer = recognizer
+        recognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) { toast("Listening… speak naturally") }
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() { toast("Finishing…") }
+            override fun onError(error: Int) { toast("I couldn't hear that clearly. Try again.") }
+            override fun onResults(results: Bundle?) {
+                val words = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+                if (!words.isNullOrBlank()) entry.setText(words)
+            }
+            override fun onPartialResults(partialResults: Bundle?) {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+        }
+        recognizer.startListening(intent)
+    }
+
+    @Deprecated("Android permission callback")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == VOICE_PERMISSION_REQUEST && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+            startVoiceInput()
+        } else if (requestCode == VOICE_PERMISSION_REQUEST) {
+            toast("Microphone permission is needed for voice input")
+        }
+    }
+
     private fun isScreenServiceEnabled(): Boolean {
         val expected = android.content.ComponentName(this, CompanionAccessibilityService::class.java).flattenToString()
         val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
@@ -256,10 +308,10 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) CompanionVoice.configure(this, tts)
     }
-    companion object { private const val SCREEN_CAPTURE_REQUEST = 701 }
+    companion object { private const val SCREEN_CAPTURE_REQUEST = 701; private const val VOICE_PERMISSION_REQUEST = 702 }
 
     private fun toast(s: String) = Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
     override fun onDestroy() {
-        worker.shutdownNow(); tts.stop(); tts.shutdown(); super.onDestroy()
+        worker.shutdownNow(); speechRecognizer?.destroy(); tts.stop(); tts.shutdown(); super.onDestroy()
     }
 }
