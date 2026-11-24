@@ -38,6 +38,10 @@ class ScreenCaptureActivity : Activity() {
         runCatching {
             val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
             projection = manager.getMediaProjection(resultCode, data)
+            // Android 14+ requires a callback before creating a virtual display.
+            projection?.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() { }
+            }, Handler(mainLooper))
             val metrics = resources.displayMetrics
             val width = metrics.widthPixels.coerceAtLeast(1)
             val height = metrics.heightPixels.coerceAtLeast(1)
