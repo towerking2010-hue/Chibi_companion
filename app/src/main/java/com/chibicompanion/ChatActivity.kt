@@ -140,30 +140,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         })
         assistantCard.addView(CompanionUi.text(this, "To inspect another app, double-tap your floating chibi and choose 'Look at the app behind me'.", 11f, CompanionUi.muted))
-        assistantCard.addView(CompanionUi.button(this, "Read accessible screen text") {
-            if (!isScreenServiceEnabled()) {
-                AlertDialog.Builder(this@ChatActivity)
-                    .setTitle("Screen Awareness is not enabled")
-                    .setMessage("Enable Chibi Companion under Android Accessibility settings first. You can turn it off again at any time.")
-                    .setPositiveButton("Open settings") { _, _ ->
-                        AssistantPreferences.setScreenAwarenessEnabled(this@ChatActivity, true)
-                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                    }
-                    .setNegativeButton("Cancel", null).show()
-            } else {
-                val prompt = "Please explain what is currently visible on my phone screen.\n\n" + ScreenContext.describe()
-                log.append("\n\nYou: What is on my screen?\n\nHer: looking…")
-                worker.execute {
-                    val answer = runCatching { AiClient.reply(this@ChatActivity, prompt) }
-                        .getOrElse { "I couldn't analyze that screen just now. Check your AI connection and try again." }
-                    ChatHistory.add(this@ChatActivity, "Her", answer)
-                    runOnUiThread {
-                        log.text = log.text.toString().replace("Her: looking…", "Her: $answer")
-                        tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "screen-reply")
-                    }
-                }
-            }
-        })
+        assistantCard.addView(CompanionUi.text(this, "For visual screen analysis, use the floating chibi button: Look at the app behind me.", 11f, CompanionUi.muted))
         assistantCard.addView(CompanionUi.button(this, "View and manage my memories") { showMemoryManager() })
         assistantCard.addView(CompanionUi.button(this, "Proactive behavior: " + AssistantPreferences.proactiveMode(this).uppercase()) {
             val modes = arrayOf("Quiet — only respond when I interact", "Optional — occasional helpful check-ins", "Active — proactively suggest useful actions")
