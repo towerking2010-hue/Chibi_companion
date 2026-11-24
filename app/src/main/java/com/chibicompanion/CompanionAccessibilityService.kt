@@ -9,6 +9,48 @@ import android.view.accessibility.AccessibilityNodeInfo
  * it does not save screenshots, passwords, or screen history.
  */
 class CompanionAccessibilityService : AccessibilityService() {
+    override fun onServiceConnected() {
+        instance = this
+        super.onServiceConnected()
+        configureServiceInfo()
+    }
+
+    override fun onDestroy() {
+        if (instance === this) instance = null
+        super.onDestroy()
+    }
+
+    fun navigate(action: String): Boolean = when (action) {
+        "back" -> performGlobalAction(GLOBAL_ACTION_BACK)
+        "home" -> performGlobalAction(GLOBAL_ACTION_HOME)
+        "notifications" -> performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
+        "quick_settings" -> performGlobalAction(GLOBAL_ACTION_QUICK_SETTINGS)
+        "scroll_down" -> scrollActiveWindow(true)
+        "scroll_up" -> scrollActiveWindow(false)
+        else -> false
+    }
+
+    private fun scrollActiveWindow(forward: Boolean): Boolean {
+        val root = rootInActiveWindow ?: return false
+        val target = findScrollable(root) ?: return false
+        return target.performAction(if (forward) AccessibilityNodeInfo.ACTION_SCROLL_FORWARD else AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+    }
+
+    private fun findScrollable(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+        if (node == null) return null
+        if (node.isScrollable) return node
+        for (i in 0 until node.childCount) {
+            val found = findScrollable(node.getChild(i))
+            if (found != null) return found
+        }
+        return null
+    }
+
+    companion object {
+        @Volatile private var instance: CompanionAccessibilityService? = null
+        fun navigateCurrent(action: String): Boolean = instance?.navigate(action) ?: false
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null || !AssistantPreferences.screenAwarenessEnabled(this)) return
         if (event.eventType !in setOf(
@@ -33,7 +75,7 @@ class CompanionAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() { ScreenContext.clear() }
-    override fun onServiceConnected() {
+    private fun configureServiceInfo() {
         serviceInfo = serviceInfo.apply {
             eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
                 AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or AccessibilityEvent.TYPE_VIEW_SCROLLED
