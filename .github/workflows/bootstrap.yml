@@ -15,8 +15,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Restore Android source from bootstrap archive
         run: |
-          base64 -d .github/chibi-source.zip.b64 > /tmp/chibi-source.zip
-          unzip -q -o /tmp/chibi-source.zip
+          base64 -d .github/chibi-source.tar.gz.b64 > /tmp/chibi-source.tar.gz
+          tar -xzf /tmp/chibi-source.tar.gz
           cp -a ChibiCompanion/. .
           rm -rf ChibiCompanion
       - name: Commit restored source files
