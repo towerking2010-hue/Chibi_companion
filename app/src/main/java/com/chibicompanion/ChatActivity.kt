@@ -2,6 +2,7 @@ package com.chibicompanion
 
 import android.app.Activity
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.graphics.Color
 import android.view.Gravity
 import android.view.View
