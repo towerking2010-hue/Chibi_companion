@@ -32,3 +32,29 @@ jobs:
           name: chibi-companion-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Prepare permanent release signing key
+        if: ${{ secrets.CHIBI_KEYSTORE_BASE64 != '' }}
+        env:
+          CHIBI_KEYSTORE_BASE64: ${{ secrets.CHIBI_KEYSTORE_BASE64 }}
+        run: |
+          echo "$CHIBI_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/chibi-release.jks"
+          chmod 600 "$RUNNER_TEMP/chibi-release.jks"
+      - name: Build permanently signed release APK
+        if: ${{ secrets.CHIBI_KEYSTORE_BASE64 != '' }}
+        env:
+          CHIBI_STORE_FILE: ${{ runner.temp }}/chibi-release.jks
+          CHIBI_STORE_PASSWORD: ${{ secrets.CHIBI_KEYSTORE_PASSWORD }}
+          CHIBI_KEY_ALIAS: chibi-release
+          CHIBI_KEY_PASSWORD: ${{ secrets.CHIBI_KEYSTORE_PASSWORD }}
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: '8.9'
+          arguments: assembleRelease --stacktrace
+      - name: Upload permanently signed APK
+        if: ${{ secrets.CHIBI_KEYSTORE_BASE64 != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: chibi-companion-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
