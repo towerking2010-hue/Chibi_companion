@@ -3,6 +3,8 @@ package com.chibicompanion
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.provider.Settings
+import android.text.InputType
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.graphics.Color
@@ -53,10 +55,15 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             val message = entry.text.toString().trim()
             if (message.isNotEmpty()) {
                 log.append("\n\nYou: $message\n\nHer: thinking…")
+                ChatHistory.add(this@ChatActivity, "You", message)
                 entry.text.clear()
                 worker.execute {
-                    val answer = runCatching { AiClient.reply(this@ChatActivity, message) }
+                    val explicitMemory = CompanionMemory.handleExplicitRequest(this@ChatActivity, message)
+                    val asksAboutScreen = message.contains("screen", true) || message.contains("what am I looking at", true) || message.contains("what is on", true)
+                    val prompt = if (asksAboutScreen) message + "\n\nSCREEN CONTEXT (user requested this):\n" + ScreenContext.describe() else message
+                    val answer = explicitMemory ?: runCatching { AiClient.reply(this@ChatActivity, prompt) }
                         .getOrElse { OfflineCompanion.reply(message) }
+                    ChatHistory.add(this@ChatActivity, "Her", answer)
                     runOnUiThread {
                         log.text = log.text.toString().replace("Her: thinking…", "Her: $answer")
                         tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "reply")
@@ -114,7 +121,86 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         refreshProviders()
         val settingsScroll = ScrollView(this).apply { addView(settingsCard) }
         root.addView(settingsScroll, LinearLayout.LayoutParams(-1, CompanionUi.dp(this,280)))
+        val assistantCard = CompanionUi.column(this, 12).apply {
+            background = CompanionUi.panel(this@ChatActivity, Color.rgb(241,239,252), 22)
+        }
+        assistantCard.addView(CompanionUi.text(this, "PHONE AWARENESS & MEMORY  ✦", 12f, CompanionUi.ink, true))
+        assistantCard.addView(CompanionUi.text(this, "Optional permissions stay under your control.", 11f, CompanionUi.muted))
+        assistantCard.addView(CompanionUi.button(this, "Enable / manage Screen Awareness") {
+            AssistantPreferences.setScreenAwarenessEnabled(this@ChatActivity, true)
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        })
+        assistantCard.addView(CompanionUi.button(this, "Ask her about my current screen") {
+            if (!isScreenServiceEnabled()) {
+                AlertDialog.Builder(this@ChatActivity)
+                    .setTitle("Screen Awareness is not enabled")
+                    .setMessage("Enable Chibi Companion under Android Accessibility settings first. You can turn it off again at any time.")
+                    .setPositiveButton("Open settings") { _, _ ->
+                        AssistantPreferences.setScreenAwarenessEnabled(this@ChatActivity, true)
+                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    }
+                    .setNegativeButton("Cancel", null).show()
+            } else {
+                val prompt = "Please explain what is currently visible on my phone screen.\n\n" + ScreenContext.describe()
+                log.append("\n\nYou: What is on my screen?\n\nHer: looking…")
+                worker.execute {
+                    val answer = runCatching { AiClient.reply(this@ChatActivity, prompt) }
+                        .getOrElse { "I couldn't analyze that screen just now. Check your AI connection and try again." }
+                    ChatHistory.add(this@ChatActivity, "Her", answer)
+                    runOnUiThread {
+                        log.text = log.text.toString().replace("Her: looking…", "Her: $answer")
+                        tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "screen-reply")
+                    }
+                }
+            }
+        })
+        assistantCard.addView(CompanionUi.button(this, "View and manage my memories") { showMemoryManager() })
+        assistantCard.addView(CompanionUi.button(this, "Proactive behavior: " + AssistantPreferences.proactiveMode(this).uppercase()) {
+            val modes = arrayOf("Quiet — only respond when I interact", "Optional — occasional helpful check-ins", "Active — proactively suggest useful actions")
+            val values = arrayOf(AssistantPreferences.QUIET, AssistantPreferences.OPTIONAL, AssistantPreferences.ACTIVE)
+            val selected = values.indexOf(AssistantPreferences.proactiveMode(this))
+            AlertDialog.Builder(this@ChatActivity).setTitle("How proactive should she be?")
+                .setSingleChoiceItems(modes, selected) { dialog, which ->
+                    AssistantPreferences.setProactiveMode(this@ChatActivity, values[which])
+                    dialog.dismiss()
+                    toast("Assistant behavior updated")
+                }.setNegativeButton("Cancel", null).show()
+        })
+        root.addView(assistantCard)
+        root.addView(CompanionUi.spacer(this, 10))
         setContentView(root)
+    }
+
+    private fun isScreenServiceEnabled(): Boolean {
+        val expected = android.content.ComponentName(this, CompanionAccessibilityService::class.java).flattenToString()
+        val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
+        return enabled.split(':').any { it.equals(expected, true) }
+    }
+
+    private fun showMemoryManager() {
+        val items = CompanionMemory.all(this)
+        val labels = (items.map { "✦  $it" } + "＋  Add a memory").toTypedArray()
+        AlertDialog.Builder(this).setTitle("Her memories — stored on this phone")
+            .setItems(labels) { _, which ->
+                if (which == items.size) {
+                    val field = EditText(this).apply { hint = "Something you want her to remember"; inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES }
+                    AlertDialog.Builder(this).setTitle("Add a memory").setView(field)
+                        .setPositiveButton("Save") { _, _ ->
+                            if (CompanionMemory.add(this, field.text.toString())) toast("Memory saved securely ♡")
+                            else toast("Please enter a little more detail")
+                        }.setNegativeButton("Cancel", null).show()
+                } else {
+                    AlertDialog.Builder(this).setTitle("Delete this memory?")
+                        .setMessage(items[which]).setPositiveButton("Delete") { _, _ ->
+                            CompanionMemory.remove(this, which); toast("Memory deleted")
+                        }.setNegativeButton("Keep", null).show()
+                }
+            }.setNeutralButton("Clear all") { _, _ ->
+                AlertDialog.Builder(this).setTitle("Clear all memories?")
+                    .setMessage("This cannot be undone.")
+                    .setPositiveButton("Clear") { _, _ -> CompanionMemory.clear(this); toast("All memories cleared") }
+                    .setNegativeButton("Cancel", null).show()
+            }.setNegativeButton("Close", null).show()
     }
 
     private fun showVoicePicker() {
