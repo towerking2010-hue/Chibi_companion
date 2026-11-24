@@ -93,10 +93,16 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         panel.addView(Button(this).apply {
             text = "👀 Look at the app behind me"
             setOnClickListener {
-                hideChat()
-                startActivity(Intent(this@FloatingCompanionService, ScreenCaptureActivity::class.java)
-                    .putExtra(ScreenCaptureActivity.EXTRA_NOTIFY_SERVICE, true)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                AlertDialog.Builder(this@FloatingCompanionService)
+                    .setTitle("Share one screen capture?")
+                    .setMessage("Android will ask for screen-capture permission. If you continue, one screenshot of the app behind the chibi will be sent to your configured AI provider for analysis. Avoid passwords, banking screens, private chats or other sensitive content.")
+                    .setPositiveButton("Continue") { _, _ ->
+                        hideChat()
+                        startActivity(Intent(this@FloatingCompanionService, ScreenCaptureActivity::class.java)
+                            .putExtra(ScreenCaptureActivity.EXTRA_NOTIFY_SERVICE, true)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                    .setNegativeButton("Cancel", null).show()
             }
         })
         val transcript=TextView(this).apply { text=ChatHistory.read(this@FloatingCompanionService); textSize=15f; setTextColor(Color.DKGRAY); setPadding(4,12,4,12) }
