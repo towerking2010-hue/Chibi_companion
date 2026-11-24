@@ -37,12 +37,11 @@ jobs:
 
       - name: Prepare permanent release signing key
         if: ${{ env.CHIBI_KEYSTORE_BASE64 != '' }}
-        env:
         run: |
           echo "$CHIBI_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/chibi-release.jks"
           chmod 600 "$RUNNER_TEMP/chibi-release.jks"
       - name: Build permanently signed release APK
-        if: ${{ secrets.CHIBI_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.CHIBI_KEYSTORE_BASE64 != '' }}
         env:
           CHIBI_STORE_FILE: ${{ runner.temp }}/chibi-release.jks
           CHIBI_STORE_PASSWORD: ${{ secrets.CHIBI_KEYSTORE_PASSWORD }}
