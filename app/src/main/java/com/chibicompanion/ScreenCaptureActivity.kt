@@ -80,6 +80,9 @@ class ScreenCaptureActivity : Activity() {
                 bitmap.recycle()
                 ScreenCaptureStore.latestJpeg = output.toByteArray()
             }
+            if (intent.getBooleanExtra(EXTRA_NOTIFY_SERVICE, false)) {
+                startService(Intent(this, FloatingCompanionService::class.java).setAction(ACTION_SCREEN_CAPTURE_READY))
+            }
             setResult(RESULT_OK)
         } catch (_: Exception) {
             ScreenCaptureStore.latestJpeg = null
@@ -104,5 +107,9 @@ class ScreenCaptureActivity : Activity() {
         super.onDestroy()
     }
 
-    companion object { private const val REQUEST_CAPTURE = 701 }
+    companion object {
+        const val EXTRA_NOTIFY_SERVICE = "notify_floating_service"
+        const val ACTION_SCREEN_CAPTURE_READY = "com.chibicompanion.SCREEN_CAPTURE_READY"
+        private const val REQUEST_CAPTURE = 701
+    }
 }
