@@ -52,7 +52,7 @@ jobs:
           gradle-version: '8.9'
           arguments: assembleRelease --stacktrace
       - name: Upload permanently signed APK
-        if: ${{ secrets.CHIBI_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.CHIBI_KEYSTORE_BASE64 != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: chibi-companion-release-apk
