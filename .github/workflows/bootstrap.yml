@@ -1,4 +1,4 @@
-name: Bootstrap and build Chibi Companion
+name: Android Debug APK
 
 on:
   push:
@@ -6,28 +6,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restore Android source from bootstrap archive
-        run: |
-          base64 -d .github/chibi-source.tar.gz.b64 > /tmp/chibi-source.tar.gz
-          tar -xzf /tmp/chibi-source.tar.gz
-          cp -a ChibiCompanion/. .
-          rm -rf ChibiCompanion
-      - name: Commit restored source files
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- . ':!.github/workflows/android.yml'
-          if ! git diff --cached --quiet; then
-            git commit -m "Add native Chibi Companion Android source"
-            git push
-          fi
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
