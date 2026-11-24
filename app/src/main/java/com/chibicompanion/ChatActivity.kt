@@ -176,8 +176,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                     toast("Assistant behavior updated")
                 }.setNegativeButton("Cancel", null).show()
         })
-        root.addView(assistantCard)
-        root.addView(CompanionUi.spacer(this, 10))
+        settingsCard.addView(assistantCard)
         setContentView(root)
     }
 
