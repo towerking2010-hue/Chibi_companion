@@ -140,7 +140,13 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         })
         assistantCard.addView(CompanionUi.button(this, "Look at my screen (one-time capture)") {
-            startActivityForResult(Intent(this@ChatActivity, ScreenCaptureActivity::class.java), SCREEN_CAPTURE_REQUEST)
+            AlertDialog.Builder(this@ChatActivity)
+                .setTitle("Share one screen capture?")
+                .setMessage("Android will ask for screen-capture permission. If you continue, one screenshot of your current screen will be sent to your configured AI provider for analysis. Avoid passwords, banking screens, private chats or other sensitive content.")
+                .setPositiveButton("Continue") { _, _ ->
+                    startActivityForResult(Intent(this@ChatActivity, ScreenCaptureActivity::class.java), SCREEN_CAPTURE_REQUEST)
+                }
+                .setNegativeButton("Cancel", null).show()
         })
         assistantCard.addView(CompanionUi.button(this, "Read accessible screen text") {
             if (!isScreenServiceEnabled()) {
