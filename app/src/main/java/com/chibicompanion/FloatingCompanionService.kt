@@ -95,7 +95,8 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         row.addView(Button(this).apply { text="Send"; setOnClickListener {
             val msg=input.text.toString().trim(); if(msg.isNotEmpty()) { input.text.clear(); ChatHistory.add(this@FloatingCompanionService,"You",msg); transcript.append("\n\nYou: $msg\nHer: …"); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
                 worker.execute {
-                    val answer = PhoneActions.tryHandle(this@FloatingCompanionService,msg)
+                    val answer = CompanionMemory.handleExplicitRequest(this@FloatingCompanionService, msg)
+                        ?: PhoneActions.tryHandle(this@FloatingCompanionService,msg)
                         ?: runCatching { AiClient.reply(this@FloatingCompanionService,msg) }
                             .getOrElse { OfflineCompanion.reply(msg) }
                     ChatHistory.add(this@FloatingCompanionService,"Her",answer)
