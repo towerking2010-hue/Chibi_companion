@@ -182,73 +182,6 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
 
-    @Deprecated("Android activity result callback")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != SCREEN_CAPTURE_REQUEST) return
-        val screenshot = ScreenCaptureStore.latestJpeg
-        ScreenCaptureStore.latestJpeg = null
-        if (resultCode != RESULT_OK || screenshot == null) {
-            toast("Screen capture was cancelled or unavailable")
-            return
-        }
-        log.append("\n\nYou: What can you see on my screen?\n\nHer: looking…")
-        worker.execute {
-            val answer = runCatching {
-                AiClient.replyWithImage(this@ChatActivity, "Describe what is visible on my phone screen and help with what I am doing.", screenshot)
-            }.getOrElse { "I captured the screen, but the connected provider could not analyze images. Try Gemini or configure a vision-capable model. Details: " + (it.message ?: "unknown error") }
-            screenshot.fill(0)
-            ChatHistory.add(this@ChatActivity, "Her", answer)
-            runOnUiThread {
-                log.text = log.text.toString().replace("Her: looking…", "Her: $answer")
-                tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "vision-reply")
-            }
-        }
-    }
-
-    private fun startVoiceInput() {
-        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            toast("Speech recognition is not available on this phone")
-            return
-        }
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), VOICE_PERMISSION_REQUEST)
-            return
-        }
-        val recognizer = SpeechRecognizer.createSpeechRecognizer(this)
-        speechRecognizer?.destroy()
-        speechRecognizer = recognizer
-        recognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) { toast("Listening… speak naturally") }
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(rmsdB: Float) {}
-            override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() { toast("Finishing…") }
-            override fun onError(error: Int) { toast("I couldn't hear that clearly. Try again.") }
-            override fun onResults(results: Bundle?) {
-                val words = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                if (!words.isNullOrBlank()) entry.setText(words)
-            }
-            override fun onPartialResults(partialResults: Bundle?) {}
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-        })
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        }
-        recognizer.startListening(intent)
-    }
-
-    @Deprecated("Android permission callback")
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == VOICE_PERMISSION_REQUEST && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-            startVoiceInput()
-        } else if (requestCode == VOICE_PERMISSION_REQUEST) {
-            toast("Microphone permission is needed for voice input")
-        }
-    }
-
     private fun isScreenServiceEnabled(): Boolean {
         val expected = android.content.ComponentName(this, CompanionAccessibilityService::class.java).flattenToString()
         val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
@@ -306,7 +239,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) CompanionVoice.configure(this, tts)
     }
-    companion object { private const val SCREEN_CAPTURE_REQUEST = 701; private const val VOICE_PERMISSION_REQUEST = 702 }
+    companion object { private const val VOICE_PERMISSION_REQUEST = 702 }
 
     private fun toast(s: String) = Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
     override fun onDestroy() {
