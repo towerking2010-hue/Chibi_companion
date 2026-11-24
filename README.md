@@ -35,8 +35,3 @@ Provider fallback is sequential and request-error based; it does not have reliab
 Phone commands are deliberately limited to Android intents and the document-tree picker. They do not provide arbitrary control of other apps or settings. A folder picker asks the user to select and grant access; it does not silently open arbitrary folders.
 
 Android may stop background services under battery restrictions. The foreground notification includes a stop action. The app requires the user to grant overlay permission explicitly. Use only API keys you own and keep them private.
-
-
-## Continuous integration
-
-The repository's GitHub Actions workflow builds a debug APK on pushes to `main` and on manual dispatch. Download the `chibi-companion-debug-apk` artifact from the Actions run after a successful build.
