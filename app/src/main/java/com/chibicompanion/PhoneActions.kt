@@ -8,6 +8,20 @@ object PhoneActions {
     fun tryHandle(ctx:Context, raw:String):String? {
         val q=raw.trim()
         val lower=q.lowercase()
+        val navigation = when {
+            lower in listOf("go back", "press back", "back") -> "back"
+            lower in listOf("go home", "home screen", "press home") -> "home"
+            lower in listOf("open notifications", "show notifications") -> "notifications"
+            lower in listOf("open quick settings", "show quick settings") -> "quick_settings"
+            lower in listOf("scroll down", "swipe down") -> "scroll_down"
+            lower in listOf("scroll up", "swipe up") -> "scroll_up"
+            else -> null
+        }
+        if (navigation != null) {
+            val ok = CompanionAccessibilityService.navigateCurrent(navigation)
+            return if (ok) "Done. I used Android's accessibility navigation." else
+                "To control navigation, first enable Chibi Companion in Android Accessibility settings."
+        }
         if (lower == "open folder" || lower == "choose folder" || lower.startsWith("browse folder")) {
             val i=Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             ctx.startActivity(i)
