@@ -6,6 +6,7 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
@@ -51,7 +52,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private fun overlayType() = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
     private fun showAvatar() {
         val v = ChibiView(this)
-        val lp = WindowManager.LayoutParams(112, 112, overlayType(),
+        val lp = WindowManager.LayoutParams(136, 164, overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 12; y = 220 }
         v.setOnTouchListener { _, e ->
@@ -108,8 +109,11 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                             else -> "talking"
                         }
                         avatar?.setMood(mood)
-                        if (::tts.isInitialized) tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"chibi-reply")
-                        android.os.Handler(mainLooper).postDelayed({ avatar?.setMood("neutral") }, 2800)
+                        if (::tts.isInitialized) {
+                            CompanionVoice.configure(this@FloatingCompanionService, tts)
+                            tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"chibi-reply")
+                        }
+                        android.os.Handler(mainLooper).postDelayed({ avatar?.setMood("neutral") }, 3500)
                     }
                 }
             }
@@ -118,13 +122,26 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         val lp=WindowManager.LayoutParams((resources.displayMetrics.widthPixels-28).coerceAtLeast(280), (resources.displayMetrics.heightPixels*0.56f).toInt(), overlayType(),
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
             PixelFormat.TRANSLUCENT).apply { gravity=Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL; y=20; softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE }
-        // ALT_FOCUSABLE_IM permits keyboard interaction for this focusable overlay.
         lp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
         runCatching { wm.addView(panel,lp); chatPanel=panel; chatParams=lp; input.requestFocus(); input.post { (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input,InputMethodManager.SHOW_IMPLICIT) } }
     }
     private fun hideChat() { chatPanel?.let { runCatching { wm.removeView(it) } }; chatPanel=null; chatParams=null }
     private fun mainThread(block:()->Unit) { android.os.Handler(mainLooper).post(block) }
-    override fun onInit(status:Int) { if(status==TextToSpeech.SUCCESS) { tts.language=Locale.getDefault(); tts.setSpeechRate(0.94f); tts.setPitch(1.12f) } }
+    override fun onInit(status:Int) {
+        if(status==TextToSpeech.SUCCESS) {
+            CompanionVoice.configure(this, tts)
+            tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) { mainThread { avatar?.setMood("talking") } }
+                override fun onDone(utteranceId: String?) {
+                    mainThread {
+                        avatar?.setMood("happy")
+                        android.os.Handler(mainLooper).postDelayed({ avatar?.setMood("neutral") }, 900)
+                    }
+                }
+                override fun onError(utteranceId: String?) { mainThread { avatar?.setMood("neutral") } }
+            })
+        }
+    }
     override fun onDestroy() {
         hideChat(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
         worker.shutdownNow(); if(::tts.isInitialized) { tts.stop(); tts.shutdown() }

@@ -1,6 +1,8 @@
 package com.chibicompanion
 
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.graphics.Color
@@ -65,8 +67,14 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         root.addView(CompanionUi.spacer(this, 12))
 
         val settingsCard = CompanionUi.column(this, 14).apply { background = CompanionUi.panel(this@ChatActivity, Color.rgb(245,242,250), 22) }
-        val settingsTitle = CompanionUi.text(this, "AI CONNECTIONS  ✦", 12f, CompanionUi.ink, true)
-        settingsCard.addView(settingsTitle)
+        settingsCard.addView(CompanionUi.text(this, "VOICE & AI CONNECTIONS  ✦", 12f, CompanionUi.ink, true))
+        settingsCard.addView(CompanionUi.spacer(this, 6))
+        settingsCard.addView(CompanionUi.button(this, "Choose companion voice ♡") { showVoicePicker() })
+        settingsCard.addView(CompanionUi.spacer(this, 6))
+        settingsCard.addView(CompanionUi.button(this, "Install more voice options") {
+            runCatching { startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) }
+                .onFailure { toast("Open your phone's Text-to-speech settings to install voices") }
+        })
         val provider = EditText(this).apply { hint = "Provider: gemini, groq, openrouter, or custom"; setSingleLine(); textSize=13f }
         val key = EditText(this).apply {
             hint = "API key (encrypted on this device)"
@@ -105,12 +113,34 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         })
         refreshProviders()
         val settingsScroll = ScrollView(this).apply { addView(settingsCard) }
-        root.addView(settingsScroll, LinearLayout.LayoutParams(-1, CompanionUi.dp(this,250)))
+        root.addView(settingsScroll, LinearLayout.LayoutParams(-1, CompanionUi.dp(this,280)))
         setContentView(root)
     }
 
+    private fun showVoicePicker() {
+        val voices = CompanionVoice.options(tts)
+        if (voices.isEmpty()) {
+            AlertDialog.Builder(this).setTitle("No extra voices found")
+                .setMessage("Your phone's text-to-speech engine has not exposed any English voices. Use 'Install more voice options' and download a voice pack, then return here.")
+                .setPositiveButton("OK", null).show()
+            return
+        }
+        val selected = CompanionVoice.selectedName(this)
+        val labels = voices.map { CompanionVoice.label(it) }.toTypedArray()
+        val checked = voices.indexOfFirst { it.name == selected }
+        AlertDialog.Builder(this)
+            .setTitle("Choose her voice")
+            .setSingleChoiceItems(labels, checked) { dialog, which ->
+                CompanionVoice.select(this, tts, voices[which])
+                toast("Voice updated ♡")
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) { tts.language = Locale.getDefault(); tts.setSpeechRate(0.94f); tts.setPitch(1.12f) }
+        if (status == TextToSpeech.SUCCESS) CompanionVoice.configure(this, tts)
     }
     private fun toast(s: String) = Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
     override fun onDestroy() {

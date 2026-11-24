@@ -34,7 +34,7 @@ class MainActivity : Activity() {
         }
         hero.addView(CompanionUi.text(this, "YOUR COMPANION", 10f, CompanionUi.muted, true))
         val avatar = ChibiView(this)
-        hero.addView(avatar, LinearLayout.LayoutParams(-1, CompanionUi.dp(this, 218)))
+        hero.addView(avatar, LinearLayout.LayoutParams(-1, CompanionUi.dp(this, 280)))
         hero.addView(CompanionUi.text(this, "Hmph… I was waiting for you!", 16f, CompanionUi.ink, true))
         hero.addView(CompanionUi.text(this, "A tiny friend, always nearby.", 12f, CompanionUi.muted))
         root.addView(hero, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -62,7 +62,7 @@ class MainActivity : Activity() {
         }, LinearLayout.LayoutParams(0, -2, 1f))
         root.addView(row)
         root.addView(CompanionUi.spacer(this, 8))
-        root.addView(CompanionUi.text(this, "Tip: drag her anywhere • double-tap to chat", 11f, CompanionUi.muted).apply { gravity = Gravity.CENTER })
+        root.addView(CompanionUi.text(this, "Drag her anywhere • double-tap to chat", 11f, CompanionUi.muted).apply { gravity = Gravity.CENTER })
         setContentView(root)
     }
 }
