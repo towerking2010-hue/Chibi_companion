@@ -130,7 +130,10 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             AssistantPreferences.setScreenAwarenessEnabled(this@ChatActivity, true)
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         })
-        assistantCard.addView(CompanionUi.button(this, "Ask her about my current screen") {
+        assistantCard.addView(CompanionUi.button(this, "Look at my screen (one-time capture)") {
+            startActivityForResult(Intent(this@ChatActivity, ScreenCaptureActivity::class.java), SCREEN_CAPTURE_REQUEST)
+        })
+        assistantCard.addView(CompanionUi.button(this, "Read accessible screen text") {
             if (!isScreenServiceEnabled()) {
                 AlertDialog.Builder(this@ChatActivity)
                     .setTitle("Screen Awareness is not enabled")
@@ -169,6 +172,31 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         root.addView(assistantCard)
         root.addView(CompanionUi.spacer(this, 10))
         setContentView(root)
+    }
+
+
+    @Deprecated("Android activity result callback")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != SCREEN_CAPTURE_REQUEST) return
+        val screenshot = ScreenCaptureStore.latestJpeg
+        ScreenCaptureStore.latestJpeg = null
+        if (resultCode != RESULT_OK || screenshot == null) {
+            toast("Screen capture was cancelled or unavailable")
+            return
+        }
+        log.append("\n\nYou: What can you see on my screen?\n\nHer: looking…")
+        worker.execute {
+            val answer = runCatching {
+                AiClient.replyWithImage(this@ChatActivity, "Describe what is visible on my phone screen and help with what I am doing.", screenshot)
+            }.getOrElse { "I captured the screen, but the connected provider could not analyze images. Try Gemini or configure a vision-capable model. Details: " + (it.message ?: "unknown error") }
+            screenshot.fill(0)
+            ChatHistory.add(this@ChatActivity, "Her", answer)
+            runOnUiThread {
+                log.text = log.text.toString().replace("Her: looking…", "Her: $answer")
+                tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "vision-reply")
+            }
+        }
     }
 
     private fun isScreenServiceEnabled(): Boolean {
@@ -228,6 +256,8 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) CompanionVoice.configure(this, tts)
     }
+    companion object { private const val SCREEN_CAPTURE_REQUEST = 701 }
+
     private fun toast(s: String) = Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
     override fun onDestroy() {
         worker.shutdownNow(); tts.stop(); tts.shutdown(); super.onDestroy()
