@@ -46,6 +46,10 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "STOP_COMPANION") { stopSelf(); return START_NOT_STICKY }
+        if (intent?.action == ScreenCaptureActivity.ACTION_SCREEN_CAPTURE_READY) {
+            handleCapturedScreen()
+            return START_STICKY
+        }
         return START_STICKY
     }
 
@@ -86,6 +90,15 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         header.addView(TextView(this).apply { text="Mou… I was waiting. ♡"; textSize=18f; setTextColor(Color.rgb(53,70,111)) }, LinearLayout.LayoutParams(0,-2,1f))
         header.addView(Button(this).apply { text="×"; setOnClickListener { hideChat() } })
         panel.addView(header)
+        panel.addView(Button(this).apply {
+            text = "👀 Look at the app behind me"
+            setOnClickListener {
+                hideChat()
+                startActivity(Intent(this@FloatingCompanionService, ScreenCaptureActivity::class.java)
+                    .putExtra(ScreenCaptureActivity.EXTRA_NOTIFY_SERVICE, true)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+        })
         val transcript=TextView(this).apply { text=ChatHistory.read(this@FloatingCompanionService); textSize=15f; setTextColor(Color.DKGRAY); setPadding(4,12,4,12) }
         val scroll=ScrollView(this).apply { addView(transcript) }
         panel.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
@@ -126,6 +139,29 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         lp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
         runCatching { wm.addView(panel,lp); chatPanel=panel; chatParams=lp; input.requestFocus(); input.post { (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input,InputMethodManager.SHOW_IMPLICIT) } }
     }
+
+    private fun handleCapturedScreen() {
+        val screenshot = ScreenCaptureStore.latestJpeg ?: return
+        ScreenCaptureStore.latestJpeg = null
+        worker.execute {
+            val answer = runCatching {
+                AiClient.replyWithImage(this@FloatingCompanionService,
+                    "Describe the app and content visible on my screen. Help me understand or interact with it. Be careful with sensitive information.", screenshot)
+            }.getOrElse {
+                "I captured the screen, but I couldn't understand the image. Connect a vision-capable provider such as Gemini and try again."
+            }
+            screenshot.fill(0)
+            ChatHistory.add(this@FloatingCompanionService, "Her", answer)
+            mainThread {
+                avatar?.setMood("happy")
+                if (::tts.isInitialized) {
+                    CompanionVoice.configure(this@FloatingCompanionService, tts)
+                    tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "screen-vision")
+                }
+            }
+        }
+    }
+
     private fun hideChat() { chatPanel?.let { runCatching { wm.removeView(it) } }; chatPanel=null; chatParams=null }
     private fun mainThread(block:()->Unit) { android.os.Handler(mainLooper).post(block) }
     override fun onInit(status:Int) {
