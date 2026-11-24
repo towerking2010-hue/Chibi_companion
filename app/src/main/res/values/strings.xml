@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Chibi Companion</string>
+    <string name="accessibility_service_description">Lets Chibi Companion read accessible labels on the current screen when you explicitly enable Screen Awareness. Editable and password fields are excluded.</string>
+</resources>
