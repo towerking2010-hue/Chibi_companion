@@ -14,7 +14,7 @@ import kotlin.math.sin
 /**
  * Image-backed Miko renderer.
  *
- * The character is rendered from the bundled 4x3 transparent twelve-expression atlas.
+ * The character is rendered from the bundled 2x2 transparent core-pose atlas.
  * This intentionally replaces the old geometric placeholder drawing. All
  * screens share this view so the same character art and expression mapping
  * are used in the home card, chat and floating companion.
@@ -65,21 +65,13 @@ open class ChibiView(context: Context) : View(context) {
         invalidate()
     }
 
-    // Atlas order: neutral, happy, excited, surprised, shy, playful,
-    // angry, sad, affectionate, determined, sleepy, talking.
+    // The committed core atlas contains four complete poses.
     private fun expressionIndex(value: String): Int = when (value) {
-        "neutral", "calm" -> 0
-        "happy", "joy" -> 1
-        "excited", "enthusiastic" -> 2
-        "surprised", "confused", "curious" -> 3
-        "shy", "embarrassed", "blushing" -> 4
-        "teasing", "playful" -> 5
-        "angry", "pouty", "annoyed" -> 6
-        "sad", "crying", "disappointed" -> 7
-        "affectionate", "love", "loving" -> 8
-        "determined", "confident" -> 9
-        "sleepy", "tired" -> 10
-        "talking", "speaking" -> 11
+        "neutral", "calm", "sad", "crying", "sleepy", "shy" -> 0
+        "happy", "joy", "affectionate", "love", "loving", "teasing", "playful" -> 1
+        "excited", "enthusiastic", "surprised", "confused", "curious",
+        "angry", "pouty", "annoyed", "determined", "confident" -> 2
+        "talking", "speaking" -> 3
         else -> 0
     }
 
@@ -87,16 +79,16 @@ open class ChibiView(context: Context) : View(context) {
         super.onDraw(canvas)
         loadAtlas()
         val bitmap = atlas
-        if (bitmap == null || bitmap.width < 4 || bitmap.height < 3 || width <= 0 || height <= 0) return
+        if (bitmap == null || bitmap.width < 2 || bitmap.height < 2 || width <= 0 || height <= 0) return
 
-        val index = if (speaking) 11 else expressionIndex(mood)
-        val column = index % 4
-        val row = index / 4
+        val index = if (speaking) 3 else expressionIndex(mood)
+        val column = index % 2
+        val row = index / 2
         val source = Rect(
-            (column * bitmap.width / 4f).toInt(),
-            (row * bitmap.height / 3f).toInt(),
-            ((column + 1) * bitmap.width / 4f).toInt(),
-            ((row + 1) * bitmap.height / 3f).toInt()
+            (column * bitmap.width / 2f).toInt(),
+            (row * bitmap.height / 2f).toInt(),
+            ((column + 1) * bitmap.width / 2f).toInt(),
+            ((row + 1) * bitmap.height / 2f).toInt()
         )
 
         val now = System.currentTimeMillis()
