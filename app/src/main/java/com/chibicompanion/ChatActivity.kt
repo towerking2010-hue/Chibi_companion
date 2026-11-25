@@ -135,10 +135,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         }
         assistantCard.addView(CompanionUi.text(this, "PHONE AWARENESS & MEMORY  ✦", 12f, CompanionUi.ink, true))
         assistantCard.addView(CompanionUi.text(this, "Miko only uses permissions you choose to enable.", 11f, CompanionUi.muted))
-        assistantCard.addView(CompanionUi.button(this, "Enable / manage Screen Awareness") {
-            AssistantPreferences.setScreenAwarenessEnabled(this@ChatActivity, true)
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        })
+        assistantCard.addView(CompanionUi.text(this, "Automatic accessibility-based screen reading is disabled in this build to avoid requesting a high-risk Android permission. For visual help, use the one-time screen capture button in Miko's floating chat; Android will ask for consent each time.", 11f, CompanionUi.muted))
         assistantCard.addView(CompanionUi.text(this, "To inspect another app, double-tap your floating chibi and choose 'Look at the app behind me'.", 11f, CompanionUi.muted))
         assistantCard.addView(CompanionUi.text(this, "For visual screen analysis, use the floating chibi button: Look at the app behind me.", 11f, CompanionUi.muted))
         assistantCard.addView(CompanionUi.button(this, "View and manage my memories") { showMemoryManager() })
