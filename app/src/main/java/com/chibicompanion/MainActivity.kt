@@ -36,7 +36,7 @@ class MainActivity : Activity() {
         }
         hero.addView(CompanionUi.text(this, "YOUR CHIBI COMPANION", 10f, CompanionUi.muted, true))
         val avatar = MikoSpriteView(this).apply {
-            setMood("excited")
+            setMood("happy")
             setOnClickListener { setInteraction("tap") }
             setOnLongClickListener { setInteraction("long_tap"); true }
         }
