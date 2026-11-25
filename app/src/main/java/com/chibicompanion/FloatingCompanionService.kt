@@ -131,7 +131,6 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                         scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
                         val mood = MikoEmotion.fromReply(answer)
                         avatar?.setMood(mood)
-                        avatar?.setMood(mood)
                         if (::tts.isInitialized) {
                             CompanionVoice.configure(this@FloatingCompanionService, tts)
                             tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"chibi-reply")
