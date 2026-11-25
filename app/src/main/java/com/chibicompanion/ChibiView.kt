@@ -11,7 +11,7 @@ import kotlin.math.sin
  * animated features. Native Canvas keeps rendering light on mid-range phones.
  */
 class ChibiView(context: Context) : View(context) {
-    @Volatile private var mood = "neutral"
+    @Volatile private var mood = "excited"
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
