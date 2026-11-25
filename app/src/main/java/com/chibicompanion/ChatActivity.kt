@@ -68,7 +68,10 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                 worker.execute {
                     val explicitMemory = CompanionMemory.handleExplicitRequest(this@ChatActivity, message)
                     val answer = explicitMemory ?: PhoneActions.tryHandle(this@ChatActivity, message) ?: runCatching { AiClient.reply(this@ChatActivity, message) }
-                        .getOrElse { OfflineCompanion.reply(message) }
+                        .getOrElse { error ->
+                            val detail = error.message?.take(180)?.let { " ($it)" }.orEmpty()
+                            "I could not reach your configured AI provider$detail. I am switching to basic offline mode; my reply may be limited.\n\n${OfflineCompanion.reply(message)}"
+                        }
                     ChatHistory.add(this@ChatActivity, "Her", answer)
                     runOnUiThread {
                         log.text = log.text.toString().replace("Her: thinking…", "Her: $answer")
