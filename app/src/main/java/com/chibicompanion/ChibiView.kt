@@ -189,67 +189,110 @@ open class ChibiView(context: Context) : View(context) {
         oval(c, 180f, 123f, 10f, 15f, skin)
         oval(c, 120f, 119f, 61f, 67f, skin)
         // blush
-        oval(c, 77f, 148f, 12f, 5f, Color.rgb(247, 169, 181))
-        oval(c, 163f, 148f, 12f, 5f, Color.rgb(247, 169, 181))
+        val blush = if (currentMood == "shy" || currentMood == "embarrassed") Color.rgb(255, 132, 169) else Color.rgb(247, 169, 181)
+        oval(c, 77f, 148f, 12f, 5f, blush)
+        oval(c, 163f, 148f, 12f, 5f, blush)
 
         val mood = currentMood
         val closed = blink || mood == "sleepy"
         val angry = mood == "angry" || mood == "pouty"
         val surprised = mood == "surprised" || mood == "confused"
-        val happy = mood == "happy" || mood == "joy" || mood == "affectionate" ||
-            mood == "excited" || mood == "enthusiastic" || mood == "teasing" ||
-            mood == "talking" || speaking
+        val sad = mood == "sad" || mood == "crying"
+        val shy = mood == "shy" || mood == "embarrassed"
+        val starEyes = mood == "excited" || mood == "enthusiastic" || mood == "happy" || mood == "joy"
+        val heartEyes = mood == "affectionate" || mood == "love"
+        val happy = starEyes || heartEyes || mood == "teasing" || mood == "talking" || speaking
         if (closed) {
             path(c, ink, true) {
-                moveTo(82f, 121f); cubicTo(91f, if (angry) 116f else 130f, 103f, if (angry) 116f else 130f, 111f, 121f)
+                moveTo(80f, 122f); cubicTo(90f, if (angry) 116f else 132f, 103f, if (angry) 116f else 132f, 112f, 121f)
             }
             path(c, ink, true) {
-                moveTo(130f, 121f); cubicTo(140f, if (angry) 116f else 130f, 151f, if (angry) 116f else 130f, 160f, 121f)
+                moveTo(128f, 121f); cubicTo(138f, if (angry) 116f else 132f, 151f, if (angry) 116f else 132f, 161f, 122f)
             }
+            line(c, ink, 1.5f, 84f, 121f, 80f, 117f)
+            line(c, ink, 1.5f, 157f, 121f, 161f, 117f)
         } else {
             val eyeY = if (surprised) 124f else 123f
-            oval(c, 96f, eyeY, if (surprised) 11f else 10f, if (surprised) 15f else 13f, Color.WHITE)
-            oval(c, 145f, eyeY, if (surprised) 11f else 10f, if (surprised) 15f else 13f, Color.WHITE)
-            oval(c, 97f, eyeY+2f, 7f, 10f, eyeBlue)
-            oval(c, 146f, eyeY+2f, 7f, 10f, eyeBlue)
-            oval(c, 98f, eyeY+1f, 3f, 5f, Color.rgb(29, 76, 149))
-            oval(c, 147f, eyeY+1f, 3f, 5f, Color.rgb(29, 76, 149))
-            oval(c, 94f, eyeY-4f, 3.2f, 3.2f, Color.WHITE)
-            oval(c, 143f, eyeY-4f, 3.2f, 3.2f, Color.WHITE)
-            line(c, ink, 1.8f, 87f, 113f, 91f, 110f, 96f, 111f)
-            line(c, ink, 1.8f, 137f, 111f, 142f, 110f, 147f, 113f)
-            if (mood == "excited" || mood == "enthusiastic" || mood == "happy") {
-                // tiny star glints drawn inside the eyes
+            val eyeRx = if (surprised) 11.5f else 10.5f
+            val eyeRy = if (surprised) 15.5f else 14f
+            // Soft lower iris rim, deep sapphire iris and layered catchlights.
+            oval(c, 96f, eyeY, eyeRx, eyeRy, Color.WHITE)
+            oval(c, 145f, eyeY, eyeRx, eyeRy, Color.WHITE)
+            oval(c, 97f, eyeY+3f, 7.8f, 10.8f, Color.rgb(35, 105, 194))
+            oval(c, 146f, eyeY+3f, 7.8f, 10.8f, Color.rgb(35, 105, 194))
+            oval(c, 97f, eyeY+5f, 5.1f, 7.2f, Color.rgb(19, 59, 126))
+            oval(c, 146f, eyeY+5f, 5.1f, 7.2f, Color.rgb(19, 59, 126))
+            oval(c, 94f, eyeY-4.5f, 3.7f, 4.2f, Color.WHITE)
+            oval(c, 143f, eyeY-4.5f, 3.7f, 4.2f, Color.WHITE)
+            oval(c, 100f, eyeY+8f, 1.8f, 2.2f, Color.rgb(164, 215, 255))
+            oval(c, 149f, eyeY+8f, 1.8f, 2.2f, Color.rgb(164, 215, 255))
+            // Upper eyeliner and outer lashes.
+            path(c, ink, true) {
+                moveTo(85f, 117f); cubicTo(91f, 106f, 103f, 107f, 108f, 116f)
+            }
+            path(c, ink, true) {
+                moveTo(133f, 116f); cubicTo(139f, 107f, 151f, 106f, 157f, 117f)
+            }
+            line(c, ink, 1.7f, 88f, 112f, 83f, 108f)
+            line(c, ink, 1.7f, 154f, 112f, 159f, 108f)
+            if (starEyes) {
                 path(c, Color.WHITE) {
-                    moveTo(97f, 119f); lineTo(99f, 123f); lineTo(103f, 125f)
-                    lineTo(99f, 127f); lineTo(97f, 131f); lineTo(95f, 127f)
-                    lineTo(91f, 125f); lineTo(95f, 123f); close()
+                    moveTo(97f, 117f); lineTo(100f, 122f); lineTo(105f, 124f)
+                    lineTo(100f, 127f); lineTo(97f, 132f); lineTo(94f, 127f)
+                    lineTo(89f, 124f); lineTo(94f, 122f); close()
                 }
                 path(c, Color.WHITE) {
-                    moveTo(146f, 119f); lineTo(148f, 123f); lineTo(152f, 125f)
-                    lineTo(148f, 127f); lineTo(146f, 131f); lineTo(144f, 127f)
-                    lineTo(140f, 125f); lineTo(144f, 123f); close()
+                    moveTo(146f, 117f); lineTo(149f, 122f); lineTo(154f, 124f)
+                    lineTo(149f, 127f); lineTo(146f, 132f); lineTo(143f, 127f)
+                    lineTo(138f, 124f); lineTo(143f, 122f); close()
+                }
+            } else if (heartEyes) {
+                path(c, Color.rgb(255, 169, 205)) {
+                    moveTo(97f, 130f); cubicTo(82f, 121f, 91f, 112f, 97f, 120f)
+                    cubicTo(104f, 112f, 112f, 121f, 97f, 130f); close()
+                }
+                path(c, Color.rgb(255, 169, 205)) {
+                    moveTo(146f, 130f); cubicTo(131f, 121f, 140f, 112f, 146f, 120f)
+                    cubicTo(153f, 112f, 161f, 121f, 146f, 130f); close()
+                }
+            }
+            if (sad) {
+                path(c, Color.rgb(104, 190, 255)) {
+                    moveTo(88f, 133f); cubicTo(82f, 144f, 86f, 150f, 91f, 145f); close()
+                }
+                path(c, Color.rgb(104, 190, 255)) {
+                    moveTo(155f, 133f); cubicTo(149f, 144f, 153f, 150f, 158f, 145f); close()
                 }
             }
         }
         // brows
         if (angry) {
-            line(c, outline, 3f, 81f,108f, 108f,114f)
-            line(c, outline, 3f, 132f,114f, 159f,108f)
+            line(c, outline, 3.2f, 81f,108f, 108f,114f)
+            line(c, outline, 3.2f, 132f,114f, 159f,108f)
+        } else if (sad) {
+            line(c, outline, 2.6f, 82f,112f, 106f,108f)
+            line(c, outline, 2.6f, 134f,108f, 158f,112f)
+        } else if (surprised) {
+            line(c, outline, 2.4f, 84f,105f, 105f,103f)
+            line(c, outline, 2.4f, 135f,103f, 156f,105f)
         }
         // mouth varies with mood / speech
         when {
             surprised -> oval(c, 120f, 158f, 6f, 8f, Color.rgb(155, 75, 101))
             speaking || mood == "talking" -> {
-                oval(c, 120f, 158f, 7f, 8f, Color.rgb(155, 75, 101))
-                oval(c, 120f, 162f, 4f, 2f, Color.rgb(242, 145, 164))
+                val mouthOpen = 4.5f + abs(sin(t * 13f)) * 4.5f
+                oval(c, 120f, 159f, 6.5f, mouthOpen, Color.rgb(139, 55, 91))
+                oval(c, 120f, 162f, 3.8f, 1.8f, Color.rgb(242, 145, 164))
             }
             happy -> path(c, Color.rgb(155, 75, 101)) {
                 moveTo(108f, 155f); cubicTo(115f, 166f, 127f, 166f, 134f, 155f)
                 cubicTo(132f, 172f, 110f, 172f, 108f, 155f); close()
             }
-            angry || mood == "determined" -> path(c, Color.rgb(155, 75, 101), true) {
-                moveTo(111f, 160f); lineTo(130f, 160f)
+            angry || mood == "determined" || mood == "pouty" -> path(c, Color.rgb(155, 75, 101), true) {
+                moveTo(111f, 160f); cubicTo(117f, 157f, 124f, 157f, 130f, 160f)
+            }
+            sad -> path(c, Color.rgb(155, 75, 101), true) {
+                moveTo(110f, 164f); cubicTo(116f, 155f, 126f, 155f, 132f, 164f)
             }
             else -> path(c, Color.rgb(155, 75, 101), true) {
                 moveTo(112f, 158f); cubicTo(120f, 164f, 128f, 158f, 130f, 157f)
