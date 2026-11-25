@@ -20,7 +20,7 @@ import kotlin.math.sin
  * are used in the home card, chat and floating companion.
  */
 open class ChibiView(context: Context) : View(context) {
-    @Volatile private var mood = "excited"
+    @Volatile protected var mood = "excited"
     @Volatile private var speaking = false
     @Volatile private var moodChangedAt = System.currentTimeMillis()
     private val startedAt = System.currentTimeMillis()
@@ -81,9 +81,9 @@ open class ChibiView(context: Context) : View(context) {
         super.onDraw(canvas)
         loadAtlas()
         val bitmap = atlas
-        if (bitmap == null || bitmap.width < 4 || bitmap.height < 3 || width <= 0 || height <= 0) return
+        if (bitmap == null || bitmap.width < 2 || bitmap.height < 2 || width <= 0 || height <= 0) return
 
-        val index = if (speaking) 11 else expressionIndex(mood)
+        val index = if (speaking) 3 else expressionIndex(mood)
         val column = index % 2
         val row = index / 2
         val source = Rect(
