@@ -23,7 +23,12 @@ class ChibiView(context: Context) : View(context) {
     private val started = System.currentTimeMillis()
 
     fun setMood(value: String) {
-        val next = value.lowercase()
+        val next = when (value.lowercase()) {
+            "embarrassed" -> "shy"
+            "love", "loving" -> "affectionate"
+            "talk" -> "talking"
+            else -> value.lowercase()
+        }
         if (next != mood) {
             mood = next
             moodChangedAt = System.currentTimeMillis()
@@ -59,7 +64,7 @@ class ChibiView(context: Context) : View(context) {
         val scale = (width / 220f).coerceAtMost(height / 320f).coerceAtLeast(.08f)
         val bounce = sin(t * 2.2f) * 2.5f
         val tilt = sin(t * .9f) * 1.8f
-        val blink = (t % 4.1f) < .14f || mood == "sleepy"
+        val blink = ((t % 4.1f) < .14f && mood !in listOf("excited", "angry", "surprised", "determined", "affectionate")) || mood == "sleepy"
         val talking = speaking || mood == "talking"
         val transition = ((System.currentTimeMillis() - moodChangedAt) / 240f).coerceIn(0f, 1f)
         val emotionPop = 1f + sin(transition * Math.PI).toFloat() * .035f
@@ -75,6 +80,7 @@ class ChibiView(context: Context) : View(context) {
         c.save()
         c.translate(width / 2f, height / 2f + bounce)
         c.scale(scale * emotionPop, scale * emotionPop)
+        c.scale(1f + sin(t * 2.0f) * .008f, 1f + cos(t * 2.0f) * .012f)
         c.rotate(tilt)
 
         // Tiny feet and body: intentionally much smaller than the head.
@@ -167,6 +173,20 @@ class ChibiView(context: Context) : View(context) {
             c.drawOval(18f,-57f,59f,-12f,f(Color.WHITE))
             c.drawOval(27f,-53f,54f,-14f,f(0xFF438FEA.toInt()))
             c.drawCircle(32f,-47f,6f,f(Color.WHITE))
+        } else if (mood == "affectionate") {
+            c.drawOval(-61f,-59f,-16f,-9f,f(Color.WHITE))
+            c.drawOval(16f,-59f,61f,-9f,f(Color.WHITE))
+            val heartEye = Path().apply {
+                moveTo(-38f,-22f); cubicTo(-61f,-38f,-58f,-55f,-42f,-49f)
+                cubicTo(-31f,-58f,-18f,-39f,-38f,-22f); close()
+            }
+            c.drawPath(heartEye,f(0xFF438DEB.toInt()))
+            c.save(); c.scale(-1f,1f); c.drawPath(heartEye,f(0xFF438DEB.toInt())); c.restore()
+            c.drawCircle(-45f,-47f,4f,f(Color.WHITE)); c.drawCircle(31f,-47f,4f,f(Color.WHITE))
+        } else if (mood == "determined") {
+            c.drawOval(-60f,-50f,-17f,-16f,f(Color.WHITE)); c.drawOval(17f,-50f,60f,-16f,f(Color.WHITE))
+            c.drawOval(-52f,-46f,-25f,-17f,f(0xFF356DCB.toInt())); c.drawOval(25f,-46f,52f,-17f,f(0xFF356DCB.toInt()))
+            c.drawLine(-65f,-65f,-26f,-76f,s(navy,4f)); c.drawLine(65f,-65f,26f,-76f,s(navy,4f))
         } else if (mood == "sleepy" || mood == "sad" || mood == "crying" || mood == "shy" || mood == "embarrassed" || blink) {
             val eyeDrop = if (mood == "sleepy") 0f else 5f
             c.drawArc(-61f,-54f+eyeDrop,-16f,-15f+eyeDrop,8f,164f,false,s(ink,4.5f))
@@ -198,9 +218,14 @@ class ChibiView(context: Context) : View(context) {
         c.drawOval(-77f,-2f,-43f,14f,f(0x66F28FA6))
         c.drawOval(43f,-2f,77f,14f,f(0x66F28FA6))
         val brow = if (mood == "angry") 0xFF9D435D.toInt() else 0xFF9B8AA4.toInt()
-        if (mood != "angry") {
-            c.drawLine(-55f,-76f,-30f,-79f,s(brow,2.8f))
-            c.drawLine(55f,-76f,30f,-79f,s(brow,2.8f))
+        if (mood != "angry" && mood != "determined") {
+            if (mood == "confused") {
+                c.drawLine(-55f,-82f,-30f,-74f,s(brow,2.8f))
+                c.drawLine(55f,-76f,30f,-79f,s(brow,2.8f))
+            } else {
+                c.drawLine(-55f,-76f,-30f,-79f,s(brow,2.8f))
+                c.drawLine(55f,-76f,30f,-79f,s(brow,2.8f))
+            }
         }
         if (mood == "crying" || mood == "sad") {
             c.drawOval(-57f,-8f,-49f,22f,f(0xFF78C9F4.toInt()))
@@ -214,7 +239,8 @@ class ChibiView(context: Context) : View(context) {
                 c.drawOval(-open+2f,30f,open-2f,36f,f(0xFFFFA4B9.toInt()))
             }
             mood == "angry" -> c.drawLine(-12f,26f,12f,26f,s(0xFF98566B.toInt(),3.5f))
-            mood == "surprised" -> c.drawOval(-8f,19f,8f,41f,f(0xFF91445E.toInt()))
+            mood == "surprised" || mood == "confused" -> c.drawOval(-8f,19f,8f,41f,f(0xFF91445E.toInt()))
+            mood == "determined" -> c.drawArc(-13f,21f,13f,37f,190f,160f,false,s(0xFF98566B.toInt(),3f))
             mood == "sad" || mood == "crying" -> c.drawArc(-12f,26f,12f,43f,195f,150f,false,s(0xFF98566B.toInt(),2.8f))
             mood == "shy" || mood == "embarrassed" -> c.drawArc(-12f,20f,12f,34f,15f,150f,false,s(0xFF98566B.toInt(),2.5f))
             mood == "happy" -> {
@@ -233,9 +259,16 @@ class ChibiView(context: Context) : View(context) {
         }
         c.drawCircle(67f,-107f,3.5f,f(0xFFFFD66B.toInt()))
         c.drawPath(shape(76f,-112f,92f,-99f,83f,-80f,73f,-94f),f(navy))
-        if (mood == "excited") {
-            c.drawPath(star(-99f,-84f,9f,4f), f(0xFFFFD76B.toInt()))
-            c.drawPath(star(103f,-61f,7f,3f), f(0xFFFFD76B.toInt()))
+        if (mood == "excited" || mood == "affectionate") {
+            val twinkle = 0.75f + (sin(t * 5f) + 1f) * .25f
+            c.save(); c.scale(twinkle, twinkle, -99f, -84f)
+            c.drawPath(star(-99f,-84f,9f,4f), f(0xFFFFD76B.toInt())); c.restore()
+            c.save(); c.scale(1.1f - twinkle * .15f, 1.1f - twinkle * .15f, 103f, -61f)
+            c.drawPath(star(103f,-61f,7f,3f), f(0xFFFFD76B.toInt())); c.restore()
+        }
+        if (mood == "confused") {
+            c.drawArc(91f,-105f,111f,-75f,190f,150f,false,s(0xFF78A7EA.toInt(),2.5f))
+            c.drawCircle(105f,-112f,3f,f(0xFF78A7EA.toInt()))
         }
         if (mood == "happy" || mood == "shy" || mood == "excited" || mood == "affectionate" || talking) {
             val heart=Path().apply {
