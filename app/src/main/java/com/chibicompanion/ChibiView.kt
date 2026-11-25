@@ -117,7 +117,13 @@ open class ChibiView(context: Context) : View(context) {
             cubicTo(178f, 264f, 170f, 239f, 168f, 209f)
             cubicTo(164f, 164f, 164f, 110f, 146f, 87f); close()
         }
-        // Hair shine strands follow the swaying locks.
+        // Layered cool shadows and fine strand ribbons give the long locks depth.
+        path(c, Color.rgb(202, 215, 240), true) {
+            moveTo(65f, 112f); cubicTo(58f, 154f, 69f, 207f, 59f, 250f)
+        }
+        path(c, Color.rgb(202, 215, 240), true) {
+            moveTo(171f, 111f); cubicTo(181f, 153f, 168f, 207f, 180f, 250f)
+        }
         path(c, Color.rgb(248, 250, 255), true) {
             moveTo(58f, 104f); cubicTo(49f, 147f, 60f, 203f, 53f, 246f)
         }
@@ -159,6 +165,20 @@ open class ChibiView(context: Context) : View(context) {
             moveTo(104f, bodyY+1f); lineTo(120f, 191f); lineTo(139f, bodyY+1f)
             lineTo(132f, 212f); lineTo(113f, 212f); close()
         }
+        // Tailored details: double collar, ribbon, seams and pleated skirt.
+        path(c, Color.rgb(111, 126, 183), true) {
+            moveTo(104f, 188f); lineTo(120f, 202f); lineTo(139f, 188f)
+        }
+        path(c, Color.rgb(255, 255, 255), true) {
+            moveTo(94f, 222f); cubicTo(111f, 228f, 137f, 228f, 152f, 221f)
+        }
+        path(c, Color.rgb(132, 105, 205)) {
+            moveTo(111f, 199f); lineTo(120f, 204f); lineTo(129f, 199f)
+            lineTo(126f, 214f); lineTo(120f, 220f); lineTo(114f, 214f); close()
+        }
+        oval(c, 120f, 207f, 2.4f, 2.4f, Color.rgb(255, 220, 245))
+        line(c, Color.rgb(255, 255, 255), 1.4f, 101f, 231f, 98f, 245f)
+        line(c, Color.rgb(255, 255, 255), 1.4f, 140f, 231f, 143f, 245f)
         oval(c, 121f, 205f, 3f, 3f, eyeBlue)
         oval(c, 121f, 218f, 2.4f, 2.4f, Color.rgb(151, 171, 218))
     }
@@ -196,7 +216,9 @@ open class ChibiView(context: Context) : View(context) {
             oval(c, 147f, eyeY+1f, 3f, 5f, Color.rgb(29, 76, 149))
             oval(c, 94f, eyeY-4f, 3.2f, 3.2f, Color.WHITE)
             oval(c, 143f, eyeY-4f, 3.2f, 3.2f, Color.WHITE)
-            if (mood == "excited" || mood == "enthusiastic") {
+            line(c, ink, 1.8f, 87f, 113f, 91f, 110f, 96f, 111f)
+            line(c, ink, 1.8f, 137f, 111f, 142f, 110f, 147f, 113f)
+            if (mood == "excited" || mood == "enthusiastic" || mood == "happy") {
                 // tiny star glints drawn inside the eyes
                 path(c, Color.WHITE) {
                     moveTo(97f, 119f); lineTo(99f, 123f); lineTo(103f, 125f)
@@ -255,6 +277,16 @@ open class ChibiView(context: Context) : View(context) {
         path(c, hairShade) {
             moveTo(91f, 35f); cubicTo(76f, 14f, 94f, 3f, 110f, 9f)
             cubicTo(99f, 15f, 99f, 24f, 111f, 34f); close()
+        }
+        // Fine individual bang strands and soft crown highlights.
+        path(c, Color.rgb(255, 255, 255), true) {
+            moveTo(91f, 48f); cubicTo(83f, 66f, 82f, 80f, 77f, 91f)
+        }
+        path(c, Color.rgb(194, 207, 235), true) {
+            moveTo(111f, 42f); cubicTo(124f, 56f, 126f, 77f, 119f, 96f)
+        }
+        path(c, Color.rgb(255, 255, 255), true) {
+            moveTo(151f, 54f); cubicTo(164f, 67f, 168f, 82f, 169f, 96f)
         }
         // side locks overlap cheeks to frame the face
         path(c, hair) {
