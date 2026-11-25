@@ -8,7 +8,6 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.RecognitionListener
 import android.content.Intent
-import android.provider.Settings
 import android.text.InputType
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
@@ -198,11 +197,6 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         }
     }
 
-    private fun isScreenServiceEnabled(): Boolean {
-        val expected = android.content.ComponentName(this, CompanionAccessibilityService::class.java).flattenToString()
-        val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
-        return enabled.split(':').any { it.equals(expected, true) }
-    }
 
     private fun showMemoryManager() {
         val items = CompanionMemory.all(this)
