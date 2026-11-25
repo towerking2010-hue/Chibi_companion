@@ -71,9 +71,9 @@ open class ChibiView(context: Context) : View(context) {
         p.strokeJoin = Paint.Join.ROUND
     }
 
-    private fun path(c: Canvas, color: Int, stroke: Boolean = false, block: (Path) -> Unit) {
+    private fun path(c: Canvas, color: Int, stroke: Boolean = false, block: Path.() -> Unit) {
         val q = Path()
-        block(q)
+        q.block()
         fill(color, if (stroke) Paint.Style.STROKE else Paint.Style.FILL)
         c.drawPath(q, p)
     }
