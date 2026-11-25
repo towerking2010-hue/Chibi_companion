@@ -14,7 +14,7 @@ import kotlin.math.sin
 /**
  * Image-backed Miko renderer.
  *
- * The character is rendered from the bundled 4x3 transparent expression atlas.
+ * The character is rendered from the bundled 2x2 transparent core-pose atlas.
  * This intentionally replaces the old geometric placeholder drawing. All
  * screens share this view so the same character art and expression mapping
  * are used in the home card, chat and floating companion.
