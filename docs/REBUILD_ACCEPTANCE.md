@@ -26,3 +26,14 @@ This branch is a product rebuild, not another branding-only patch.
 - CI success is a compile/package check only, not proof of device behavior.
 - Do not call a release complete until APK artifact integrity is checked and the user has verified install, launch, floating overlay, chat, voice, and each advertised action on-device.
 - Keep this work on a separate branch until it is reviewed; do not force-push or overwrite the user's main branch.
+
+
+## Current implementation update — 2026-11-25
+- Home now includes a direct Settings entry point.
+- Chat is a dedicated conversation screen with a persistent character panel, transcript, compact composer, microphone action, and Settings shortcut.
+- Settings is a separate screen for provider credentials, voice selection, local memory management, and proactive mode.
+- Chat TTS mouth motion is driven by utterance callbacks while the selected emotion remains visible.
+- Floating Miko keeps the response emotion instead of resetting to neutral on a timer; its chat panel links to Settings.
+- The procedural Canvas renderer now has more distinct sleepy, shy, sad/crying, surprised, angry, teasing, and excited face treatments.
+- This is still a procedural 2D renderer, not a completed Live2D model or a full production sprite rig. The generated character expression sheet remains a visual reference and has not been integrated as Android sprite assets.
+- Latest CI must pass before considering this code push build-verified. Device verification remains with the user.
