@@ -94,6 +94,7 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
     }
     private fun field(hintText: String) = android.widget.EditText(this).apply {
         hint=hintText; setSingleLine(); textSize=13f
+        setTextColor(CompanionUi.ink); setHintTextColor(CompanionUi.muted)
         setPadding(CompanionUi.dp(this@SettingsActivity,12),CompanionUi.dp(this@SettingsActivity,11),CompanionUi.dp(this@SettingsActivity,12),CompanionUi.dp(this@SettingsActivity,11))
         background=CompanionUi.panel(this@SettingsActivity,Color.rgb(37,43,76),14)
         val lp=android.widget.LinearLayout.LayoutParams(-1,-2); lp.topMargin=CompanionUi.dp(this@SettingsActivity,6); layoutParams=lp
