@@ -35,21 +35,21 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
 
         val root = CompanionUi.column(this, 18).apply { setBackgroundColor(CompanionUi.bg) }
         val heading = CompanionUi.column(this)
-        heading.addView(CompanionUi.text(this, "YOUR LITTLE CHAT SPACE", 10f, CompanionUi.pink, true))
-        heading.addView(CompanionUi.text(this, "Let's talk ♡", 26f, CompanionUi.ink, true))
-        heading.addView(CompanionUi.text(this, "She may act tough, but she's happy you're here.", 12f, CompanionUi.muted))
+        heading.addView(CompanionUi.text(this, "MIKO • YOUR AI COMPANION", 10f, CompanionUi.pink, true))
+        heading.addView(CompanionUi.text(this, "Hey! Let's talk ♡", 26f, CompanionUi.ink, true))
+        heading.addView(CompanionUi.text(this, "Curious, cheerful, and always ready to help.", 12f, CompanionUi.muted))
         root.addView(heading)
         root.addView(CompanionUi.spacer(this, 14))
 
         val chatCard = CompanionUi.column(this, 15).apply { background = CompanionUi.panel(this@ChatActivity, Color.WHITE, 24) }
-        log = CompanionUi.text(this, "Ayaya… you finally came to see me? ♡\n\nAdd an AI provider below when you're ready for cloud conversations.", 15f)
+        log = CompanionUi.text(this, "Miko: Ehehe! You came to see me! ✦\n\nConnect an AI provider below when you are ready for cloud conversations.", 15f)
         log.setLineSpacing(CompanionUi.dp(this,3).toFloat(), 1f)
         chatCard.addView(ScrollView(this).apply { isFillViewport = true; addView(log) }, LinearLayout.LayoutParams(-1,0,1f))
         root.addView(chatCard, LinearLayout.LayoutParams(-1,0,1f))
         root.addView(CompanionUi.spacer(this, 12))
 
         entry = EditText(this).apply {
-            hint = "Say something to her…"
+            hint = "Say something to Miko…"
             textSize = 15f
             setTextColor(CompanionUi.ink)
             setHintTextColor(CompanionUi.muted)
@@ -85,7 +85,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         val settingsCard = CompanionUi.column(this, 14).apply { background = CompanionUi.panel(this@ChatActivity, Color.rgb(245,242,250), 22) }
         settingsCard.addView(CompanionUi.text(this, "VOICE & AI CONNECTIONS  ✦", 12f, CompanionUi.ink, true))
         settingsCard.addView(CompanionUi.spacer(this, 6))
-        settingsCard.addView(CompanionUi.button(this, "Choose companion voice ♡") { showVoicePicker() })
+        settingsCard.addView(CompanionUi.button(this, "Choose Miko's voice ♡") { showVoicePicker() })
         settingsCard.addView(CompanionUi.spacer(this, 6))
         settingsCard.addView(CompanionUi.button(this, "Install more voice options") {
             runCatching { startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) }
@@ -134,7 +134,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             background = CompanionUi.panel(this@ChatActivity, Color.rgb(241,239,252), 22)
         }
         assistantCard.addView(CompanionUi.text(this, "PHONE AWARENESS & MEMORY  ✦", 12f, CompanionUi.ink, true))
-        assistantCard.addView(CompanionUi.text(this, "Optional permissions stay under your control.", 11f, CompanionUi.muted))
+        assistantCard.addView(CompanionUi.text(this, "Miko only uses permissions you choose to enable.", 11f, CompanionUi.muted))
         assistantCard.addView(CompanionUi.button(this, "Enable / manage Screen Awareness") {
             AssistantPreferences.setScreenAwarenessEnabled(this@ChatActivity, true)
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
