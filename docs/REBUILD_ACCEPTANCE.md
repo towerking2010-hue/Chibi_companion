@@ -45,3 +45,14 @@ This branch is a product rebuild, not another branding-only patch.
 - The committed `miko_atlas.webp` is a 128×128 2×2 core sheet (four poses). The renderer now uses the actual 2×2 cell geometry and maps related emotions to the closest available pose.
 - Drawing is explicitly clipped to the view bounds to prevent the avatar from painting over neighboring controls.
 - This is a lightweight animated 2D sprite implementation, not a Live2D/3D rig. Device verification is still required.
+
+
+## Character animation upgrade — 2026-11-25
+- Miko's native Canvas design now has waist-length silver-white side locks with a subtle independent sway layered over her idle motion.
+- Replaced the low-resolution image-backed view with a crisp native Canvas renderer so the home and floating character do not upscale 64px atlas cells.
+- Added interaction states for pickup, dragging, release settling, single tap, double tap, and long press/head-pat gestures.
+- Floating companion window enlarged from 132dp to 168dp wide and 210dp high for improved visibility on high-density phones.
+- Home and chat character views respond to taps and long presses.
+- Idle breathing, blinking, eye movement, gentle bobbing, and body sway remain lightweight Canvas animations.
+- These are native 2D Canvas animations, not a skeletal Live2D rig. Hair sway is a layered 2D approximation rather than independently simulated physics.
+- CI and device testing are still required before release claims; the user must verify the interaction feel and performance on the Galaxy A31.
