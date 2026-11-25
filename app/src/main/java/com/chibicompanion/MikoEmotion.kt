@@ -10,6 +10,8 @@ package com.chibicompanion
 object MikoEmotion {
     private val cues = listOf(
         "excited" to listOf("!!!", "let's go", "lets go", "amazing", "that's awesome", "thats awesome", "woohoo", "can't wait", "cant wait", "✨", "🌟"),
+        "determined" to listOf("you've got this", "you can do this", "let's do this", "lets do this", "never give up", "we can do it"),
+        "confused" to listOf("i'm confused", "im confused", "huh?", "what do you mean", "i don't understand", "i dont understand"),
         "angry" to listOf("i'm angry", "im angry", "that's unfair", "thats unfair", "how dare", "grr", "baka"),
         "crying" to listOf("i'm crying", "im crying", "😭", "so heartbreaking", "that hurts"),
         "sad" to listOf("i'm sorry", "im sorry", "that's sad", "thats sad", "that sounds painful", "i feel bad"),
@@ -17,7 +19,7 @@ object MikoEmotion {
         "sleepy" to listOf("good night", "sleep well", "i'm sleepy", "im sleepy", "so sleepy", "zzz"),
         "surprised" to listOf("wait, what", "no way", "seriously?!", "whoa", "oh!"),
         "teasing" to listOf("hehe", "ehehe", "gotcha", "just kidding", "teasing you"),
-        "affectionate" to listOf("♡", "♥", "love you", "missed you", "here for you", "proud of you"),
+        "affectionate" to listOf("♡", "♥", "love you", "missed you", "here for you", "proud of you", "sending hugs", "big hug"),
         "happy" to listOf("glad to hear", "that makes me happy", "you're welcome", "you are welcome", "happy to help", "nice work", "well done")
     )
 
