@@ -12,7 +12,8 @@
     </queries>
     <application
         android:allowBackup="false"
-        android:label="Chibi Companion"
+        android:label="Miko"
+        android:icon="@drawable/miko_launcher_icon"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity android:name=".ScreenCaptureActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".ChatActivity" android:exported="false"/>
@@ -22,16 +23,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <service
-            android:name=".CompanionAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data android:name="android.accessibilityservice"
-                android:resource="@xml/chibi_accessibility_service" />
-        </service>
         <service
             android:name=".FloatingCompanionService"
             android:exported="false"

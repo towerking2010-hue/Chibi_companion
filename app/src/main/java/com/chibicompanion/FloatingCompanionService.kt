@@ -40,8 +40,8 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             NotificationChannel(id, "Floating companion", NotificationManager.IMPORTANCE_LOW))
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, FloatingCompanionService::class.java).setAction("STOP_COMPANION"), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        return Notification.Builder(this, id).setContentTitle("Chibi Companion is active")
-            .setContentText("Double-tap your companion to chat").setSmallIcon(android.R.drawable.sym_def_app_icon)
+        return Notification.Builder(this, id).setContentTitle("Miko is here")
+            .setContentText("Double-tap Miko to chat").setSmallIcon(android.R.drawable.sym_def_app_icon)
             .setContentIntent(open).addAction(android.R.drawable.ic_menu_close_clear_cancel, "Turn off", stop).setOngoing(true).build()
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -87,7 +87,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             elevation=18f
         }
         val header=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
-        header.addView(TextView(this).apply { text="Mou… I was waiting. ♡"; textSize=18f; setTextColor(Color.rgb(53,70,111)) }, LinearLayout.LayoutParams(0,-2,1f))
+        header.addView(TextView(this).apply { text="Miko: Hiii! I was waiting. ♡"; textSize=18f; setTextColor(Color.rgb(53,70,111)) }, LinearLayout.LayoutParams(0,-2,1f))
         header.addView(Button(this).apply { text="×"; setOnClickListener { hideChat() } })
         panel.addView(header)
         panel.addView(Button(this).apply {
@@ -111,7 +111,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         val scroll=ScrollView(this).apply { addView(transcript) }
         panel.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
-        val input=EditText(this).apply { hint="Talk to me…"; maxLines=3; textSize=15f }
+        val input=EditText(this).apply { hint="Talk to Miko…"; maxLines=3; textSize=15f }
         row.addView(input,LinearLayout.LayoutParams(0,-2,1f))
         row.addView(Button(this).apply { text="Send"; setOnClickListener {
             val msg=input.text.toString().trim(); if(msg.isNotEmpty()) { input.text.clear(); ChatHistory.add(this@FloatingCompanionService,"You",msg); transcript.append("\n\nYou: $msg\nHer: …"); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
@@ -120,7 +120,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                         ?: PhoneActions.tryHandle(this@FloatingCompanionService,msg)
                         ?: runCatching { AiClient.reply(this@FloatingCompanionService,msg) }
                             .getOrElse { OfflineCompanion.reply(msg) }
-                    ChatHistory.add(this@FloatingCompanionService,"Her",answer)
+                    ChatHistory.add(this@FloatingCompanionService,"Miko",answer)
                     mainThread {
                         transcript.text=ChatHistory.read(this@FloatingCompanionService)
                         scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }

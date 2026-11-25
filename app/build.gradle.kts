@@ -10,7 +10,7 @@ android {
     defaultConfig {
         applicationId = "com.chibicompanion"
         minSdk = 26
-        targetSdk = 32
+        targetSdk = 35
         versionCode = 2
         versionName = "0.2.0"
     }

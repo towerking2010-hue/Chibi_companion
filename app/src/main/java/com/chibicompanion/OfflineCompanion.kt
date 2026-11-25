@@ -5,12 +5,12 @@ object OfflineCompanion {
     fun reply(message: String): String {
         val q = message.lowercase()
         return when {
-            q.contains("hello") || q.contains("hi") || q.contains("hey") -> "Hmph, hello. I was totally not waiting for you… okay, maybe a little. ♡"
-            q.contains("how are you") -> "I'm doing fine! Just floating here and keeping you company. What about you?"
-            q.contains("thank") -> "D-don't mention it! I only helped because I wanted to, okay?"
-            q.contains("sad") || q.contains("upset") || q.contains("lonely") -> "Hey… come here for a second. You don't have to deal with everything alone. Want to tell me what happened?"
-            q.contains("joke") -> "Why did the phone need glasses? Because it lost its contacts. …That was a good one. Don't laugh too hard!"
-            q.contains("love you") -> "W-wha?! You can't just say things like that out of nowhere! …I'm glad you're here too. ♡"
+            q.contains("hello") || q.contains("hi") || q.contains("hey") -> "Hiii! You called? Ehehe, I'm here! ✨"
+            q.contains("how are you") -> "I'm doing great now that you're here! What are we getting into today? ✨"
+            q.contains("thank") -> "You're welcome! That's what I'm here for. Don't forget to give yourself some credit too! ♡"
+            q.contains("sad") || q.contains("upset") || q.contains("lonely") -> "Hey, I'm here with you. You don't have to carry everything alone. Want to tell me what's going on?"
+            q.contains("joke") -> "Why did the phone wear glasses? It lost all its contacts! ...Hehe, okay, I'll work on my jokes."
+            q.contains("love you") -> "A-ah, you're making me blush! I'm really glad you're here too. ♡"
             else -> "My cloud AIs are unavailable, so I'm in simple offline mode right now. I can still keep you company, but connect a configured provider for full AI conversations."
         }
     }
