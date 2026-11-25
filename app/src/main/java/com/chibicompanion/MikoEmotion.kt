@@ -19,6 +19,7 @@ object MikoEmotion {
         "sleepy" to listOf("good night", "sleep well", "i'm sleepy", "im sleepy", "so sleepy", "zzz"),
         "surprised" to listOf("wait, what", "no way", "seriously?!", "whoa", "oh!"),
         "teasing" to listOf("hehe", "ehehe", "gotcha", "just kidding", "teasing you"),
+        "pouty" to listOf("hmph", "hmpf", "not fair", "i'm pouting", "im pouting", "you're mean", "you are mean"),
         "affectionate" to listOf("♡", "♥", "love you", "missed you", "here for you", "proud of you", "sending hugs", "big hug"),
         "happy" to listOf("glad to hear", "that makes me happy", "you're welcome", "you are welcome", "happy to help", "nice work", "well done")
     )
