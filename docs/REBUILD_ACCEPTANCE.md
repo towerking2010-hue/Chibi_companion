@@ -7,20 +7,30 @@ This branch is a product rebuild, not a branding-only patch.
 - Cute chibi girl with long silver-white hair, blue eyes, and a blue/lavender casual outfit.
 - Launcher mark: head-only character icon.
 - In-app companion: full readable character, not a tiny sticker.
-- Character must be a crisp, scalable Canvas-rendered design when no external artwork asset is available; avoid enlarging tiny compressed sprites.
+- Current renderer is resolution-independent Android Canvas vector drawing. It is not a production illustration, Live2D rig, or 3D model.
 
 ## Interaction and animation
 - Idle breathing, blinking, gentle floating/bobbing and subtle sway.
 - Dragging follows the finger and leans in the direction of movement.
 - Pickup, release, tap, double-tap and long-press reactions.
 - Talking state follows Android TextToSpeech utterance callbacks.
-- Be honest about the difference between sprite animation and independently rigged Live2D physics.
+- Current animation is whole-character transforms plus procedural face states; hair is not independently physics-rigged.
 
 ## App behavior
-- Home, chat and floating companion use the same character renderer.
-- Cloud AI requires a user-configured provider; no paid service is enabled automatically.
+- Home, chat and floating companion use the shared ChibiView renderer through MikoSpriteView.
+- Voice input uses Android SpeechRecognizer; spoken replies use installed Android TextToSpeech voices.
+- Cloud AI requires a user-configured provider key; no paid service is enabled automatically.
 - Offline fallback is scripted, not an offline LLM.
-- Phone actions remain permission-aware and require confirmation where consequential.
+- Long-term memory is explicitly user-managed and encrypted with Android Keystore.
+- Implemented phone intents are limited to launching apps, opening dial/search, preparing calls/messages, alarms/timers and folder picker. Consequential actions remain user-confirmed.
+- Screen understanding is an opt-in capture flow and requires a configured vision-capable provider.
+
+## Not yet implemented / not to be advertised as complete
+- System-wide always-listening wake word.
+- Full Android VoiceInteractionService / default assistant integration.
+- Broad device settings control or unrestricted automation.
+- A local general-purpose LLM.
+- Production-quality illustrated character asset, Live2D physics rig, 3D model, or professional voice model.
 
 ## Device and release gates
 - Target the Galaxy A31 class of hardware.
@@ -29,10 +39,6 @@ This branch is a product rebuild, not a branding-only patch.
 - Keep work on this branch; do not merge into main without user approval.
 
 ## Implementation status — 2026-11-25
-- Home, chat and floating companion all use `MikoSpriteView`, which extends the shared `ChibiView`.
-- The current committed `miko_atlas.webp` is a **2×2 sheet (four complete poses)**. The renderer must slice it as 2×2; treating it as 4×3 causes partial-face crops.
-- The four-pose atlas is only a core expression set. It does **not** provide the full 12-expression range requested for the finished Miko.
-- The renderer now draws the image atlas rather than the procedural geometric face. It applies lightweight breathing, bobbing and tilt transforms.
-- Floating interaction states include pickup, drag lean, release settling, tap, double-tap and long-press. The home/chat character also responds to touch.
-- This is an animated 2D sprite implementation, not Live2D/3D or independently simulated hair physics.
-- CI and APK verification are still required for the latest commit. Physical device verification remains with the user.
+- The shared renderer is procedural Canvas vector artwork with long twin locks, face states, blinking, breathing, bobbing and sway.
+- Happy / excited faces should remain open-eyed except for brief natural blinks; sleepy is the only intentionally closed-eye resting state.
+- The app is a functional foundation, not yet the fully featured personal assistant described in the product vision.
