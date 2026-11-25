@@ -13,6 +13,7 @@
     <application
         android:allowBackup="false"
         android:label="Miko"
+        android:icon="@drawable/miko_launcher_icon"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity android:name=".ScreenCaptureActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".ChatActivity" android:exported="false"/>
