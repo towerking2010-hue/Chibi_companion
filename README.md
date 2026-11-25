@@ -14,7 +14,7 @@ A lightweight native Kotlin Android companion prototype intended for Android 8+ 
 - API keys encrypted using AES-GCM with an Android Keystore key.
 - Basic local scripted fallback when cloud providers are unavailable.
 - Basic app launching, Android Settings launching, Google search, and Android folder picker commands.
-- GitHub Actions workflow for building a debug APK and uploading it as an artifact.
+- GitHub Actions workflow for building debug and signed release APKs and uploading both as artifacts.
 
 ## Build
 Open this directory in Android Studio with JDK 17 and allow Gradle sync. Build `app` > `assembleDebug`, or push to GitHub and run the `Android debug build` workflow. The workflow uploads `app-debug.apk` as `miko-debug-apk`.
@@ -28,7 +28,7 @@ Open this directory in Android Studio with JDK 17 and allow Gradle sync. Build `
 6. Add provider keys in the chat/settings activity in priority order.
 
 ## Important limitations
-This is a source implementation, **not a device-verified release APK**. It has not yet been compiled or tested on a physical Galaxy A31 in this environment. The avatar is a lightweight Canvas illustration, not a Live2D model or a finished sprite animation set. Its current animation is idle bobbing/blinking with simple expression changes.
+The rebuild branch now produces a signed release APK in GitHub Actions. CI confirms compilation and packaging, but this is **not a device-verified release**: install, launch, overlay, chat, voice, and phone-action behavior still need testing on a physical Galaxy A31. The avatar is a lightweight Canvas illustration, not a Live2D model or a finished sprite animation set. Its current animation is idle bobbing/blinking with simple expression changes.
 
 Provider fallback is sequential and request-error based; it does not have reliable provider-side quota telemetry, automatic quota prediction, per-key cooldown scheduling, streaming, or provider health dashboards. Free cloud tiers have changing limits and are not unlimited. If every cloud provider is unavailable, the app uses short scripted offline responses; it does not include a local large language model.
 
