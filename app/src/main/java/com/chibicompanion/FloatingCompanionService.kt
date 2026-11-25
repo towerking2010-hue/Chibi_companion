@@ -55,7 +55,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
 
     private fun overlayType() = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
     private fun showAvatar() {
-        val v = ChibiView(this)
+        val v = MikoSpriteView(this)
         // WindowManager.LayoutParams dimensions are pixels, so convert dp explicitly.
         // The old 136x164 raw-pixel window rendered Miko as a tiny sticker on high-density phones.
         val lp = WindowManager.LayoutParams(CompanionUi.dp(this, 132), CompanionUi.dp(this, 192), overlayType(),
