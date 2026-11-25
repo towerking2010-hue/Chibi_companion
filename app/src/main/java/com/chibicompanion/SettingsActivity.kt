@@ -16,7 +16,7 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
         super.onCreate(savedInstanceState)
         window.statusBarColor = CompanionUi.bg
         window.navigationBarColor = CompanionUi.bg
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        window.decorView.systemUiVisibility = 0
         tts = android.speech.tts.TextToSpeech(this, this)
 
         val scroll = ScrollView(this).apply { setBackgroundColor(CompanionUi.bg); isFillViewport = true }
@@ -88,14 +88,14 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
     }
 
     private fun card(label: String) = CompanionUi.column(this,14).apply {
-        background=CompanionUi.panel(this@SettingsActivity,Color.WHITE,22)
+        background=CompanionUi.panel(this@SettingsActivity,Color.rgb(30,36,65),22)
         addView(CompanionUi.text(this@SettingsActivity,label,10f,CompanionUi.pink,true))
         addView(CompanionUi.spacer(this@SettingsActivity,4))
     }
     private fun field(hintText: String) = android.widget.EditText(this).apply {
         hint=hintText; setSingleLine(); textSize=13f
         setPadding(CompanionUi.dp(this@SettingsActivity,12),CompanionUi.dp(this@SettingsActivity,11),CompanionUi.dp(this@SettingsActivity,12),CompanionUi.dp(this@SettingsActivity,11))
-        background=CompanionUi.panel(this@SettingsActivity,Color.rgb(248,247,252),14)
+        background=CompanionUi.panel(this@SettingsActivity,Color.rgb(37,43,76),14)
         val lp=android.widget.LinearLayout.LayoutParams(-1,-2); lp.topMargin=CompanionUi.dp(this@SettingsActivity,6); layoutParams=lp
     }
     private fun refreshProviders() {
