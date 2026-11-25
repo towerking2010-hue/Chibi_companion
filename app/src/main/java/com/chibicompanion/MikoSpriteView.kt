@@ -6,8 +6,8 @@ import kotlin.math.abs
 import kotlin.math.sin
 
 /**
- * Crisp native-canvas Miko renderer. The character is drawn at vector-like
- * resolution instead of enlarging the old 64px-per-pose atlas.
+ * Image-atlas Miko renderer with lightweight pickup, drag and release motion.
+ * Character artwork and expression poses are shared across all app surfaces.
  */
 class MikoSpriteView(context: Context) : ChibiView(context) {
     private var interaction = ""
