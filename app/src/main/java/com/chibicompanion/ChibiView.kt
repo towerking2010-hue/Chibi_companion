@@ -13,6 +13,7 @@ import kotlin.math.sin
 class ChibiView(context: Context) : View(context) {
     @Volatile private var mood = "excited"
     @Volatile private var speaking = false
+    @Volatile private var moodChangedAt = System.currentTimeMillis()
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -21,7 +22,14 @@ class ChibiView(context: Context) : View(context) {
     }
     private val started = System.currentTimeMillis()
 
-    fun setMood(value: String) { mood = value.lowercase(); invalidate() }
+    fun setMood(value: String) {
+        val next = value.lowercase()
+        if (next != mood) {
+            mood = next
+            moodChangedAt = System.currentTimeMillis()
+            invalidate()
+        }
+    }
     fun setSpeaking(value: Boolean) { speaking = value; invalidate() }
     private fun f(c: Int) = fill.apply { shader = null; style = Paint.Style.FILL; color = c }
     private fun s(c: Int, w: Float) = line.apply { shader = null; color = c; strokeWidth = w }
@@ -53,6 +61,10 @@ class ChibiView(context: Context) : View(context) {
         val tilt = sin(t * .9f) * 1.8f
         val blink = (t % 4.1f) < .14f || mood == "sleepy"
         val talking = speaking || mood == "talking"
+        val transition = ((System.currentTimeMillis() - moodChangedAt) / 240f).coerceIn(0f, 1f)
+        val emotionPop = 1f + sin(transition * Math.PI).toFloat() * .035f
+        val lookX = sin(t * .42f) * 2.2f
+        val lookY = cos(t * .31f) * 1.2f
         val skin = 0xFFFFDED4.toInt()
         val ink = 0xFF39466D.toInt()
         val blue = 0xFF438DEB.toInt()
@@ -62,7 +74,7 @@ class ChibiView(context: Context) : View(context) {
 
         c.save()
         c.translate(width / 2f, height / 2f + bounce)
-        c.scale(scale, scale)
+        c.scale(scale * emotionPop, scale * emotionPop)
         c.rotate(tilt)
 
         // Tiny feet and body: intentionally much smaller than the head.
@@ -166,6 +178,8 @@ class ChibiView(context: Context) : View(context) {
         } else {
             c.drawOval(-61f,-59f,-16f,-9f,f(Color.WHITE))
             c.drawOval(16f,-59f,61f,-9f,f(Color.WHITE))
+            c.save()
+            c.translate(lookX, lookY)
             fill.shader = RadialGradient(-37f,-34f,28f,
                 intArrayOf(0xFFB7F0FF.toInt(),0xFF438FEA.toInt(),0xFF203A87.toInt()),null,Shader.TileMode.CLAMP)
             c.drawOval(-57f,-56f,-20f,-12f,fill)
@@ -176,6 +190,7 @@ class ChibiView(context: Context) : View(context) {
             c.drawOval(32f,-42f,46f,-16f,f(0xFF18254D.toInt()))
             c.drawCircle(-46f,-47f,7f,f(Color.WHITE)); c.drawCircle(32f,-47f,7f,f(Color.WHITE))
             c.drawCircle(-29f,-17f,3f,f(0xFFB9F4FF.toInt())); c.drawCircle(49f,-17f,3f,f(0xFFB9F4FF.toInt()))
+            c.restore()
             c.drawLine(-59f,-65f,-42f,-69f,s(navy,3f)); c.drawLine(59f,-65f,42f,-69f,s(navy,3f))
         }
 
