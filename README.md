@@ -1,4 +1,4 @@
-# Chibi Companion — Android source
+# Miko — Android companion source
 
 A lightweight native Kotlin Android companion prototype intended for Android 8+ and the Samsung Galaxy A31.
 
@@ -17,11 +17,11 @@ A lightweight native Kotlin Android companion prototype intended for Android 8+ 
 - GitHub Actions workflow for building a debug APK and uploading it as an artifact.
 
 ## Build
-Open this directory in Android Studio with JDK 17 and allow Gradle sync. Build `app` > `assembleDebug`, or push to GitHub and run the `Android debug build` workflow. The workflow uploads `app-debug.apk` as `chibi-companion-debug-apk`.
+Open this directory in Android Studio with JDK 17 and allow Gradle sync. Build `app` > `assembleDebug`, or push to GitHub and run the `Android debug build` workflow. The workflow uploads `app-debug.apk` as `miko-debug-apk`.
 
 ## First launch
 1. Install the debug APK.
-2. Open Chibi Companion.
+2. Open Miko.
 3. Grant Android's Display over other apps permission.
 4. Start the floating companion.
 5. Double-tap the chibi to open the overlay chat.
