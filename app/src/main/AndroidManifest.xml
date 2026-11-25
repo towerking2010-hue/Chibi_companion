@@ -16,8 +16,8 @@
         android:icon="@drawable/miko_launcher_icon"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity android:name=".ScreenCaptureActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-        <activity android:name=".ChatActivity" android:exported="false"/>
-        <activity android:name=".SettingsActivity" android:exported="false"/>
+        <activity android:name=".ChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".SettingsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
