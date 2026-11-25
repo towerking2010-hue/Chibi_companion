@@ -62,7 +62,7 @@ class ChibiView(context: Context) : View(context) {
     override fun onDraw(c: Canvas) {
         super.onDraw(c)
         val t = (System.currentTimeMillis() - started) / 1000f
-        val scale = (width / 220f).coerceAtMost(height / 320f).coerceAtLeast(.08f)
+        val scale = (width / 220f).coerceAtMost(height / 370f).coerceAtLeast(.08f)
         val bounce = sin(t * 2.2f) * 2.5f
         val tilt = sin(t * .9f) * 1.8f
         val blink = ((t % 4.1f) < .14f && mood !in listOf("excited", "angry", "surprised", "determined", "affectionate")) || mood == "sleepy"
