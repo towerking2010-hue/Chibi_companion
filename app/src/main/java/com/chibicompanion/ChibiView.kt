@@ -71,6 +71,7 @@ open class ChibiView(context: Context) : View(context) {
         val emotionPop = 1f + sin(transition * Math.PI).toFloat() * .035f
         val lookX = sin(t * .42f) * 2.2f
         val lookY = cos(t * .31f) * 1.2f
+        val hairSway = sin(t * 1.35f) * 6f
         val skin = 0xFFFFDED4.toInt()
         val ink = 0xFF39466D.toInt()
         val blue = 0xFF438DEB.toInt()
@@ -123,15 +124,55 @@ open class ChibiView(context: Context) : View(context) {
 
         // Flowing white/silver hair behind the face.
         val back = Path().apply {
-            moveTo(-65f,-98f); cubicTo(-111f,-154f,-94f,-8f,-79f,58f)
-            quadTo(-62f,74f,-54f,35f); cubicTo(0f,62f,54f,35f,54f,35f)
-            quadTo(66f,78f,81f,53f); cubicTo(105f,-28f,107f,-123f,42f,-147f)
-            quadTo(-26f,-174f,-65f,-98f); close()
+            moveTo(-65f,-98f)
+            cubicTo(-111f,-154f,-94f,-8f,-79f,58f)
+            cubicTo(-91f,103f,-86f,143f,-62f,158f)
+            quadTo(-42f,170f,-35f,132f)
+            cubicTo(-31f,108f,-39f,84f,-48f,62f)
+            cubicTo(-66f,18f,-69f,-37f,-56f,-82f)
+            cubicTo(-24f,-145f,28f,-159f,65f,-125f)
+            cubicTo(111f,-83f,100f,15f,79f,58f)
+            cubicTo(88f,103f,91f,143f,62f,158f)
+            quadTo(42f,170f,35f,132f)
+            cubicTo(31f,108f,39f,84f,48f,62f)
+            cubicTo(66f,18f,69f,-37f,56f,-82f)
+            cubicTo(25f,-143f,-25f,-151f,-65f,-98f)
+            close()
         }
         fill.shader = LinearGradient(-90f,-130f,90f,65f,
             intArrayOf(0xFFB9C8E6.toInt(),0xFFFDFEFF.toInt(),0xFFD3DFF4.toInt()),
             null,Shader.TileMode.CLAMP)
         c.drawPath(back,fill); fill.shader=null
+        // Long, animated side locks reach below her waist. The tiny sway is
+        // deliberately cheap: a few bezier strokes rather than a heavy rig.
+        val leftLock = Path().apply {
+            moveTo(-75f,-52f)
+            cubicTo(-92f,8f,-82f,72f,-68f,111f + hairSway)
+            cubicTo(-64f,132f,-69f,151f,-58f,160f)
+            cubicTo(-43f,146f,-48f,119f,-51f,96f)
+            cubicTo(-57f,48f,-55f,-4f,-75f,-52f)
+            close()
+        }
+        val rightLock = Path().apply {
+            moveTo(75f,-52f)
+            cubicTo(92f,8f,82f,72f,68f,111f - hairSway)
+            cubicTo(64f,132f,69f,151f,58f,160f)
+            cubicTo(43f,146f,48f,119f,51f,96f)
+            cubicTo(57f,48f,55f,-4f,75f,-52f)
+            close()
+        }
+        fill.shader = LinearGradient(-85f,0f,85f,150f,
+            intArrayOf(0xFFB8C7E5.toInt(),0xFFFDFEFF.toInt(),0xFFD2DDF3.toInt()),
+            null,Shader.TileMode.CLAMP)
+        c.drawPath(leftLock,fill); c.drawPath(rightLock,fill); fill.shader=null
+        c.drawPath(leftLock,s(0xFF9DADD0.toInt(),1.7f))
+        c.drawPath(rightLock,s(0xFF9DADD0.toInt(),1.7f))
+        c.drawPath(Path().apply {
+            moveTo(-72f,-25f); cubicTo(-81f,28f,-67f,90f,-62f,143f + hairSway)
+        },s(Color.WHITE,2.6f))
+        c.drawPath(Path().apply {
+            moveTo(72f,-25f); cubicTo(81f,28f,67f,90f,62f,143f - hairSway)
+        },s(Color.WHITE,2.6f))
 
         // Oversized fringe and side locks frame the face.
         c.drawOval(-91f,-153f,91f,25f,f(hair))
