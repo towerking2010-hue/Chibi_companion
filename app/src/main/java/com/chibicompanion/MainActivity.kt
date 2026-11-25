@@ -35,7 +35,7 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
         }
         hero.addView(CompanionUi.text(this, "YOUR CHIBI COMPANION", 10f, CompanionUi.muted, true))
-        val avatar = ChibiView(this).apply { setMood("excited") }
+        val avatar = MikoSpriteView(this).apply { setMood("excited") }
         hero.addView(avatar, LinearLayout.LayoutParams(-1, CompanionUi.dp(this, 300)))
         hero.addView(CompanionUi.text(this, "Ehehe! You're here! ✦", 19f, CompanionUi.ink, true))
         hero.addView(CompanionUi.text(this, "A tiny friend with a big personality.", 12f, CompanionUi.muted))
