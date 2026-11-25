@@ -17,6 +17,7 @@ class MikoSpriteView(context: Context) : ChibiView(context) {
     private var moodBeforeInteraction = "excited"
 
     fun setInteraction(state: String) {
+        if (interaction.isEmpty() && state != "released") moodBeforeInteraction = mood
         interaction = state
         interactionUntil = when (state) {
             "picked_up" -> System.currentTimeMillis() + 850L
@@ -38,6 +39,7 @@ class MikoSpriteView(context: Context) : ChibiView(context) {
     }
 
     fun setDragMotion(dx: Float, dy: Float) {
+        if (interaction != "dragging") moodBeforeInteraction = mood
         dragTilt = (dx * .12f).coerceIn(-14f, 14f)
         dragStretch = (1f + abs(dy) / 1700f).coerceIn(1f, 1.05f)
         interaction = "dragging"
@@ -57,6 +59,7 @@ class MikoSpriteView(context: Context) : ChibiView(context) {
         if (interaction.isNotEmpty() && interactionUntil > 0L && now > interactionUntil) {
             interaction = ""
             interactionUntil = 0L
+            setMood(moodBeforeInteraction)
         }
         val t = (now / 1000f)
         val dragging = interaction == "dragging"
