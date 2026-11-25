@@ -28,7 +28,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         super.onCreate(savedInstanceState)
         window.statusBarColor=CompanionUi.bg
         window.navigationBarColor=CompanionUi.bg
-        window.decorView.systemUiVisibility=View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        window.decorView.systemUiVisibility=0
         tts=TextToSpeech(this,this)
 
         val root=LinearLayout(this).apply {
@@ -46,7 +46,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
 
         val character=LinearLayout(this).apply {
             gravity=Gravity.CENTER_VERTICAL
-            background=CompanionUi.gradient(this@ChatActivity,android.graphics.Color.rgb(255,235,245),android.graphics.Color.rgb(231,237,255),22)
+            background=CompanionUi.gradient(this@ChatActivity,android.graphics.Color.rgb(57,31,83),android.graphics.Color.rgb(25,49,86),22)
             setPadding(CompanionUi.dp(this@ChatActivity,8),CompanionUi.dp(this@ChatActivity,4),CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,4))
         }
         avatar=MikoSpriteView(this).apply { setMood("happy"); setOnClickListener { setInteraction("tap") }; setOnLongClickListener { setInteraction("long_tap"); true } }
@@ -58,7 +58,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         val charLp=LinearLayout.LayoutParams(-1,CompanionUi.dp(this,158)); charLp.topMargin=CompanionUi.dp(this,10)
         root.addView(character,charLp)
 
-        val transcriptCard=CompanionUi.column(this,14).apply { background=CompanionUi.panel(this@ChatActivity,android.graphics.Color.WHITE,22) }
+        val transcriptCard=CompanionUi.column(this,14).apply { background=CompanionUi.panel(this@ChatActivity,android.graphics.Color.rgb(30,36,65),22) }
         transcript=CompanionUi.text(this,ChatHistory.read(this).ifBlank { "Miko: Ehehe! You came to see me! ✦\n\nMiko: What's on your mind?" },14f,CompanionUi.ink)
         transcript.setLineSpacing(CompanionUi.dp(this,4).toFloat(),1f)
         val scroll=ScrollView(this).apply { isFillViewport=true; addView(transcript) }
@@ -70,7 +70,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         input=EditText(this).apply {
             hint="Message Miko…"; textSize=14f; maxLines=3
             setTextColor(CompanionUi.ink); setHintTextColor(CompanionUi.muted)
-            background=CompanionUi.panel(this@ChatActivity,android.graphics.Color.WHITE,18)
+            background=CompanionUi.panel(this@ChatActivity,android.graphics.Color.rgb(37,43,76),18)
             setPadding(CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12),CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12))
         }
         composer.addView(input,LinearLayout.LayoutParams(0,-2,1f))
