@@ -34,13 +34,14 @@ This branch is a product rebuild, not another branding-only patch.
 - Settings is a separate screen for provider credentials, voice selection, local memory management, and proactive mode.
 - Chat TTS mouth motion is driven by utterance callbacks while the selected emotion remains visible.
 - Floating Miko keeps the response emotion instead of resetting to neutral on a timer; its chat panel links to Settings.
-- The procedural Canvas renderer now has more distinct sleepy, shy, sad/crying, surprised, angry, teasing, and excited face treatments.
-- This is still a procedural 2D renderer, not a completed Live2D model or a full production sprite rig. The generated character expression sheet remains a visual reference and has not been integrated as Android sprite assets.
+- The original procedural Canvas renderer remains as a fallback for missing/unmapped assets.
+- A generated 4×3, 12-expression transparent WebP atlas is now bundled at `app/src/main/res/drawable-nodpi/miko_atlas.webp` and is loaded by the image-backed renderer.
+- The sprite renderer uses lightweight breathing, bobbing, and tilt transforms; this is an animated 2D sprite system, not Live2D/3D or independently rigged body/face parts.
 - Latest CI must pass before considering this code push build-verified. Device verification remains with the user.
 
 
 ## Sprite renderer integration — 2026-11-25
 - Added an image-backed `MikoSpriteView` renderer and switched the home, chat, and floating companion views to use it.
 - The renderer is prepared to load `miko_atlas` from Android drawable resources, map the 12 expression cells, and animate the sprite with light breathing/bobbing transforms.
-- The original Canvas character remains the runtime fallback until the generated atlas image is committed at `app/src/main/res/drawable/miko_atlas.webp`. The sprite art itself is not yet bundled in this commit, so this is not yet the completed visual replacement.
+- The generated atlas is now committed at `app/src/main/res/drawable-nodpi/miko_atlas.webp`; Android resource lookup loads it at native pixel density.
 - This is a lightweight animated 2D sprite implementation, not a Live2D/3D rig. Device verification is still required.
