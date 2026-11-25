@@ -76,7 +76,6 @@ class MikoSpriteView(context: Context) : ChibiView(context) {
             super.onDraw(canvas)
             return
         }
-        super<View>.onDraw(canvas)
         val index = expressionIndex()
         val col = index % 4
         val row = index / 4
