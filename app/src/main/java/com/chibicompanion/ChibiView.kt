@@ -27,6 +27,7 @@ class ChibiView(context: Context) : View(context) {
             "embarrassed" -> "shy"
             "love", "loving" -> "affectionate"
             "talk" -> "talking"
+            "pout", "pouting" -> "pouty"
             else -> value.lowercase()
         }
         if (next != mood) {
@@ -187,6 +188,10 @@ class ChibiView(context: Context) : View(context) {
             c.drawOval(-60f,-50f,-17f,-16f,f(Color.WHITE)); c.drawOval(17f,-50f,60f,-16f,f(Color.WHITE))
             c.drawOval(-52f,-46f,-25f,-17f,f(0xFF356DCB.toInt())); c.drawOval(25f,-46f,52f,-17f,f(0xFF356DCB.toInt()))
             c.drawLine(-65f,-65f,-26f,-76f,s(navy,4f)); c.drawLine(65f,-65f,26f,-76f,s(navy,4f))
+        } else if (mood == "pouty") {
+            c.drawOval(-61f,-54f,-16f,-13f,f(Color.WHITE)); c.drawOval(16f,-54f,61f,-13f,f(Color.WHITE))
+            c.drawOval(-53f,-47f,-25f,-14f,f(0xFF438DEB.toInt())); c.drawOval(25f,-47f,53f,-14f,f(0xFF438DEB.toInt()))
+            c.drawLine(-62f,-68f,-28f,-62f,s(navy,4f)); c.drawLine(62f,-68f,28f,-62f,s(navy,4f))
         } else if (mood == "sleepy" || mood == "sad" || mood == "crying" || mood == "shy" || mood == "embarrassed" || blink) {
             val eyeDrop = if (mood == "sleepy") 0f else 5f
             c.drawArc(-61f,-54f+eyeDrop,-16f,-15f+eyeDrop,8f,164f,false,s(ink,4.5f))
@@ -239,6 +244,7 @@ class ChibiView(context: Context) : View(context) {
                 c.drawOval(-open+2f,30f,open-2f,36f,f(0xFFFFA4B9.toInt()))
             }
             mood == "angry" -> c.drawLine(-12f,26f,12f,26f,s(0xFF98566B.toInt(),3.5f))
+            mood == "pouty" -> c.drawOval(-13f,22f,13f,39f,f(0xFF98566B.toInt()))
             mood == "surprised" || mood == "confused" -> c.drawOval(-8f,19f,8f,41f,f(0xFF91445E.toInt()))
             mood == "determined" -> c.drawArc(-13f,21f,13f,37f,190f,160f,false,s(0xFF98566B.toInt(),3f))
             mood == "sad" || mood == "crying" -> c.drawArc(-12f,26f,12f,43f,195f,150f,false,s(0xFF98566B.toInt(),2.8f))
