@@ -58,7 +58,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         val charLp=LinearLayout.LayoutParams(-1,CompanionUi.dp(this,158)); charLp.topMargin=CompanionUi.dp(this,10)
         root.addView(character,charLp)
 
-        val transcriptCard=CompanionUi.column(this,14).apply { background=CompanionUi.panel(this,android.graphics.Color.WHITE,22) }
+        val transcriptCard=CompanionUi.column(this,14).apply { background=CompanionUi.panel(this@ChatActivity,android.graphics.Color.WHITE,22) }
         transcript=CompanionUi.text(this,ChatHistory.read(this).ifBlank { "Miko: Ehehe! You came to see me! ✦\n\nMiko: What's on your mind?" },14f,CompanionUi.ink)
         transcript.setLineSpacing(CompanionUi.dp(this,4).toFloat(),1f)
         val scroll=ScrollView(this).apply { isFillViewport=true; addView(transcript) }
