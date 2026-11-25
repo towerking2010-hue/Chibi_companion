@@ -7,15 +7,15 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
-import android.view.View
-import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * Image-backed 2D Miko renderer. The atlas contains 12 authored expressions
- * in a 4x3 grid. Lightweight transforms provide breathing/bobbing while the
- * selected expression is held; this is a sprite animation system, not Live2D.
+ * Lightweight image-backed Miko renderer.
+ *
+ * The bundled core atlas is a 2x2 sheet (four complete chibi poses), not a
+ * 4x3 sheet. Keep source-cell geometry in sync with the actual asset so we
+ * never crop a face or draw outside this view's bounds.
  */
 class MikoSpriteView(context: Context) : ChibiView(context) {
     private var spriteMood = "excited"
@@ -52,56 +52,55 @@ class MikoSpriteView(context: Context) : ChibiView(context) {
         return atlas
     }
 
+    // Four complete poses in the committed 2x2 atlas. Several moods share
+    // the closest matching pose until a larger expression sheet is authored.
     private fun expressionIndex(): Int = when {
-        spriteSpeaking -> 11
-        spriteMood == "neutral" -> 0
-        spriteMood == "happy" -> 1
-        spriteMood == "excited" -> 2
-        spriteMood == "angry" -> 3
-        spriteMood == "sad" || spriteMood == "crying" -> 4
-        spriteMood == "shy" -> 5
-        spriteMood == "sleepy" -> 6
-        spriteMood == "surprised" || spriteMood == "confused" -> 7
-        spriteMood == "teasing" -> 8
-        spriteMood == "affectionate" -> 9
-        spriteMood == "determined" -> 10
-        spriteMood == "talking" -> 11
-        spriteMood == "pouty" -> 3
+        spriteSpeaking -> 2
+        spriteMood in setOf("neutral", "calm") -> 0
+        spriteMood in setOf("happy", "shy", "affectionate", "teasing", "love") -> 1
+        spriteMood in setOf("excited", "talking", "surprised", "determined") -> 2
+        spriteMood in setOf("angry", "sad", "crying", "sleepy", "confused", "pouty") -> 3
         else -> 0
     }
 
     override fun onDraw(canvas: Canvas) {
         val image = loadAtlas()
-        if (image == null || image.isRecycled) {
+        if (image == null || image.isRecycled || width <= 0 || height <= 0) {
             super.onDraw(canvas)
             return
         }
+
         val index = expressionIndex()
-        val col = index % 4
-        val row = index / 4
+        val columns = 2
+        val rows = 2
+        val col = index % columns
+        val row = index / columns
         val src = Rect(
-            col * image.width / 4,
-            row * image.height / 3,
-            (col + 1) * image.width / 4,
-            (row + 1) * image.height / 3
+            col * image.width / columns,
+            row * image.height / rows,
+            (col + 1) * image.width / columns,
+            (row + 1) * image.height / rows
         )
-        val cellW = src.width().toFloat()
-        val cellH = src.height().toFloat()
-        val fit = min((width * .94f) / cellW, (height * .94f) / cellH)
-        val drawW = cellW * fit
-        val drawH = cellH * fit
+
+        val fit = min((width * .94f) / src.width(), (height * .94f) / src.height())
+        val drawW = src.width() * fit
+        val drawH = src.height() * fit
         val t = (System.currentTimeMillis() - bornAt) / 1000f
         val bob = sin(t * 2.1f) * (height * .009f)
         val breathe = 1f + sin(t * 2f) * .012f
         val tilt = sin(t * .75f) * 1.1f
 
         canvas.save()
+        // Explicit clipping protects adjacent controls even if a parent or
+        // WindowManager gives this view unusual dimensions.
+        canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
         canvas.translate(width / 2f, height / 2f + bob)
         canvas.rotate(tilt)
         canvas.scale(breathe, breathe)
         val dst = RectF(-drawW / 2f, -drawH / 2f, drawW / 2f, drawH / 2f)
         canvas.drawBitmap(image, src, dst, spritePaint)
         canvas.restore()
-        postInvalidateDelayed(50)
+
+        if (isShown) postInvalidateDelayed(50)
     }
 }
