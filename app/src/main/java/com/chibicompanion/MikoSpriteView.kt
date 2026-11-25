@@ -39,7 +39,7 @@ class MikoSpriteView(context: Context) : ChibiView(context) {
     }
 
     fun setDragMotion(dx: Float, dy: Float) {
-        if (interaction != "dragging") moodBeforeInteraction = currentMood
+        // Keep the mood captured on pickup throughout the same drag gesture.
         dragTilt = (dx * .12f).coerceIn(-14f, 14f)
         dragStretch = (1f + abs(dy) / 1700f).coerceIn(1f, 1.05f)
         interaction = "dragging"
@@ -67,13 +67,19 @@ class MikoSpriteView(context: Context) : ChibiView(context) {
         val sway = sin(t * .85f) * (if (dragging) .4f else 2.4f)
         val breathe = 1f + sin(t * 1.8f) * (if (dragging) .003f else .012f)
         val pickup = if (interaction == "picked_up") 1.04f + sin(t * 18f) * .018f else 1f
+        val tapBounce = when (interaction) {
+            "tap" -> 1f + abs(sin(t * 10f)) * .025f
+            "double_tap" -> 1f + abs(sin(t * 15f)) * .035f
+            "long_tap" -> 1f + sin(t * 5f) * .012f
+            else -> 1f
+        }
         val settle = if (interaction == "released") 1f + sin(t * 12f) * .012f else 1f
 
         canvas.save()
         canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
         canvas.translate(width / 2f, height / 2f + bob)
         canvas.rotate(sway + dragTilt)
-        canvas.scale(breathe * pickup * settle, breathe * dragStretch * pickup * settle)
+        canvas.scale(breathe * pickup * tapBounce * settle, breathe * dragStretch * pickup * tapBounce * settle)
         canvas.translate(-width / 2f, -height / 2f)
         super.onDraw(canvas)
         canvas.restore()
