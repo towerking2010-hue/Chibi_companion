@@ -23,6 +23,6 @@ object MikoEmotion {
 
     fun fromReply(reply: String): String {
         val normalized = reply.lowercase()
-        return cues.firstOrNull { (_, phrases) -> phrases.any { normalized.contains(it) } }?.first ?: "happy"
+        return cues.firstOrNull { (_, phrases) -> phrases.any { normalized.contains(it) } }?.first ?: "neutral"
     }
 }
