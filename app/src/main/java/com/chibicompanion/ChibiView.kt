@@ -177,7 +177,8 @@ open class ChibiView(context: Context) : View(context) {
         val angry = mood == "angry" || mood == "pouty"
         val surprised = mood == "surprised" || mood == "confused"
         val happy = mood == "happy" || mood == "joy" || mood == "affectionate" ||
-            mood == "excited" || mood == "teasing" || mood == "talking" || speaking
+            mood == "excited" || mood == "enthusiastic" || mood == "teasing" ||
+            mood == "talking" || speaking
         if (closed) {
             path(c, ink, true) {
                 moveTo(82f, 121f); cubicTo(91f, if (angry) 116f else 130f, 103f, if (angry) 116f else 130f, 111f, 121f)
@@ -278,8 +279,10 @@ open class ChibiView(context: Context) : View(context) {
         val now = System.nanoTime()
         val t = (now - startedAt) / 1_000_000_000f
         val moodAge = (now - moodChangedAt) / 1_000_000f
-        val blinkPhase = (t % 4.1f)
-        val blinking = blinkPhase > 3.82f && blinkPhase < 4.02f
+        // Keep the greeting visibly awake: short natural blinks, with a longer
+        // open-eye interval so a freshly opened home screen never looks sleepy.
+        val blinkPhase = (t % 5.2f)
+        val blinking = blinkPhase > 4.98f && blinkPhase < 5.08f
         val breathe = 1f + sin(t * 1.65f) * 0.008f
         val bob = sin(t * 2.0f) * 2.2f
         val hairSway = sin(t * 1.25f) * 2.4f
