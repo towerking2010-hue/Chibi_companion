@@ -48,6 +48,10 @@ class MainActivity : Activity() {
             startActivity(Intent(this@MainActivity, ChatActivity::class.java))
         })
         root.addView(CompanionUi.spacer(this, 8))
+        root.addView(CompanionUi.button(this, "⚙  Miko settings") {
+            startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+        })
+        root.addView(CompanionUi.spacer(this, 8))
         root.addView(CompanionUi.button(this, "✦  Bring Miko to your screen") {
             if (Settings.canDrawOverlays(this)) {
                 startService(Intent(this, FloatingCompanionService::class.java))
