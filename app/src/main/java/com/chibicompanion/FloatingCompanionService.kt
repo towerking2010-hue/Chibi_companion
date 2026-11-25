@@ -176,14 +176,11 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         if(status==TextToSpeech.SUCCESS) {
             CompanionVoice.configure(this, tts)
             tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) { mainThread { avatar?.setMood("talking") } }
+                override fun onStart(utteranceId: String?) { mainThread { avatar?.setSpeaking(true) } }
                 override fun onDone(utteranceId: String?) {
-                    mainThread {
-                        avatar?.setMood("happy")
-                        android.os.Handler(mainLooper).postDelayed({ avatar?.setMood("neutral") }, 900)
-                    }
+                    mainThread { avatar?.setSpeaking(false) }
                 }
-                override fun onError(utteranceId: String?) { mainThread { avatar?.setMood("neutral") } }
+                override fun onError(utteranceId: String?) { mainThread { avatar?.setSpeaking(false) } }
             })
         }
     }
