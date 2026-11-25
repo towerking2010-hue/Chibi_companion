@@ -17,12 +17,12 @@ import java.util.concurrent.Executors
 
 class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private lateinit var wm: WindowManager
-    private var avatar: ChibiView? = null
+    private var avatar: MikoSpriteView? = null
     private var chatPanel: LinearLayout? = null
     private var chatParams: WindowManager.LayoutParams? = null
     private var avatarParams: WindowManager.LayoutParams? = null
     private var lastTap = 0L
-    private var downX = 0f; private var downY = 0f; private var originX = 0; private var originY = 0; private var dragging = false
+    private var downX = 0f; private var downY = 0f; private var originX = 0; private var originY = 0; private var downAt = 0L; private var dragging = false
     private val worker = Executors.newSingleThreadExecutor()
     private lateinit var tts: TextToSpeech
 
@@ -58,23 +58,46 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         val v = MikoSpriteView(this)
         // WindowManager.LayoutParams dimensions are pixels, so convert dp explicitly.
         // The old 136x164 raw-pixel window rendered Miko as a tiny sticker on high-density phones.
-        val lp = WindowManager.LayoutParams(CompanionUi.dp(this, 132), CompanionUi.dp(this, 192), overlayType(),
+        val lp = WindowManager.LayoutParams(CompanionUi.dp(this, 168), CompanionUi.dp(this, 210), overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 12; y = 220 }
         v.setOnTouchListener { _, e ->
             when (e.action) {
-                MotionEvent.ACTION_DOWN -> { downX=e.rawX; downY=e.rawY; originX=lp.x; originY=lp.y; dragging=false; true }
+                MotionEvent.ACTION_DOWN -> {
+                    downX=e.rawX; downY=e.rawY; originX=lp.x; originY=lp.y
+                    downAt=System.currentTimeMillis(); dragging=false
+                    v.setInteraction("picked_up")
+                    true
+                }
                 MotionEvent.ACTION_MOVE -> {
                     val dx=e.rawX-downX; val dy=e.rawY-downY
                     if (kotlin.math.abs(dx)>8 || kotlin.math.abs(dy)>8) dragging=true
-                    if (dragging) { lp.x=originX+dx.toInt(); lp.y=originY+dy.toInt(); runCatching { wm.updateViewLayout(v,lp) } }
+                    if (dragging) {
+                        v.setDragMotion(dx,dy)
+                        lp.x=originX+dx.toInt(); lp.y=originY+dy.toInt()
+                        runCatching { wm.updateViewLayout(v,lp) }
+                    }
                     true
                 }
                 MotionEvent.ACTION_UP -> {
                     val now=System.currentTimeMillis()
-                    if (!dragging && now-lastTap < 420) { lastTap=0L; toggleChat() } else if (!dragging) lastTap=now
+                    val held=now-downAt
+                    if (dragging) {
+                        v.clearDragMotion()
+                    } else if (held>=550L) {
+                        v.setInteraction("long_tap")
+                        lastTap=0L
+                    } else if (now-lastTap < 420L) {
+                        v.setInteraction("double_tap")
+                        lastTap=0L
+                        toggleChat()
+                    } else {
+                        v.setInteraction("tap")
+                        lastTap=now
+                    }
                     true
                 }
+                MotionEvent.ACTION_CANCEL -> { v.clearDragMotion(); true }
                 else -> false
             }
         }
