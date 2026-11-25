@@ -18,7 +18,7 @@ import java.util.concurrent.Executors
 class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var transcript: TextView
     private lateinit var input: EditText
-    private lateinit var avatar: ChibiView
+    private lateinit var avatar: MikoSpriteView
     private lateinit var tts: TextToSpeech
     private var recognizer: SpeechRecognizer? = null
     private val worker = Executors.newSingleThreadExecutor()
@@ -49,7 +49,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             background=CompanionUi.gradient(this@ChatActivity,android.graphics.Color.rgb(255,235,245),android.graphics.Color.rgb(231,237,255),22)
             setPadding(CompanionUi.dp(this@ChatActivity,8),CompanionUi.dp(this@ChatActivity,4),CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,4))
         }
-        avatar=MikoSpriteView(this).apply { setMood("happy") }
+        avatar=MikoSpriteView(this).apply { setMood("happy"); setOnClickListener { setInteraction("tap") }; setOnLongClickListener { setInteraction("long_tap"); true } }
         character.addView(avatar,LinearLayout.LayoutParams(CompanionUi.dp(this,112),CompanionUi.dp(this,150)))
         val greeting=CompanionUi.column(this,4)
         greeting.addView(CompanionUi.text(this,"Miko is here!",17f,CompanionUi.ink,true))
