@@ -90,6 +90,9 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         }
         val header=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
         header.addView(TextView(this).apply { text="Miko: Hiii! I was waiting. ♡"; textSize=18f; setTextColor(Color.rgb(53,70,111)) }, LinearLayout.LayoutParams(0,-2,1f))
+        header.addView(Button(this).apply { text="⚙"; setOnClickListener {
+            startActivity(Intent(this@FloatingCompanionService, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } })
         header.addView(Button(this).apply { text="×"; setOnClickListener { hideChat() } })
         panel.addView(header)
         panel.addView(Button(this).apply {
@@ -135,7 +138,6 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                             CompanionVoice.configure(this@FloatingCompanionService, tts)
                             tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"chibi-reply")
                         }
-                        android.os.Handler(mainLooper).postDelayed({ avatar?.setMood("neutral") }, 3500)
                     }
                 }
             }
@@ -161,7 +163,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             screenshot.fill(0)
             ChatHistory.add(this@FloatingCompanionService, "Her", answer)
             mainThread {
-                avatar?.setMood("happy")
+                avatar?.setMood(MikoEmotion.fromReply(answer))
                 if (::tts.isInitialized) {
                     CompanionVoice.configure(this@FloatingCompanionService, tts)
                     tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "screen-vision")
