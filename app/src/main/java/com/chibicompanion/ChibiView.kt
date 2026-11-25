@@ -31,6 +31,18 @@ class ChibiView(context: Context) : View(context) {
         }
     }
 
+    private fun star(cx: Float, cy: Float, outer: Float, inner: Float): Path =
+        Path().apply {
+            for (i in 0 until 10) {
+                val angle = -Math.PI / 2.0 + i * Math.PI / 5.0
+                val radius = if (i % 2 == 0) outer else inner
+                val x = cx + (kotlin.math.cos(angle) * radius).toFloat()
+                val y = cy + (kotlin.math.sin(angle) * radius).toFloat()
+                if (i == 0) moveTo(x, y) else lineTo(x, y)
+            }
+            close()
+        }
+
     override fun onDraw(c: Canvas) {
         super.onDraw(c)
         val t = (System.currentTimeMillis() - started) / 1000f
@@ -119,7 +131,17 @@ class ChibiView(context: Context) : View(context) {
         c.drawPath(Path().apply { moveTo(78f,-51f); cubicTo(91f,-3f,79f,26f,70f,43f) },s(0xFFB6C7E7.toInt(),4f))
 
         // Big sparkling blue eyes, with a proper blink.
-        if (blink) {
+        if (mood == "excited") {
+            // Miko's signature anime sparkle-eyes expression.
+            c.drawOval(-61f,-59f,-16f,-9f,f(Color.WHITE))
+            c.drawOval(16f,-59f,61f,-9f,f(Color.WHITE))
+            c.drawPath(star(-38f,-34f,25f,11f), f(0xFF4B8FEF.toInt()))
+            c.drawPath(star(38f,-34f,25f,11f), f(0xFF4B8FEF.toInt()))
+            c.drawPath(star(-38f,-35f,12f,5f), f(0xFFFFF8D8.toInt()))
+            c.drawPath(star(38f,-35f,12f,5f), f(0xFFFFF8D8.toInt()))
+            c.drawCircle(-49f,-48f,3f,f(Color.WHITE))
+            c.drawCircle(27f,-48f,3f,f(Color.WHITE))
+        } else if (blink) {
             c.drawArc(-59f,-55f,-17f,-17f,10f,160f,false,s(ink,4f))
             c.drawArc(17f,-55f,59f,-17f,10f,160f,false,s(ink,4f))
         } else {
@@ -168,7 +190,11 @@ class ChibiView(context: Context) : View(context) {
         }
         c.drawCircle(67f,-107f,3.5f,f(0xFFFFD66B.toInt()))
         c.drawPath(shape(76f,-112f,92f,-99f,83f,-80f,73f,-94f),f(navy))
-        if (mood == "happy" || mood == "shy" || talking) {
+        if (mood == "excited") {
+            c.drawPath(star(-99f,-84f,9f,4f), f(0xFFFFD76B.toInt()))
+            c.drawPath(star(103f,-61f,7f,3f), f(0xFFFFD76B.toInt()))
+        }
+        if (mood == "happy" || mood == "shy" || mood == "excited" || talking) {
             val heart=Path().apply {
                 moveTo(95f,-132f); cubicTo(78f,-147f,73f,-124f,95f,-109f)
                 cubicTo(117f,-124f,112f,-147f,95f,-132f); close()
