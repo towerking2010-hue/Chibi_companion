@@ -141,6 +141,18 @@ class ChibiView(context: Context) : View(context) {
             c.drawPath(star(38f,-35f,12f,5f), f(0xFFFFF8D8.toInt()))
             c.drawCircle(-49f,-48f,3f,f(Color.WHITE))
             c.drawCircle(27f,-48f,3f,f(Color.WHITE))
+        } else if (mood == "angry") {
+            c.drawOval(-60f,-47f,-17f,-20f,f(Color.WHITE))
+            c.drawOval(17f,-47f,60f,-20f,f(Color.WHITE))
+            c.drawOval(-53f,-44f,-25f,-21f,f(0xFF356DCB.toInt()))
+            c.drawOval(25f,-44f,53f,-21f,f(0xFF356DCB.toInt()))
+            c.drawLine(-63f,-73f,-29f,-59f,s(0xFF9D435D.toInt(),5f))
+            c.drawLine(63f,-73f,29f,-59f,s(0xFF9D435D.toInt(),5f))
+        } else if (mood == "teasing") {
+            c.drawArc(-60f,-55f,-17f,-17f,10f,160f,false,s(ink,4f))
+            c.drawOval(18f,-57f,59f,-12f,f(Color.WHITE))
+            c.drawOval(27f,-53f,54f,-14f,f(0xFF438FEA.toInt()))
+            c.drawCircle(32f,-47f,6f,f(Color.WHITE))
         } else if (blink) {
             c.drawArc(-59f,-55f,-17f,-17f,10f,160f,false,s(ink,4f))
             c.drawArc(17f,-55f,59f,-17f,10f,160f,false,s(ink,4f))
@@ -163,12 +175,21 @@ class ChibiView(context: Context) : View(context) {
         // Blush and brows change with emotion.
         c.drawOval(-77f,-2f,-43f,14f,f(0x66F28FA6))
         c.drawOval(43f,-2f,77f,14f,f(0x66F28FA6))
-        val brow = if (mood == "angry") 0xFF79546D.toInt() else 0xFF9B8AA4.toInt()
-        c.drawLine(-55f,-76f,-30f,-79f,s(brow,2.8f))
-        c.drawLine(55f,-76f,30f,-79f,s(brow,2.8f))
+        val brow = if (mood == "angry") 0xFF9D435D.toInt() else 0xFF9B8AA4.toInt()
+        if (mood != "angry") {
+            c.drawLine(-55f,-76f,-30f,-79f,s(brow,2.8f))
+            c.drawLine(55f,-76f,30f,-79f,s(brow,2.8f))
+        }
+        if (mood == "crying" || mood == "sad") {
+            c.drawOval(-57f,-8f,-49f,22f,f(0xFF78C9F4.toInt()))
+            c.drawOval(49f,-8f,57f,22f,f(0xFF78C9F4.toInt()))
+        }
 
         when (mood) {
-            "angry" -> c.drawLine(-10f,24f,10f,24f,s(0xFF98566B.toInt(),3f))
+            "angry" -> c.drawLine(-12f,26f,12f,26f,s(0xFF98566B.toInt(),3.5f))
+            "surprised" -> c.drawOval(-8f,19f,8f,41f,f(0xFF91445E.toInt()))
+            "sad", "crying" -> c.drawArc(-12f,26f,12f,43f,195f,150f,false,s(0xFF98566B.toInt(),2.8f))
+            "shy", "embarrassed" -> c.drawArc(-12f,20f,12f,34f,15f,150f,false,s(0xFF98566B.toInt(),2.5f))
             "talking" -> {
                 val open = 7f + (sin(t*13f)+1f)*3f
                 c.drawOval(-open,17f,open,38f,f(0xFF8D405B.toInt()))
@@ -194,7 +215,7 @@ class ChibiView(context: Context) : View(context) {
             c.drawPath(star(-99f,-84f,9f,4f), f(0xFFFFD76B.toInt()))
             c.drawPath(star(103f,-61f,7f,3f), f(0xFFFFD76B.toInt()))
         }
-        if (mood == "happy" || mood == "shy" || mood == "excited" || talking) {
+        if (mood == "happy" || mood == "shy" || mood == "excited" || mood == "affectionate" || talking) {
             val heart=Path().apply {
                 moveTo(95f,-132f); cubicTo(78f,-147f,73f,-124f,95f,-109f)
                 cubicTo(117f,-124f,112f,-147f,95f,-132f); close()
