@@ -49,7 +49,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             background=CompanionUi.gradient(this@ChatActivity,android.graphics.Color.rgb(255,235,245),android.graphics.Color.rgb(231,237,255),22)
             setPadding(CompanionUi.dp(this@ChatActivity,8),CompanionUi.dp(this@ChatActivity,4),CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,4))
         }
-        avatar=ChibiView(this).apply { setMood("happy") }
+        avatar=MikoSpriteView(this).apply { setMood("happy") }
         character.addView(avatar,LinearLayout.LayoutParams(CompanionUi.dp(this,112),CompanionUi.dp(this,150)))
         val greeting=CompanionUi.column(this,4)
         greeting.addView(CompanionUi.text(this,"Miko is here!",17f,CompanionUi.ink,true))
