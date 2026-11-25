@@ -5,27 +5,33 @@ import android.graphics.Canvas
 import kotlin.math.abs
 import kotlin.math.sin
 
-/**
- * Image-atlas Miko renderer with lightweight pickup, drag and release motion.
- * Character artwork and expression poses are shared across all app surfaces.
- */
+/** Gesture-aware motion layer around the crisp vector Miko renderer. */
 class MikoSpriteView(context: Context) : ChibiView(context) {
     private var interaction = ""
     private var interactionUntil = 0L
     private var dragTilt = 0f
     private var dragStretch = 1f
+    private var releaseTilt = 0f
+    private var releaseStretch = 1f
+    private var releasedAt = 0L
     private var moodBeforeInteraction = "excited"
 
     fun setInteraction(state: String) {
         if (interaction.isEmpty() && state != "released") moodBeforeInteraction = currentMood
         interaction = state
+        val now = System.currentTimeMillis()
         interactionUntil = when (state) {
-            "picked_up" -> System.currentTimeMillis() + 850L
-            "tap" -> System.currentTimeMillis() + 620L
-            "double_tap" -> System.currentTimeMillis() + 1100L
-            "long_tap" -> System.currentTimeMillis() + 950L
-            "released" -> System.currentTimeMillis() + 480L
+            "picked_up" -> now + 850L
+            "tap" -> now + 620L
+            "double_tap" -> now + 1100L
+            "long_tap" -> now + 950L
+            "released" -> now + 480L
             else -> 0L
+        }
+        if (state == "released") {
+            releaseTilt = dragTilt
+            releaseStretch = dragStretch
+            releasedAt = now
         }
         when (state) {
             "picked_up" -> setMood("surprised")
@@ -39,9 +45,8 @@ class MikoSpriteView(context: Context) : ChibiView(context) {
     }
 
     fun setDragMotion(dx: Float, dy: Float) {
-        // Keep the mood captured on pickup throughout the same drag gesture.
-        dragTilt = (dx * .12f).coerceIn(-14f, 14f)
-        dragStretch = (1f + abs(dy) / 1700f).coerceIn(1f, 1.05f)
+        dragTilt = (dx * .10f).coerceIn(-11f, 11f)
+        dragStretch = (1f + abs(dy) / 2300f).coerceIn(1f, 1.035f)
         interaction = "dragging"
         interactionUntil = 0L
         setMood("happy")
@@ -49,8 +54,6 @@ class MikoSpriteView(context: Context) : ChibiView(context) {
     }
 
     fun clearDragMotion() {
-        dragTilt = 0f
-        dragStretch = 1f
         setInteraction("released")
     }
 
@@ -61,25 +64,38 @@ class MikoSpriteView(context: Context) : ChibiView(context) {
             interactionUntil = 0L
             setMood(moodBeforeInteraction)
         }
-        val t = (now / 1000f)
+
+        val t = now / 1000f
         val dragging = interaction == "dragging"
-        val bob = sin(t * 2.1f) * height * (if (dragging) .003f else .012f)
-        val sway = sin(t * .85f) * (if (dragging) .4f else 2.4f)
-        val breathe = 1f + sin(t * 1.8f) * (if (dragging) .003f else .012f)
-        val pickup = if (interaction == "picked_up") 1.04f + sin(t * 18f) * .018f else 1f
+        val bob = sin(t * 2.0f) * height * if (dragging) .0015f else .006f
+        val sway = sin(t * .8f) * if (dragging) .25f else 1.1f
+        val breathe = 1f + sin(t * 1.65f) * if (dragging) .002f else .005f
+        val pickup = if (interaction == "picked_up") 1.025f + sin(t * 14f) * .008f else 1f
         val tapBounce = when (interaction) {
-            "tap" -> 1f + abs(sin(t * 10f)) * .025f
-            "double_tap" -> 1f + abs(sin(t * 15f)) * .035f
-            "long_tap" -> 1f + sin(t * 5f) * .012f
+            "tap" -> 1f + abs(sin(t * 9f)) * .018f
+            "double_tap" -> 1f + abs(sin(t * 13f)) * .025f
+            "long_tap" -> 1f + sin(t * 4f) * .008f
             else -> 1f
         }
-        val settle = if (interaction == "released") 1f + sin(t * 12f) * .012f else 1f
+
+        val releaseAge = if (releasedAt == 0L) 1f
+            else ((now - releasedAt) / 420f).coerceIn(0f, 1f)
+        val spring = (1f - releaseAge)
+        val returningTilt = if (interaction == "released") releaseTilt * spring * spring else dragTilt
+        val returningStretch = if (interaction == "released") 1f + (releaseStretch - 1f) * spring else dragStretch
+        if (releaseAge >= 1f) {
+            dragTilt = 0f
+            dragStretch = 1f
+            releaseTilt = 0f
+            releaseStretch = 1f
+            releasedAt = 0L
+        }
 
         canvas.save()
         canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
         canvas.translate(width / 2f, height / 2f + bob)
-        canvas.rotate(sway + dragTilt)
-        canvas.scale(breathe * pickup * tapBounce * settle, breathe * dragStretch * pickup * tapBounce * settle)
+        canvas.rotate(sway + returningTilt)
+        canvas.scale(breathe * pickup * tapBounce, breathe * returningStretch * pickup * tapBounce)
         canvas.translate(-width / 2f, -height / 2f)
         super.onDraw(canvas)
         canvas.restore()
