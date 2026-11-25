@@ -58,9 +58,11 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         val v = MikoSpriteView(this)
         // WindowManager.LayoutParams dimensions are pixels, so convert dp explicitly.
         // The old 136x164 raw-pixel window rendered Miko as a tiny sticker on high-density phones.
-        val lp = WindowManager.LayoutParams(CompanionUi.dp(this, 168), CompanionUi.dp(this, 210), overlayType(),
+        val overlayWidth = CompanionUi.dp(this, 136)
+        val overlayHeight = CompanionUi.dp(this, 178)
+        val lp = WindowManager.LayoutParams(overlayWidth, overlayHeight, overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 12; y = 220 }
+            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 8; y = CompanionUi.dp(this, 150) }
         v.setOnTouchListener { _, e ->
             when (e.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -83,6 +85,13 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     val now=System.currentTimeMillis()
                     val held=now-downAt
                     if (dragging) {
+                        // Dock to the nearest screen edge after the spring-release animation.
+                        val metrics = resources.displayMetrics
+                        val maxX = (metrics.widthPixels - lp.width).coerceAtLeast(0)
+                        val maxY = (metrics.heightPixels - lp.height - CompanionUi.dp(this, 28)).coerceAtLeast(0)
+                        lp.x = if (lp.x + lp.width / 2 < metrics.widthPixels / 2) 0 else maxX
+                        lp.y = lp.y.coerceIn(CompanionUi.dp(this, 32), maxY)
+                        runCatching { wm.updateViewLayout(v, lp) }
                         v.clearDragMotion()
                     } else if (held>=550L) {
                         v.setInteraction("long_tap")
