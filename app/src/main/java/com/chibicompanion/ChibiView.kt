@@ -178,7 +178,7 @@ open class ChibiView(context: Context) : View(context) {
         val surprised = mood == "surprised" || mood == "confused"
         val happy = mood == "happy" || mood == "joy" || mood == "affectionate" ||
             mood == "excited" || mood == "teasing" || mood == "talking" || speaking
-        if (closed || happy) {
+        if (closed) {
             path(c, ink, true) {
                 moveTo(82f, 121f); cubicTo(91f, if (angry) 116f else 130f, 103f, if (angry) 116f else 130f, 111f, 121f)
             }
