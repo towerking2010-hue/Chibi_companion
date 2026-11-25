@@ -10,12 +10,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 
 object CompanionUi {
-    val ink = Color.rgb(62, 64, 91)
-    val muted = Color.rgb(133, 132, 157)
-    val pink = Color.rgb(246, 157, 187)
-    val lavender = Color.rgb(184, 174, 235)
-    val bg = Color.rgb(250, 247, 253)
-    val white = Color.WHITE
+    val ink = Color.rgb(245, 242, 255)
+    val muted = Color.rgb(171, 178, 207)
+    val pink = Color.rgb(255, 105, 174)
+    val lavender = Color.rgb(153, 119, 255)
+    val bg = Color.rgb(15, 19, 39)
+    val white = Color.rgb(30, 36, 65)
 
     fun dp(c: Context, v: Int) = (v * c.resources.displayMetrics.density).toInt()
     fun panel(c: Context, color: Int = white, radius: Int = 24): GradientDrawable =
@@ -30,7 +30,7 @@ object CompanionUi {
     fun button(c: Context, value: String, primary: Boolean = false, onClick: () -> Unit): TextView =
         text(c, value, 15f, if (primary) white else ink, true).apply {
             gravity = Gravity.CENTER
-            background = if (primary) gradient(c, pink, lavender, 18) else panel(c, Color.rgb(242,239,249), 18)
+            background = if (primary) gradient(c, pink, lavender, 18) else panel(c, Color.rgb(37, 43, 76), 18)
             setPadding(dp(c,16), dp(c,15), dp(c,16), dp(c,15))
             isClickable = true; isFocusable = true; setOnClickListener { onClick() }
         }
