@@ -7,7 +7,7 @@ This branch is a product rebuild, not a branding-only patch.
 - Cute chibi girl with long silver-white hair, blue eyes, and a blue/lavender casual outfit.
 - Launcher mark: head-only character icon.
 - In-app companion: full readable character, not a tiny sticker.
-- Character artwork must be image-backed; geometric Canvas placeholder art is not an acceptable final character.
+- Character must be a crisp, scalable Canvas-rendered design when no external artwork asset is available; avoid enlarging tiny compressed sprites.
 
 ## Interaction and animation
 - Idle breathing, blinking, gentle floating/bobbing and subtle sway.
