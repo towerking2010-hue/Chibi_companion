@@ -155,9 +155,14 @@ class ChibiView(context: Context) : View(context) {
             c.drawOval(18f,-57f,59f,-12f,f(Color.WHITE))
             c.drawOval(27f,-53f,54f,-14f,f(0xFF438FEA.toInt()))
             c.drawCircle(32f,-47f,6f,f(Color.WHITE))
-        } else if (blink) {
-            c.drawArc(-59f,-55f,-17f,-17f,10f,160f,false,s(ink,4f))
-            c.drawArc(17f,-55f,59f,-17f,10f,160f,false,s(ink,4f))
+        } else if (mood == "sleepy" || mood == "sad" || mood == "crying" || mood == "shy" || mood == "embarrassed" || blink) {
+            val eyeDrop = if (mood == "sleepy") 0f else 5f
+            c.drawArc(-61f,-54f+eyeDrop,-16f,-15f+eyeDrop,8f,164f,false,s(ink,4.5f))
+            c.drawArc(16f,-54f+eyeDrop,61f,-15f+eyeDrop,8f,164f,false,s(ink,4.5f))
+            if (mood == "sad" || mood == "crying") {
+                c.drawOval(-55f,-30f,-48f,-17f,f(0xFF78C9F4.toInt()))
+                c.drawOval(48f,-30f,55f,-17f,f(0xFF78C9F4.toInt()))
+            }
         } else {
             c.drawOval(-61f,-59f,-16f,-9f,f(Color.WHITE))
             c.drawOval(16f,-59f,61f,-9f,f(Color.WHITE))
@@ -187,21 +192,21 @@ class ChibiView(context: Context) : View(context) {
             c.drawOval(49f,-8f,57f,22f,f(0xFF78C9F4.toInt()))
         }
 
-        when (mood) {
-            "angry" -> c.drawLine(-12f,26f,12f,26f,s(0xFF98566B.toInt(),3.5f))
-            "surprised" -> c.drawOval(-8f,19f,8f,41f,f(0xFF91445E.toInt()))
-            "sad", "crying" -> c.drawArc(-12f,26f,12f,43f,195f,150f,false,s(0xFF98566B.toInt(),2.8f))
-            "shy", "embarrassed" -> c.drawArc(-12f,20f,12f,34f,15f,150f,false,s(0xFF98566B.toInt(),2.5f))
-            "talking" -> {
-                val open = 7f + (sin(t*13f)+1f)*3f
-                c.drawOval(-open,17f,open,38f,f(0xFF8D405B.toInt()))
-                c.drawOval(-open+3f,30f,open-3f,36f,f(0xFFFFA4B9.toInt()))
+        when {
+            talking -> {
+                val open = 5f + (sin(t*13f)+1f)*4f
+                c.drawOval(-open,18f,open,38f,f(0xFF8D405B.toInt()))
+                c.drawOval(-open+2f,30f,open-2f,36f,f(0xFFFFA4B9.toInt()))
             }
-            "happy" -> {
+            mood == "angry" -> c.drawLine(-12f,26f,12f,26f,s(0xFF98566B.toInt(),3.5f))
+            mood == "surprised" -> c.drawOval(-8f,19f,8f,41f,f(0xFF91445E.toInt()))
+            mood == "sad" || mood == "crying" -> c.drawArc(-12f,26f,12f,43f,195f,150f,false,s(0xFF98566B.toInt(),2.8f))
+            mood == "shy" || mood == "embarrassed" -> c.drawArc(-12f,20f,12f,34f,15f,150f,false,s(0xFF98566B.toInt(),2.5f))
+            mood == "happy" -> {
                 c.drawOval(-12f,16f,12f,40f,f(0xFF91445E.toInt()))
                 c.drawOval(-7f,31f,7f,38f,f(0xFFFFA4B9.toInt()))
             }
-            "sleepy" -> c.drawArc(-10f,19f,10f,32f,5f,170f,false,s(0xFF98566B.toInt(),2.5f))
+            mood == "sleepy" -> c.drawArc(-10f,19f,10f,32f,5f,170f,false,s(0xFF98566B.toInt(),2.5f))
             else -> c.drawArc(-10f,18f,10f,33f,15f,150f,false,s(0xFF98566B.toInt(),2.5f))
         }
 
