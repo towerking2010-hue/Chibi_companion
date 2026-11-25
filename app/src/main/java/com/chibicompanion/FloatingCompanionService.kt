@@ -129,12 +129,8 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     mainThread {
                         transcript.text=ChatHistory.read(this@FloatingCompanionService)
                         scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
-                        val mood = when {
-                            answer.contains("sorry",true) || answer.contains("sad",true) -> "shy"
-                            answer.contains("baka",true) || answer.contains("annoy",true) -> "angry"
-                            answer.contains("happy",true) || answer.contains("glad",true) || answer.contains("♡") -> "happy"
-                            else -> "talking"
-                        }
+                        val mood = MikoEmotion.fromReply(answer)
+                        avatar?.setMood(mood)
                         avatar?.setMood(mood)
                         if (::tts.isInitialized) {
                             CompanionVoice.configure(this@FloatingCompanionService, tts)
