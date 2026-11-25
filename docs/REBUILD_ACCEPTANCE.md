@@ -37,3 +37,10 @@ This branch is a product rebuild, not another branding-only patch.
 - The procedural Canvas renderer now has more distinct sleepy, shy, sad/crying, surprised, angry, teasing, and excited face treatments.
 - This is still a procedural 2D renderer, not a completed Live2D model or a full production sprite rig. The generated character expression sheet remains a visual reference and has not been integrated as Android sprite assets.
 - Latest CI must pass before considering this code push build-verified. Device verification remains with the user.
+
+
+## Sprite renderer integration — 2026-11-25
+- Added an image-backed `MikoSpriteView` renderer and switched the home, chat, and floating companion views to use it.
+- The renderer is prepared to load `miko_atlas` from Android drawable resources, map the 12 expression cells, and animate the sprite with light breathing/bobbing transforms.
+- The original Canvas character remains the runtime fallback until the generated atlas image is committed at `app/src/main/res/drawable/miko_atlas.webp`. The sprite art itself is not yet bundled in this commit, so this is not yet the completed visual replacement.
+- This is a lightweight animated 2D sprite implementation, not a Live2D/3D rig. Device verification is still required.
