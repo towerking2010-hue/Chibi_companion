@@ -62,7 +62,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         val overlayHeight = CompanionUi.dp(this, 178)
         val lp = WindowManager.LayoutParams(overlayWidth, overlayHeight, overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 8; y = CompanionUi.dp(this, 150) }
+            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 8; y = CompanionUi.dp(this@FloatingCompanionService, 150) }
         v.setOnTouchListener { _, e ->
             when (e.action) {
                 MotionEvent.ACTION_DOWN -> {
