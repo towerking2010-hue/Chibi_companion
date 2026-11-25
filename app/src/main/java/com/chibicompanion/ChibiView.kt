@@ -10,7 +10,7 @@ import kotlin.math.sin
  * Super-deformed chibi companion: oversized head, tiny body and expressive
  * animated features. Native Canvas keeps rendering light on mid-range phones.
  */
-open open class ChibiView(context: Context) : View(context) {
+open class ChibiView(context: Context) : View(context) {
     @Volatile private var mood = "excited"
     @Volatile private var speaking = false
     @Volatile private var moodChangedAt = System.currentTimeMillis()
