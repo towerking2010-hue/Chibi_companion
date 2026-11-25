@@ -15,7 +15,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         window.statusBarColor = CompanionUi.bg
         window.navigationBarColor = CompanionUi.bg
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        window.decorView.systemUiVisibility = 0
 
         val scroll = ScrollView(this).apply { isFillViewport = true; setBackgroundColor(CompanionUi.bg) }
         val root = CompanionUi.column(this, 18)
@@ -31,7 +31,7 @@ class MainActivity : Activity() {
         root.addView(CompanionUi.spacer(this, 10))
 
         val hero = CompanionUi.column(this, 12).apply {
-            background = CompanionUi.gradient(this@MainActivity, Color.rgb(255,235,245), Color.rgb(230,235,255), 30)
+            background = CompanionUi.gradient(this@MainActivity, Color.rgb(57, 31, 83), Color.rgb(25, 49, 86), 30)
             gravity = Gravity.CENTER
         }
         hero.addView(CompanionUi.text(this, "YOUR CHIBI COMPANION", 10f, CompanionUi.muted, true))
@@ -72,7 +72,7 @@ class MainActivity : Activity() {
         root.addView(CompanionUi.spacer(this, 14))
 
         val note = CompanionUi.column(this, 14).apply {
-            background = CompanionUi.panel(this@MainActivity, Color.rgb(244,241,251), 22)
+            background = CompanionUi.panel(this@MainActivity, Color.rgb(30, 36, 65), 22)
         }
         note.addView(CompanionUi.text(this, "A little note ♡", 14f, CompanionUi.ink, true))
         note.addView(CompanionUi.text(this, "Miko can chat using a provider you configure, or use her basic offline fallback. Cloud AI requires your own provider key; no paid service is enabled automatically.", 12f, CompanionUi.muted))
