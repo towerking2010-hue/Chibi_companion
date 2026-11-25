@@ -12,6 +12,7 @@ import kotlin.math.sin
  */
 class ChibiView(context: Context) : View(context) {
     @Volatile private var mood = "excited"
+    @Volatile private var speaking = false
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -21,6 +22,7 @@ class ChibiView(context: Context) : View(context) {
     private val started = System.currentTimeMillis()
 
     fun setMood(value: String) { mood = value.lowercase(); invalidate() }
+    fun setSpeaking(value: Boolean) { speaking = value; invalidate() }
     private fun f(c: Int) = fill.apply { shader = null; style = Paint.Style.FILL; color = c }
     private fun s(c: Int, w: Float) = line.apply { shader = null; color = c; strokeWidth = w }
     private fun shape(vararg xy: Float): Path = Path().apply {
@@ -50,7 +52,7 @@ class ChibiView(context: Context) : View(context) {
         val bounce = sin(t * 2.2f) * 2.5f
         val tilt = sin(t * .9f) * 1.8f
         val blink = (t % 4.1f) < .14f || mood == "sleepy"
-        val talking = mood == "talking"
+        val talking = speaking || mood == "talking"
         val skin = 0xFFFFDED4.toInt()
         val ink = 0xFF39466D.toInt()
         val blue = 0xFF438DEB.toInt()
