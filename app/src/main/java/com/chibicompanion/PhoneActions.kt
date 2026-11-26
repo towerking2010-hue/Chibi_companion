@@ -8,6 +8,16 @@ object PhoneActions {
     fun tryHandle(ctx:Context, raw:String):String? {
         val q=raw.trim()
         val lower=q.lowercase()
+        if (lower in listOf("show tasks", "my tasks", "open tasks", "show my tasks", "task list")) {
+            ctx.startActivity(Intent(ctx, TasksActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return "Here is your task list. Let's get things done! ♡"
+        }
+        if (lower.startsWith("add task ") || lower.startsWith("remember task ") || lower.startsWith("todo ")) {
+            val title = q.substringAfter(' ').trim()
+            if (title.isBlank()) return "What should I add to your task list?"
+            TaskStore.add(ctx, title)
+            return "Added '$title' to your task list. One step at a time! ♡"
+        }
         if (lower == "what time is it" || lower == "current time" || lower == "tell me the time") {
             val now = java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault()).format(java.util.Date())
             return "It's $now."
