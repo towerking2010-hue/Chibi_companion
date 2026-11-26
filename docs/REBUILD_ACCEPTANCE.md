@@ -32,6 +32,9 @@ This branch is a product rebuild, not a branding-only patch.
 - A local general-purpose LLM.
 - Production-quality illustrated character asset, Live2D physics rig, 3D model, or professional voice model.
 
+- Local notes are encrypted on-device and support create, edit, search and delete.
+- Task and notes screens are native Android UI; notes are not synchronized to cloud services.
+
 ## Device and release gates
 - Target the Galaxy A31 class of hardware.
 - CI success is a compile/package check only, not proof of device behavior.
