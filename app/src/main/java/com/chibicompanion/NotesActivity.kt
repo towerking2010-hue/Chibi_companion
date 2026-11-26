@@ -34,7 +34,7 @@ class NotesActivity : Activity() {
         root.addView(header)
         search = EditText(this).apply {
             hint = "Search your notes…"
-            singleLine = true
+            setSingleLine(true)
             setTextColor(CompanionUi.ink)
             setHintTextColor(CompanionUi.muted)
             background = CompanionUi.panel(this@NotesActivity, android.graphics.Color.rgb(37,43,76), 16)
