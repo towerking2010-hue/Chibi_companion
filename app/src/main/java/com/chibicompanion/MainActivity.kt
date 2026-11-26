@@ -41,6 +41,7 @@ class MainActivity : Activity() {
             startActivity(Intent(this, ChatActivity::class.java))
         })
         root.addView(CompanionUi.button(this, "✓  Tasks and plans") { startActivity(Intent(this, TasksActivity::class.java)) })
+        root.addView(CompanionUi.button(this, "✎  Notes") { startActivity(Intent(this, NotesActivity::class.java)) })
         root.addView(CompanionUi.spacer(this, 4))
         root.addView(CompanionUi.text(this, "QUICK ACTIONS", 10f, CompanionUi.pink, true))
         listOf(
