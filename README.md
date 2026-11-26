@@ -14,6 +14,7 @@ A lightweight native Kotlin Android companion prototype intended for Android 8+ 
 - API keys encrypted using AES-GCM with an Android Keystore key.
 - Basic local scripted fallback when cloud providers are unavailable.
 - Basic app launching, Android Settings launching, Google search, and Android folder picker commands.
+- Local task list with add, complete, delete and clear-completed actions; tasks are stored on-device.
 - GitHub Actions workflow for building debug and signed release APKs and uploading both as artifacts.
 
 ## Build
