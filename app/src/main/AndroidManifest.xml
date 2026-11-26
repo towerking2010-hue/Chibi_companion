@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.REQUEST_ASSISTANT_ROLE"/>
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN"/>
@@ -21,11 +22,12 @@
         <activity android:name=".NotesActivity" android:exported="false" />
         <activity android:name=".ChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
         <activity android:name=".SettingsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
-        <activity android:name=".MikoAssistActivity" android:exported="true" android:label="Miko" android:icon="@drawable/miko_launcher_icon">
+        <activity android:name=".MikoAssistActivity" android:exported="true" android:label="Miko" android:icon="@drawable/miko_launcher_icon" android:description="@string/assist_description">
             <intent-filter>
                 <action android:name="android.intent.action.ASSIST" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <meta-data android:name="android.assist_action" android:value="launch_assistant" />
         </activity>
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
@@ -41,7 +43,7 @@
             <meta-data android:name="android.voice_interaction" android:resource="@xml/miko_voice_interaction" />
             <intent-filter><action android:name="android.service.voice.VoiceInteractionService" /></intent-filter>
         </service>
-        <service android:name=".MikoVoiceSessionService" android:permission="android.permission.BIND_VOICE_INTERACTION" android:exported="true" android:process=":voice">
+        <service android:name=".MikoVoiceSessionService" android:permission="android.permission.BIND_VOICE_INTERACTION" android:exported="true">
             <intent-filter><action android:name="android.service.voice.VoiceInteractionSessionService" /></intent-filter>
         </service>
         <service

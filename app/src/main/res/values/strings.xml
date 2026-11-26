@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Miko</string>
+    <string name="assist_description">Summon Miko, your personal AI companion</string>
 </resources>

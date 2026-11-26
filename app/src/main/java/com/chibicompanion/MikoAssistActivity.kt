@@ -15,13 +15,23 @@ import android.widget.Toast
 class MikoAssistActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Ensure the activity is properly visible to the system
+        if (Build.VERSION.SDK_INT >= 29) {
+            // This activity is launched via the ASSIST pathway, it should be
+            // treated as an assistant interaction
+        }
+
         if (Settings.canDrawOverlays(this)) {
             val service = Intent(this, FloatingCompanionService::class.java)
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(service) else startService(service)
+            Toast.makeText(this, "Miko summoned ♡", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(this, "Allow Miko to display over other apps to summon her.", Toast.LENGTH_LONG).show()
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
-        finish()
+
+        // Small delay to ensure service starts before activity finishes
+        android.os.Handler(mainLooper).postDelayed({ finish() }, 500)
     }
 }

@@ -26,6 +26,24 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private val worker = Executors.newSingleThreadExecutor()
     private lateinit var tts: TextToSpeech
 
+    private const val POS_PREFS = "miko_floating_position"
+    private const val POS_X = "pos_x"
+    private const val POS_Y = "pos_y"
+
+    private fun loadSavedPosition(): Pair<Int, Int> {
+        val prefs = getSharedPreferences(POS_PREFS, MODE_PRIVATE)
+        val x = prefs.getInt(POS_X, -1)
+        val y = prefs.getInt(POS_Y, -1)
+        return Pair(x, y)
+    }
+
+    private fun savePosition(x: Int, y: Int) {
+        getSharedPreferences(POS_PREFS, MODE_PRIVATE).edit()
+            .putInt(POS_X, x)
+            .putInt(POS_Y, y)
+            .apply()
+    }
+
     override fun onCreate() {
         super.onCreate()
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -65,9 +83,22 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         // The old 136x164 raw-pixel window rendered Miko as a tiny sticker on high-density phones.
         val overlayWidth = CompanionUi.dp(this, 136)
         val overlayHeight = CompanionUi.dp(this, 178)
+
+        // Load saved position
+        val (savedX, savedY) = loadSavedPosition()
+        val metrics = resources.displayMetrics
+        val defaultX = 8
+        val defaultY = CompanionUi.dp(this@FloatingCompanionService, 150)
+        val maxX = (metrics.widthPixels - overlayWidth).coerceAtLeast(0)
+        val maxY = (metrics.heightPixels - overlayHeight - CompanionUi.dp(this, 28)).coerceAtLeast(0)
+
+        val startX = if (savedX >= 0) savedX.coerceIn(0, maxX) else defaultX
+        val startY = if (savedY >= 0) savedY.coerceIn(CompanionUi.dp(this, 24), maxY) else defaultY
+
         val lp = WindowManager.LayoutParams(overlayWidth, overlayHeight, overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 8; y = CompanionUi.dp(this@FloatingCompanionService, 150) }
+            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = startX; y = startY }
+
         v.setOnTouchListener { _, e ->
             when (e.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -89,12 +120,13 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     val held=now-downAt
                     if (dragging) {
                         // Keep Miko wherever the user drops her; only clamp to visible screen bounds.
-                        val metrics = resources.displayMetrics
                         val maxX = (metrics.widthPixels - lp.width).coerceAtLeast(0)
                         val maxY = (metrics.heightPixels - lp.height - CompanionUi.dp(this, 28)).coerceAtLeast(0)
                         lp.x = lp.x.coerceIn(0, maxX)
                         lp.y = lp.y.coerceIn(CompanionUi.dp(this, 24), maxY)
                         runCatching { wm.updateViewLayout(v, lp) }
+                        // Save position
+                        savePosition(lp.x, lp.y)
                     } else if (held>=550L) {
                         lastTap=0L
                     } else if (now-lastTap < 420L) {

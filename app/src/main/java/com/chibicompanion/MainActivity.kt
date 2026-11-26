@@ -26,6 +26,15 @@ class MainActivity : Activity() {
             checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 903)
         }
+
+        // Check if we can request the assistant role (Android 12+)
+        if (Build.VERSION.SDK_INT >= 29) {
+            val roleManager = getSystemService(RoleManager::class.java)
+            if (roleManager.isRoleAvailable(RoleManager.ROLE_ASSISTANT) &&
+                !roleManager.isRoleHeld(RoleManager.ROLE_ASSISTANT)) {
+                // Role is available but not held - we could request it
+            }
+        }
         window.statusBarColor = CompanionUi.bg
         window.navigationBarColor = CompanionUi.bg
         window.decorView.systemUiVisibility = 0
@@ -110,7 +119,20 @@ class MainActivity : Activity() {
             return
         }
 
-        // Android 12/Samsung provides a dedicated system page for choosing the
+        // Try to request the assistant role directly (Android 12+)
+        if (Build.VERSION.SDK_INT >= 29) {
+            val roleManager = getSystemService(RoleManager::class.java)
+            if (roleManager.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) {
+                val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT)
+                if (intent != null) {
+                    waitingForAssistantSettings = true
+                    startActivityForResult(intent, 904)
+                    return
+                }
+            }
+        }
+
+        // Fallback: Android 12/Samsung provides a dedicated system page for choosing the
         // default voice/digital assistant. Let the user choose Miko there.
         waitingForAssistantSettings = true
         val settingsIntent = Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)
