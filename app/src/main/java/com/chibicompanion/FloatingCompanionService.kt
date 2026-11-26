@@ -100,7 +100,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     }
                     true
                 }
-                MotionEvent.ACTION_CANCEL -> { v.clearDragMotion(); true }
+                MotionEvent.ACTION_CANCEL -> true
                 else -> false
             }
         }
@@ -122,7 +122,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         header.addView(Button(this).apply { text="×"; setOnClickListener { hideChat() } })
         panel.addView(header)
         panel.addView(Button(this).apply {
-            text = "👀 Look at the app behind me"
+            text = "👀 Understand my screen"
             setOnClickListener {
                 val consent = AlertDialog.Builder(this@FloatingCompanionService)
                     .setTitle("Share one screen capture?")
@@ -158,8 +158,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     mainThread {
                         transcript.text=ChatHistory.read(this@FloatingCompanionService)
                         scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
-                        val mood = MikoEmotion.fromReply(answer)
-                        if (::tts.isInitialized) {
+                                    if (::tts.isInitialized) {
                             CompanionVoice.configure(this@FloatingCompanionService, tts)
                             tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"chibi-reply")
                         }
