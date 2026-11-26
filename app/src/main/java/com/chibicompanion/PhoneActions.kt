@@ -47,6 +47,36 @@ object PhoneActions {
             ctx.startActivity(mail)
             return "I opened an email draft. Review the recipient and message before sending."
         }
+        val settingsAction = when {
+            lower in listOf("open wifi settings", "wifi settings", "open wi-fi settings") -> android.provider.Settings.ACTION_WIFI_SETTINGS
+            lower in listOf("open bluetooth settings", "bluetooth settings") -> android.provider.Settings.ACTION_BLUETOOTH_SETTINGS
+            lower in listOf("open display settings", "display settings", "brightness settings") -> android.provider.Settings.ACTION_DISPLAY_SETTINGS
+            lower in listOf("open sound settings", "sound settings", "volume settings") -> android.provider.Settings.ACTION_SOUND_SETTINGS
+            lower in listOf("open battery settings", "battery settings") -> android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS
+            lower in listOf("open location settings", "location settings", "gps settings") -> android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS
+            lower in listOf("open accessibility settings", "accessibility settings") -> android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS
+            else -> null
+        }
+        if (settingsAction != null) {
+            ctx.startActivity(Intent(settingsAction).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return "I opened the relevant Android settings. You stay in control of the change."
+        }
+        if (lower in listOf("open camera", "launch camera", "take a photo", "take photo")) {
+            return try {
+                ctx.startActivity(Intent("android.media.action.IMAGE_CAPTURE").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                "Camera is open. You can frame and take the photo."
+            } catch (_: Exception) { "I couldn't find a camera app on this phone." }
+        }
+        if (lower.startsWith("remind me to ")) {
+            val task = q.substringAfter("remind me to ").trim()
+            if (task.isBlank()) return "What should I remind you about?"
+            val event = Intent(Intent.ACTION_INSERT, android.provider.CalendarContract.Events.CONTENT_URI)
+                .putExtra(android.provider.CalendarContract.Events.TITLE, "Reminder: $task")
+                .putExtra(android.provider.CalendarContract.Events.DESCRIPTION, "Created with Miko")
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            ctx.startActivity(event)
+            return "I opened a calendar reminder draft for '$task'. Choose its date and time, then save it."
+        }
         val navigation = when {
             lower in listOf("go back", "press back", "back") -> "back"
             lower in listOf("go home", "home screen", "press home") -> "home"
