@@ -89,6 +89,30 @@ object PhoneActions {
             } catch (_: Exception) { "I couldn't find a camera app on this phone." }
         }
         if (lower.startsWith("remind me to ")) {
+            val match = Regex("^remind me to (.+?) in (\\d+)\\s*(seconds?|secs?|minutes?|mins?|hours?|hrs?)$", RegexOption.IGNORE_CASE).find(q)
+            if (match != null) {
+                val task = match.groupValues[1].trim()
+                val amount = match.groupValues[2].toLongOrNull() ?: return "I couldn't read that reminder delay."
+                val unit = match.groupValues[3].lowercase()
+                val multiplier = when {
+                    unit.startsWith("hour") || unit.startsWith("hr") -> 3_600_000L
+                    unit.startsWith("sec") -> 1_000L
+                    else -> 60_000L
+                }
+                val delay = runCatching { Math.multiplyExact(amount, multiplier) }.getOrNull()
+                    ?: return "That reminder is too far in the future."
+                if (task.isBlank() || delay !in 1_000L..(30L * 24 * 60 * 60 * 1000)) return "Choose a reminder between 1 second and 30 days from now."
+                ReminderScheduler.schedule(ctx, task, delay)
+                val duration = when {
+                    amount == 1L && unit.startsWith("hour") -> "1 hour"
+                    unit.startsWith("hour") || unit.startsWith("hr") -> "$amount hours"
+                    amount == 1L && unit.startsWith("min") -> "1 minute"
+                    unit.startsWith("min") -> "$amount minutes"
+                    amount == 1L -> "1 second"
+                    else -> "$amount seconds"
+                }
+                return "Okay! I'll remind you about '$task' in $duration. ♡"
+            }
             val task = q.substringAfter("remind me to ").trim()
             if (task.isBlank()) return "What should I remind you about?"
             val event = Intent(Intent.ACTION_INSERT, android.provider.CalendarContract.Events.CONTENT_URI)
