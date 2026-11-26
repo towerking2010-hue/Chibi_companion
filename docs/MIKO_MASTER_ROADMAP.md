@@ -77,7 +77,7 @@ The product should be useful without a character model, and the model must remai
 ## Current implementation checkpoint
 The Android rebuild branch already has native chat, configurable cloud providers, encrypted on-device memory, speech recognition and TTS, a floating service, basic phone intents, opt-in screen capture flow, and the reserved model viewport. It does not yet have a local general-purpose LLM, system-wide wake word, default assistant integration, unrestricted app control, or laptop/TV clients.
 
-The first new product increment is a local task list. Tasks are stored on-device and can be added, completed, deleted and cleared. This is a foundation feature, not a claim that full calendar/reminder automation is complete.
+The first new product increment is a local task list and encrypted notes space. Tasks are stored on-device and can be added, completed, deleted and cleared. Notes are encrypted with Android Keystore and support create, edit, search and delete. This is a foundation feature, not a claim that full calendar/reminder automation is complete.
 
 ## Release gates
 - Build and sign APK in CI.
