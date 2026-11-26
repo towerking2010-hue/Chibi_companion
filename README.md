@@ -36,3 +36,7 @@ Provider fallback is sequential and request-error based; it does not have reliab
 Phone commands are deliberately limited to Android intents and the document-tree picker. They do not provide arbitrary control of other apps or settings. A folder picker asks the user to select and grant access; it does not silently open arbitrary folders.
 
 Android may stop background services under battery restrictions. The foreground notification includes a stop action. The app requires the user to grant overlay permission explicitly. Use only API keys you own and keep them private.
+
+
+### Notes
+Miko includes a local notes space. Notes are stored on-device and can be created, edited, searched and deleted. Use the Notes button on the home screen or say “open notes”.
