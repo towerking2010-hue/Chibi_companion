@@ -9,6 +9,10 @@ object PhoneActions {
         return try {
         val q=raw.trim()
         val lower=q.lowercase()
+        if (lower in listOf("show notes", "my notes", "open notes", "show my notes", "notes")) {
+            ctx.startActivity(Intent(ctx, NotesActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return "Here are your private notes. Keep all your brilliant ideas in one place! ♡"
+        }
         if (lower in listOf("show tasks", "my tasks", "open tasks", "show my tasks", "task list")) {
             ctx.startActivity(Intent(ctx, TasksActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return "Here is your task list. Let's get things done! ♡"
