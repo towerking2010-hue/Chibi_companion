@@ -39,6 +39,13 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         titles.addView(CompanionUi.text(this,"MIKO • PERSONAL ASSISTANT",10f,CompanionUi.pink,true))
         titles.addView(CompanionUi.text(this,"Ask me anything ♡",22f,CompanionUi.ink,true))
         header.addView(titles,LinearLayout.LayoutParams(0,-2,1f))
+        header.addView(CompanionUi.button(this,"Clear") {
+            android.app.AlertDialog.Builder(this).setTitle("Clear chat history?")
+                .setMessage("This removes the saved conversation from this phone.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Clear") { _, _ -> ChatHistory.clear(this); transcript.text = ChatHistory.read(this) }
+                .show()
+        })
         header.addView(CompanionUi.button(this,"⚙") { startActivity(Intent(this,SettingsActivity::class.java)) })
         root.addView(header)
         root.addView(ModelSlotView(this), LinearLayout.LayoutParams(-1, CompanionUi.dp(this,112)).apply {
