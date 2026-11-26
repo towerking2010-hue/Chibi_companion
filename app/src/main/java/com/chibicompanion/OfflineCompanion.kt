@@ -11,7 +11,7 @@ object OfflineCompanion {
             q.contains("sad") || q.contains("upset") || q.contains("lonely") -> "Hey, I'm here with you. You don't have to carry everything alone. Want to tell me what's going on?"
             q.contains("joke") -> "Why did the phone wear glasses? It lost all its contacts! ...Hehe, okay, I'll work on my jokes."
             q.contains("love you") -> "A-ah, you're making me blush! I'm really glad you're here too. ♡"
-            else -> "My cloud AIs are unavailable, so I'm in simple offline mode right now. I can still keep you company, but connect a configured provider for full AI conversations."
+            else -> "Hmm, I'm not sure about that one yet. Tell me a little more, or give me a task I can help with! ♡"
         }
     }
 }
