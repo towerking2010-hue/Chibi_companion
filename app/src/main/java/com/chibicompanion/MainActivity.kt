@@ -81,7 +81,7 @@ class MainActivity : Activity() {
             }
         })
         root.addView(CompanionUi.button(this, "＋  Add Miko summon tile to Quick Settings") {
-            if (Build.VERSION.SDK_INT >= 24) {
+            if (Build.VERSION.SDK_INT >= 33) {
                 runCatching { startActivity(Intent(Settings.ACTION_ADD_TILE).apply {
                     putExtra(Settings.EXTRA_COMPONENT, android.content.ComponentName(this@MainActivity, MikoQuickSettingsTileService::class.java))
                     putExtra(Settings.EXTRA_TILE_LABEL, "Miko")
