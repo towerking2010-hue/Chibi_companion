@@ -16,6 +16,7 @@ import android.widget.Toast
 class MainActivity : Activity() {
     private var waitingForOverlayPermission = false
     private var waitingForAssistantSettings = false
+    private var pendingOpenChat = false
     private lateinit var setupButton: android.widget.TextView
     private lateinit var floatingButton: android.widget.TextView
 
@@ -159,6 +160,7 @@ class MainActivity : Activity() {
     private fun openFloatingChat() {
         if (!Settings.canDrawOverlays(this)) {
             waitingForOverlayPermission = true
+            pendingOpenChat = true
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
             return
         }
@@ -194,7 +196,14 @@ class MainActivity : Activity() {
 
         if (waitingForOverlayPermission) {
             waitingForOverlayPermission = false
-            if (Settings.canDrawOverlays(this) && isMikoDefaultAssistant()) startMikoFloating()
+            if (Settings.canDrawOverlays(this)) {
+                if (pendingOpenChat) {
+                    pendingOpenChat = false
+                    openFloatingChat()
+                } else {
+                    startMikoFloating()
+                }
+            }
         }
     }
 }
