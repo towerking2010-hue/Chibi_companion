@@ -53,11 +53,15 @@ class MainActivity : Activity() {
             })
             root.addView(CompanionUi.spacer(this, 7))
         }
-        root.addView(CompanionUi.button(this, "☁  Bring Miko's assistant panel to your screen") {
+        root.addView(CompanionUi.button(this, "☁  Start floating Miko") {
             if (Settings.canDrawOverlays(this)) {
                 startService(Intent(this, FloatingCompanionService::class.java))
                 Toast.makeText(this, "Miko's floating panel is ready", Toast.LENGTH_SHORT).show()
             } else startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+        })
+        root.addView(CompanionUi.button(this, "✕  Stop floating Miko") {
+            stopService(Intent(this, FloatingCompanionService::class.java).setAction("STOP_COMPANION"))
+            Toast.makeText(this, "Floating Miko stopped", Toast.LENGTH_SHORT).show()
         })
         root.addView(CompanionUi.spacer(this, 8))
         root.addView(CompanionUi.button(this, "⚙  Settings and connections") {
