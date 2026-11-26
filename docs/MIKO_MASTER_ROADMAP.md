@@ -108,6 +108,14 @@ This is a first-class product requirement, not a decorative extra. The goal is t
 - Test overlay, assistant invocation, Quick Settings tile, notification controls, battery use, reboot behaviour and gestures on the physical Galaxy A31 before calling this complete.
 
 ## Current implementation checkpoint
+
+### Companion access implementation status (0.7.0 development increment)
+- Registered a Quick Settings tile to toggle the floating companion without opening the launcher. First use still requires the user to grant Display over other apps; the tile opens that permission screen when missing.
+- Registered an Android VoiceInteractionService and session that requests the floating companion when invoked. Main screen includes a request to set Miko as the default assistant. Android may reject the role if firmware or eligibility requirements are not met; this requires physical Galaxy A31 testing.
+- Existing avatar double-tap still opens/closes chat; closing chat leaves the floating avatar running. The tile and assistant invocation control the companion service separately.
+- The system navigation gesture remains owned by Android/One UI. Miko does not intercept gestures or enable Accessibility automatically.
+
+
 The Android rebuild branch already has native chat, configurable cloud providers, encrypted on-device memory, speech recognition and TTS, a floating service, basic phone intents, opt-in screen capture flow, and the reserved model viewport. It does not yet have a local general-purpose LLM, system-wide wake word, default assistant integration, unrestricted app control, or laptop/TV clients.
 
 The first new product increment is a local task list and encrypted notes space. Tasks are stored on-device and can be added, completed, deleted and cleared. Notes are encrypted with Android Keystore and support create, edit, search and delete. This is a foundation feature, not a claim that full calendar/reminder automation is complete.
