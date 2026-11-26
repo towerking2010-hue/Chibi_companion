@@ -88,12 +88,12 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     val now=System.currentTimeMillis()
                     val held=now-downAt
                     if (dragging) {
-                        // Dock to the nearest screen edge after the spring-release animation.
+                        // Keep Miko wherever the user drops her; only clamp to visible screen bounds.
                         val metrics = resources.displayMetrics
                         val maxX = (metrics.widthPixels - lp.width).coerceAtLeast(0)
                         val maxY = (metrics.heightPixels - lp.height - CompanionUi.dp(this, 28)).coerceAtLeast(0)
-                        lp.x = if (lp.x + lp.width / 2 < metrics.widthPixels / 2) 0 else maxX
-                        lp.y = lp.y.coerceIn(CompanionUi.dp(this, 32), maxY)
+                        lp.x = lp.x.coerceIn(0, maxX)
+                        lp.y = lp.y.coerceIn(CompanionUi.dp(this, 24), maxY)
                         runCatching { wm.updateViewLayout(v, lp) }
                     } else if (held>=550L) {
                         lastTap=0L
