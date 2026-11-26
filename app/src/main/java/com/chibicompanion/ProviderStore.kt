@@ -42,10 +42,18 @@ object ProviderStore {
 
     fun add(ctx: Context, name: String, key: String, model: String, endpoint: String = "") {
         val p = ctx.getSharedPreferences(PREF, Context.MODE_PRIVATE)
-        val count = p.getInt("count", 0)
-        p.edit().putString("p${count}_name", name).putString("p${count}_key", encrypt(key))
-            .putString("p${count}_model", model).putString("p${count}_endpoint", endpoint)
-            .putInt("count", count + 1).apply()
+        val current = all(ctx).toMutableList()
+        val existing = current.indexOfFirst { it.name == name && it.endpoint == endpoint }
+        val value = Provider(name, key, model, endpoint)
+        if (existing >= 0) current[existing] = value else current.add(value)
+        val edit = p.edit().clear().putInt("count", current.size.coerceAtMost(8))
+        current.take(8).forEachIndexed { i, item ->
+            edit.putString("p${i}_name", item.name)
+                .putString("p${i}_key", encrypt(item.key))
+                .putString("p${i}_model", item.model)
+                .putString("p${i}_endpoint", item.endpoint)
+        }
+        edit.apply()
     }
     fun all(ctx: Context): List<Provider> {
         val p = ctx.getSharedPreferences(PREF, Context.MODE_PRIVATE)
