@@ -18,7 +18,6 @@ import java.util.concurrent.Executors
 class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var transcript: TextView
     private lateinit var input: EditText
-    private lateinit var avatar: MikoSpriteView
     private lateinit var tts: TextToSpeech
     private var recognizer: SpeechRecognizer? = null
     private val worker = Executors.newSingleThreadExecutor()
@@ -30,7 +29,6 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         window.navigationBarColor=CompanionUi.bg
         window.decorView.systemUiVisibility=0
         tts=TextToSpeech(this,this)
-
         val root=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
             setPadding(CompanionUi.dp(this@ChatActivity,16),CompanionUi.dp(this@ChatActivity,12),CompanionUi.dp(this@ChatActivity,16),CompanionUi.dp(this@ChatActivity,10))
@@ -38,51 +36,40 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         }
         val header=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
         val titles=CompanionUi.column(this)
-        titles.addView(CompanionUi.text(this,"MIKO • YOUR COMPANION",10f,CompanionUi.pink,true))
-        titles.addView(CompanionUi.text(this,"Let's talk ♡",22f,CompanionUi.ink,true))
+        titles.addView(CompanionUi.text(this,"MIKO • PERSONAL ASSISTANT",10f,CompanionUi.pink,true))
+        titles.addView(CompanionUi.text(this,"Ask me anything ♡",22f,CompanionUi.ink,true))
         header.addView(titles,LinearLayout.LayoutParams(0,-2,1f))
         header.addView(CompanionUi.button(this,"⚙") { startActivity(Intent(this,SettingsActivity::class.java)) })
         root.addView(header)
-
-        val character=LinearLayout(this).apply {
-            gravity=Gravity.CENTER_VERTICAL
-            background=CompanionUi.gradient(this@ChatActivity,android.graphics.Color.rgb(57,31,83),android.graphics.Color.rgb(25,49,86),22)
-            setPadding(CompanionUi.dp(this@ChatActivity,8),CompanionUi.dp(this@ChatActivity,4),CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,4))
-        }
-        avatar=MikoSpriteView(this).apply { setMood("happy"); setOnClickListener { setInteraction("tap") }; setOnLongClickListener { setInteraction("long_tap"); true } }
-        character.addView(avatar,LinearLayout.LayoutParams(CompanionUi.dp(this,112),CompanionUi.dp(this,150)))
-        val greeting=CompanionUi.column(this,4)
-        greeting.addView(CompanionUi.text(this,"Miko is here!",17f,CompanionUi.ink,true))
-        greeting.addView(CompanionUi.text(this,"Tell me what's on your mind.",12f,CompanionUi.muted))
-        character.addView(greeting)
-        val charLp=LinearLayout.LayoutParams(-1,CompanionUi.dp(this,158)); charLp.topMargin=CompanionUi.dp(this,10)
-        root.addView(character,charLp)
-
+        root.addView(ModelSlotView(this), LinearLayout.LayoutParams(-1, CompanionUi.dp(this,112)).apply {
+            topMargin=CompanionUi.dp(this@ChatActivity,8)
+        })
         val transcriptCard=CompanionUi.column(this,14).apply { background=CompanionUi.panel(this@ChatActivity,android.graphics.Color.rgb(30,36,65),22) }
-        transcript=CompanionUi.text(this,ChatHistory.read(this).ifBlank { "Miko: Ehehe! You came to see me! ✦\n\nMiko: What's on your mind?" },14f,CompanionUi.ink)
+        transcript=CompanionUi.text(this,ChatHistory.read(this).ifBlank { "Miko: Hiii! I'm here. What can I help you with? ✦" },14f,CompanionUi.ink)
         transcript.setLineSpacing(CompanionUi.dp(this,4).toFloat(),1f)
         val scroll=ScrollView(this).apply { isFillViewport=true; addView(transcript) }
         transcriptCard.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         val cardLp=LinearLayout.LayoutParams(-1,0,1f); cardLp.topMargin=CompanionUi.dp(this,12); cardLp.bottomMargin=CompanionUi.dp(this,10)
         root.addView(transcriptCard,cardLp)
-
         val composer=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; orientation=LinearLayout.HORIZONTAL }
         input=EditText(this).apply {
-            hint="Message Miko…"; textSize=14f; maxLines=3
+            hint="Message or give a command…"; textSize=14f; maxLines=3
             setTextColor(CompanionUi.ink); setHintTextColor(CompanionUi.muted)
             background=CompanionUi.panel(this@ChatActivity,android.graphics.Color.rgb(37,43,76),18)
             setPadding(CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12),CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12))
         }
         composer.addView(input,LinearLayout.LayoutParams(0,-2,1f))
-        val mic=CompanionUi.button(this,"🎙") { startVoiceInput() }
-        val micLp=LinearLayout.LayoutParams(CompanionUi.dp(this,54),CompanionUi.dp(this,52)); micLp.leftMargin=CompanionUi.dp(this,6)
-        composer.addView(mic,micLp)
-        val send=CompanionUi.button(this,"➤",true) { sendMessage() }
-        val sendLp=LinearLayout.LayoutParams(CompanionUi.dp(this,54),CompanionUi.dp(this,52)); sendLp.leftMargin=CompanionUi.dp(this,6)
-        composer.addView(send,sendLp)
+        composer.addView(CompanionUi.button(this,"🎙") { startVoiceInput() },LinearLayout.LayoutParams(CompanionUi.dp(this,54),CompanionUi.dp(this,52)).apply { leftMargin=CompanionUi.dp(this@ChatActivity,6) })
+        composer.addView(CompanionUi.button(this,"➤",true) { sendMessage() },LinearLayout.LayoutParams(CompanionUi.dp(this,54),CompanionUi.dp(this,52)).apply { leftMargin=CompanionUi.dp(this@ChatActivity,6) })
         root.addView(composer)
-        root.addView(CompanionUi.text(this,"Cloud AI uses only a provider key you add in Settings. Without one, Miko uses her basic offline fallback.",10f,CompanionUi.muted).apply { gravity=Gravity.CENTER; setPadding(0,CompanionUi.dp(this@ChatActivity,8),0,0) })
+        root.addView(CompanionUi.text(this,"Voice uses Android speech recognition and installed text-to-speech. Cloud AI requires your own provider key; offline mode is basic.",10f,CompanionUi.muted).apply {
+            gravity=Gravity.CENTER; setPadding(0,CompanionUi.dp(this@ChatActivity,8),0,0)
+        })
         setContentView(root)
+        intent.getStringExtra(EXTRA_PROMPT)?.let { prompt ->
+            input.setText(prompt); input.setSelection(input.text.length)
+            if (prompt.endsWith(" ")) input.requestFocus() else input.post { sendMessage() }
+        }
     }
 
     private fun sendMessage() {
@@ -90,32 +77,26 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         if(message.isEmpty()) return
         input.text.clear()
         ChatHistory.add(this,"You",message)
-        appendLine("\n\nYou: $message\n\nMiko: thinking…")
-        avatar.setMood("happy")
+        transcript.text=ChatHistory.read(this)+"\n\nMiko: thinking…"
         val sequence=++replySequence
         worker.execute {
             val answer=CompanionMemory.handleExplicitRequest(this,message)
                 ?: PhoneActions.tryHandle(this,message)
                 ?: runCatching { AiClient.reply(this,message) }.getOrElse { error ->
-                    val detail=error.message?.take(150)?.let { " ($it)" }.orEmpty()
-                    "I couldn't reach a configured AI provider$detail. I'm using my basic offline fallback for now.\n\n${OfflineCompanion.reply(message)}"
+                    val detail=error.message?.take(150)?.let { " ("+it+")" }.orEmpty()
+                    "I couldn't reach a configured AI provider"+detail+". I'm using my basic offline fallback for now.\n\n"+OfflineCompanion.reply(message)
                 }
             ChatHistory.add(this,"Miko",answer)
             runOnUiThread {
                 if(isFinishing || isDestroyed) return@runOnUiThread
                 transcript.text=ChatHistory.read(this)
-                avatar.setMood(MikoEmotion.fromReply(answer))
+                (transcript.parent as? ScrollView)?.post { (transcript.parent as? ScrollView)?.fullScroll(View.FOCUS_DOWN) }
                 if(::tts.isInitialized) {
                     CompanionVoice.configure(this,tts)
-                    tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"miko-$sequence")
+                    tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"miko-"+sequence)
                 }
             }
         }
-    }
-
-    private fun appendLine(value:String) {
-        transcript.append(value)
-        (transcript.parent as? ScrollView)?.post { (transcript.parent as? ScrollView)?.fullScroll(View.FOCUS_DOWN) }
     }
 
     private fun startVoiceInput() {
@@ -134,7 +115,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                 override fun onError(error:Int){toast("I couldn't hear that clearly. Try again.")}
                 override fun onResults(results:Bundle?){
                     val words=results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                    if(!words.isNullOrBlank()) input.setText(words)
+                    if(!words.isNullOrBlank()) { input.setText(words); sendMessage() }
                 }
                 override fun onPartialResults(partialResults:Bundle?){}
                 override fun onEvent(eventType:Int,params:Bundle?){}
@@ -152,16 +133,8 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         if(requestCode==VOICE_PERMISSION && grantResults.firstOrNull()==PackageManager.PERMISSION_GRANTED) startVoiceInput()
         else if(requestCode==VOICE_PERMISSION) toast("Microphone permission is needed for voice input")
     }
-
     override fun onInit(status:Int) {
-        if(status==TextToSpeech.SUCCESS) {
-            CompanionVoice.configure(this,tts)
-            tts.setOnUtteranceProgressListener(object:UtteranceProgressListener(){
-                override fun onStart(utteranceId:String?){runOnUiThread{avatar.setSpeaking(true)}}
-                override fun onDone(utteranceId:String?){runOnUiThread{avatar.setSpeaking(false)}}
-                override fun onError(utteranceId:String?){runOnUiThread{avatar.setSpeaking(false)}}
-            })
-        }
+        if(status==TextToSpeech.SUCCESS) CompanionVoice.configure(this,tts)
     }
     private fun toast(s:String)=Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
     override fun onDestroy(){
@@ -169,5 +142,8 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         if(::tts.isInitialized){tts.stop();tts.shutdown()}
         super.onDestroy()
     }
-    companion object { private const val VOICE_PERMISSION=702 }
+    companion object {
+        const val EXTRA_PROMPT="com.chibicompanion.EXTRA_PROMPT"
+        private const val VOICE_PERMISSION=702
+    }
 }
