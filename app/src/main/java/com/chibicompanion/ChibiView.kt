@@ -92,7 +92,12 @@ open class ChibiView(context: Context) : View(context) {
     }
 
     private fun drawHairBack(c: Canvas, t: Float, sway: Float) {
-        // Long twin side locks fall well below the waist.
+        // The two long back locks sway independently with a soft delayed response.
+        val leftSwing = sin(t * 1.25f - 0.45f) * 1.65f
+        val rightSwing = sin(t * 1.25f + 0.35f) * 1.9f
+
+        c.save()
+        c.rotate(leftSwing, 70f, 92f)
         path(c, hairShade) {
             moveTo(67f, 74f); cubicTo(35f, 95f, 39f, 155f, 43f, 211f)
             cubicTo(44f, 239f, 31f, 258f, 40f, 270f)
@@ -105,6 +110,16 @@ open class ChibiView(context: Context) : View(context) {
             cubicTo(59f, 264f, 67f, 240f, 68f, 210f)
             cubicTo(72f, 164f, 73f, 111f, 91f, 86f); close()
         }
+        path(c, Color.rgb(202, 215, 240), true) {
+            moveTo(65f, 112f); cubicTo(58f, 154f, 69f, 207f, 59f, 250f)
+        }
+        path(c, Color.rgb(248, 250, 255), true) {
+            moveTo(58f, 104f); cubicTo(49f, 147f, 60f, 203f, 53f, 246f)
+        }
+        c.restore()
+
+        c.save()
+        c.rotate(rightSwing, 170f, 92f)
         path(c, hairShade) {
             moveTo(166f, 74f); cubicTo(207f, 93f, 205f, 151f, 197f, 210f)
             cubicTo(192f, 240f, 209f, 258f, 197f, 270f)
@@ -117,19 +132,13 @@ open class ChibiView(context: Context) : View(context) {
             cubicTo(178f, 264f, 170f, 239f, 168f, 209f)
             cubicTo(164f, 164f, 164f, 110f, 146f, 87f); close()
         }
-        // Layered cool shadows and fine strand ribbons give the long locks depth.
-        path(c, Color.rgb(202, 215, 240), true) {
-            moveTo(65f, 112f); cubicTo(58f, 154f, 69f, 207f, 59f, 250f)
-        }
         path(c, Color.rgb(202, 215, 240), true) {
             moveTo(171f, 111f); cubicTo(181f, 153f, 168f, 207f, 180f, 250f)
         }
         path(c, Color.rgb(248, 250, 255), true) {
-            moveTo(58f, 104f); cubicTo(49f, 147f, 60f, 203f, 53f, 246f)
-        }
-        path(c, Color.rgb(248, 250, 255), true) {
             moveTo(179f, 104f); cubicTo(190f, 150f, 178f, 205f, 188f, 247f)
         }
+        c.restore()
     }
 
     private fun drawBody(c: Canvas, t: Float) {
