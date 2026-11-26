@@ -46,6 +46,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                 .setPositiveButton("Clear") { _, _ -> ChatHistory.clear(this); transcript.text = ChatHistory.read(this) }
                 .show()
         })
+        header.addView(CompanionUi.button(this,"Stop Miko") { stopService(Intent(this,FloatingCompanionService::class.java)); toast("Floating Miko stopped") })
         header.addView(CompanionUi.button(this,"⚙") { startActivity(Intent(this,SettingsActivity::class.java)) })
         root.addView(header)
         root.addView(ModelSlotView(this), LinearLayout.LayoutParams(-1, CompanionUi.dp(this,112)).apply {
@@ -91,7 +92,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                 ?: PhoneActions.tryHandle(this,message)
                 ?: runCatching { AiClient.reply(this,message) }.getOrElse { error ->
                     val detail=error.message?.take(150)?.let { " ("+it+")" }.orEmpty()
-                    "I couldn't reach a configured AI provider"+detail+". I'm using my basic offline fallback for now.\n\n"+OfflineCompanion.reply(message)
+                    OfflineCompanion.reply(message)
                 }
             ChatHistory.add(this,"Miko",answer)
             runOnUiThread {
