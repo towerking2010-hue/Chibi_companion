@@ -29,7 +29,7 @@ class MikoQuickSettingsTileService : TileService() {
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
         }
         qsTile?.state = if (running) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
-        qsTile?.label = if (running) "Miko" else "Hide Miko"
+        qsTile?.label = if (running) "Summon Miko" else "Hide Miko"
         qsTile?.updateTile()
     }
 
