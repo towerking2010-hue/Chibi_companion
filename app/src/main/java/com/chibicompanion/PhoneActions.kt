@@ -102,7 +102,9 @@ object PhoneActions {
                 val delay = runCatching { Math.multiplyExact(amount, multiplier) }.getOrNull()
                     ?: return "That reminder is too far in the future."
                 if (task.isBlank() || delay !in 1_000L..(30L * 24 * 60 * 60 * 1000)) return "Choose a reminder between 1 second and 30 days from now."
-                ReminderScheduler.schedule(ctx, task, delay)
+                if (!ReminderScheduler.schedule(ctx, task, delay)) {
+                    return "I need notification permission before I can remind you. Allow notifications for Miko in Android Settings, then try again."
+                }
                 val duration = when {
                     amount == 1L && unit.startsWith("hour") -> "1 hour"
                     unit.startsWith("hour") || unit.startsWith("hr") -> "$amount hours"
