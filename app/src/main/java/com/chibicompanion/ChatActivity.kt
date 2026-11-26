@@ -43,7 +43,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             android.app.AlertDialog.Builder(this).setTitle("Clear chat history?")
                 .setMessage("This removes the saved conversation from this phone.")
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Clear") { _, _ -> ChatHistory.clear(this); transcript.text = ChatHistory.read(this) }
+                .setPositiveButton("Clear") { _, _ -> ChatHistory.clear(this); transcript.text = "Miko: Hiii! A fresh start. What would you like to do? ✦" }
                 .show()
         })
         header.addView(CompanionUi.button(this,"×") { stopService(Intent(this,FloatingCompanionService::class.java)); toast("Floating Miko stopped") }, LinearLayout.LayoutParams(CompanionUi.dp(this,44),CompanionUi.dp(this,48)))
