@@ -205,7 +205,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                 override fun onDone(utteranceId: String?) {
                     
                 }
-                override fun onError(utteranceId: String?) { mainThread { avatar?.setSpeaking(false) } }
+                override fun onError(utteranceId: String?) { }
             })
         }
     }
