@@ -133,54 +133,107 @@ open class ChibiView(context: Context) : View(context) {
     }
 
     private fun drawBody(c: Canvas, t: Float) {
-        val bodyY = 178f + sin(t*2f)*1.4f
-        // legs and shoes
-        path(c, Color.rgb(226, 230, 244)) {
-            moveTo(99f, 224f); cubicTo(95f, 241f, 92f, 250f, 92f, 256f)
-            cubicTo(92f, 264f, 116f, 265f, 119f, 257f)
-            lineTo(117f, 225f); close()
+        val bodyY = 178f + sin(t * 2f) * 1.2f
+        // Petite legs, soft socks and rounded flower boots.
+        path(c, Color.rgb(255, 224, 211)) {
+            moveTo(101f, 218f); cubicTo(98f, 231f, 96f, 245f, 97f, 254f)
+            cubicTo(99f, 260f, 113f, 260f, 117f, 254f)
+            lineTo(116f, 219f); close()
         }
-        path(c, Color.rgb(226, 230, 244)) {
-            moveTo(128f, 225f); lineTo(126f, 257f)
-            cubicTo(129f, 265f, 153f, 264f, 153f, 256f)
-            cubicTo(152f, 246f, 148f, 236f, 145f, 224f); close()
+        path(c, Color.rgb(255, 224, 211)) {
+            moveTo(124f, 219f); lineTo(123f, 254f)
+            cubicTo(127f, 260f, 141f, 260f, 143f, 254f)
+            cubicTo(144f, 244f, 140f, 230f, 137f, 218f); close()
         }
-        oval(c, 105f, 258f, 17f, 7f, Color.rgb(75, 83, 119))
-        oval(c, 140f, 258f, 17f, 7f, Color.rgb(75, 83, 119))
-        // arms behind outfit
+        path(c, Color.rgb(242, 244, 255)) {
+            moveTo(97f, 235f); cubicTo(103f, 240f, 111f, 240f, 117f, 235f)
+            lineTo(118f, 256f); cubicTo(113f, 261f, 99f, 261f, 96f, 255f); close()
+        }
+        path(c, Color.rgb(242, 244, 255)) {
+            moveTo(123f, 235f); cubicTo(130f, 240f, 138f, 240f, 144f, 235f)
+            lineTo(145f, 255f); cubicTo(140f, 261f, 126f, 261f, 122f, 256f); close()
+        }
+        path(c, Color.rgb(191, 198, 231)) {
+            moveTo(94f, 251f); cubicTo(99f, 245f, 115f, 246f, 120f, 253f)
+            lineTo(120f, 267f); cubicTo(116f, 275f, 94f, 275f, 91f, 265f); close()
+        }
+        path(c, Color.rgb(191, 198, 231)) {
+            moveTo(120f, 253f); cubicTo(126f, 246f, 142f, 245f, 147f, 251f)
+            lineTo(150f, 265f); cubicTo(147f, 275f, 125f, 275f, 120f, 267f); close()
+        }
+        path(c, Color.rgb(249, 249, 255), true) {
+            moveTo(97f, 255f); cubicTo(103f, 251f, 111f, 251f, 116f, 256f)
+            moveTo(124f, 256f); cubicTo(130f, 251f, 138f, 251f, 144f, 255f)
+        }
+        // Tiny flower details on each boot.
+        for (cx in listOf(105f, 136f)) {
+            oval(c, cx - 4f, 261f, 3.5f, 4.5f, Color.rgb(179, 165, 220))
+            oval(c, cx + 4f, 261f, 3.5f, 4.5f, Color.rgb(179, 165, 220))
+            oval(c, cx, 256f, 3.5f, 4.5f, Color.rgb(202, 190, 237))
+            oval(c, cx, 266f, 3.5f, 4.5f, Color.rgb(202, 190, 237))
+            oval(c, cx, 261f, 2f, 2f, Color.rgb(250, 225, 173))
+        }
+        // Arms and rounded puff sleeves.
         path(c, skin) {
-            moveTo(88f, bodyY+9f); cubicTo(78f, 187f, 80f, 209f, 91f, 213f)
-            lineTo(101f, 203f); lineTo(98f, 187f); close()
+            moveTo(91f, 183f); cubicTo(79f, 191f, 79f, 207f, 88f, 215f)
+            cubicTo(94f, 219f, 101f, 211f, 99f, 204f); close()
         }
         path(c, skin) {
-            moveTo(151f, 187f); lineTo(148f, 203f); lineTo(159f, 213f)
-            cubicTo(171f, 208f, 168f, 187f, 159f, bodyY+9f); close()
+            moveTo(149f, 183f); cubicTo(161f, 191f, 161f, 207f, 152f, 215f)
+            cubicTo(146f, 219f, 139f, 211f, 141f, 204f); close()
         }
-        // soft lavender sailor-style casual top
-        path(c, Color.rgb(198, 211, 244)) {
-            moveTo(99f, bodyY); cubicTo(108f, 171f, 136f, 171f, 147f, bodyY+2f)
-            lineTo(157f, 222f); cubicTo(142f, 232f, 102f, 232f, 88f, 222f); close()
+        path(c, Color.rgb(246, 245, 255)) {
+            moveTo(91f, 174f); cubicTo(77f, 176f, 76f, 197f, 87f, 207f)
+            cubicTo(94f, 212f, 103f, 205f, 103f, 194f)
+            lineTo(101f, 181f); close()
         }
-        path(c, Color.rgb(239, 242, 255)) {
-            moveTo(104f, bodyY+1f); lineTo(120f, 191f); lineTo(139f, bodyY+1f)
-            lineTo(132f, 212f); lineTo(113f, 212f); close()
+        path(c, Color.rgb(246, 245, 255)) {
+            moveTo(149f, 174f); cubicTo(163f, 176f, 164f, 197f, 153f, 207f)
+            cubicTo(146f, 212f, 137f, 205f, 137f, 194f)
+            lineTo(139f, 181f); close()
         }
-        // Tailored details: double collar, ribbon, seams and pleated skirt.
-        path(c, Color.rgb(111, 126, 183), true) {
-            moveTo(104f, 188f); lineTo(120f, 202f); lineTo(139f, 188f)
+        // Midnight-navy pinafore and pleated skirt.
+        path(c, Color.rgb(49, 58, 101)) {
+            moveTo(99f, 178f); cubicTo(108f, 170f, 132f, 170f, 141f, 178f)
+            lineTo(154f, 225f); cubicTo(143f, 235f, 97f, 235f, 86f, 225f); close()
         }
-        path(c, Color.rgb(255, 255, 255), true) {
-            moveTo(94f, 222f); cubicTo(111f, 228f, 137f, 228f, 152f, 221f)
+        path(c, Color.rgb(238, 239, 255)) {
+            moveTo(94f, 219f); cubicTo(108f, 226f, 132f, 226f, 146f, 219f)
+            lineTo(153f, 233f); cubicTo(139f, 244f, 101f, 244f, 87f, 233f); close()
         }
-        path(c, Color.rgb(132, 105, 205)) {
-            moveTo(111f, 199f); lineTo(120f, 204f); lineTo(129f, 199f)
-            lineTo(126f, 214f); lineTo(120f, 220f); lineTo(114f, 214f); close()
+        path(c, Color.rgb(160, 169, 215), true) {
+            moveTo(94f, 222f); lineTo(89f, 233f); moveTo(106f, 226f); lineTo(104f, 241f)
+            moveTo(120f, 227f); lineTo(120f, 243f); moveTo(134f, 226f); lineTo(136f, 241f)
+            moveTo(146f, 222f); lineTo(151f, 233f)
         }
-        oval(c, 120f, 207f, 2.4f, 2.4f, Color.rgb(255, 220, 245))
-        line(c, Color.rgb(255, 255, 255), 1.4f, 101f, 231f, 98f, 245f)
-        line(c, Color.rgb(255, 255, 255), 1.4f, 140f, 231f, 143f, 245f)
-        oval(c, 121f, 205f, 3f, 3f, eyeBlue)
-        oval(c, 121f, 218f, 2.4f, 2.4f, Color.rgb(151, 171, 218))
+        // White blouse, sailor collar and lavender bow.
+        path(c, Color.rgb(249, 248, 255)) {
+            moveTo(104f, 174f); lineTo(120f, 191f); lineTo(136f, 174f)
+            lineTo(141f, 211f); lineTo(120f, 222f); lineTo(99f, 211f); close()
+        }
+        path(c, Color.rgb(202, 193, 238)) {
+            moveTo(104f, 175f); lineTo(120f, 190f); lineTo(136f, 175f)
+            lineTo(129f, 197f); lineTo(120f, 204f); lineTo(111f, 197f); close()
+        }
+        path(c, Color.rgb(171, 153, 222)) {
+            moveTo(112f, 192f); lineTo(120f, 198f); lineTo(128f, 192f)
+            lineTo(126f, 207f); lineTo(120f, 212f); lineTo(114f, 207f); close()
+        }
+        oval(c, 120f, 198f, 2.8f, 2.8f, Color.rgb(255, 229, 183))
+        // Jacket edging, buttons, cuffs and fine tailoring.
+        path(c, Color.rgb(247, 248, 255), true) {
+            moveTo(96f, 181f); cubicTo(91f, 198f, 91f, 216f, 96f, 229f)
+            moveTo(144f, 181f); cubicTo(149f, 198f, 149f, 216f, 144f, 229f)
+        }
+        line(c, Color.rgb(185, 174, 225), 1.5f, 88f, 203f, 96f, 208f)
+        line(c, Color.rgb(185, 174, 225), 1.5f, 152f, 203f, 144f, 208f)
+        oval(c, 101f, 211f, 2f, 2f, Color.rgb(226, 211, 170))
+        oval(c, 139f, 211f, 2f, 2f, Color.rgb(226, 211, 170))
+        // Delicate lace-like sleeve trim.
+        path(c, Color.rgb(205, 194, 238), true) {
+            moveTo(83f, 201f); cubicTo(88f, 206f, 94f, 207f, 99f, 202f)
+            moveTo(141f, 202f); cubicTo(146f, 207f, 152f, 206f, 157f, 201f)
+        }
     }
 
     private fun drawFace(c: Canvas, t: Float, blink: Boolean) {
