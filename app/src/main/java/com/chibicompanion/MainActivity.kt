@@ -15,6 +15,7 @@ import android.widget.Toast
 
 class MainActivity : Activity() {
     private var waitingForOverlayPermission = false
+    private var waitingForAssistantSettings = false
     private lateinit var setupButton: android.widget.TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -94,20 +95,28 @@ class MainActivity : Activity() {
     }
 
     private fun beginMikoSetup() {
-        if (Build.VERSION.SDK_INT >= 29) {
-            val roles = getSystemService(RoleManager::class.java)
-            if (!roles.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) {
-                Toast.makeText(this, "This Android version doesn't offer the assistant role.", Toast.LENGTH_LONG).show()
-                return
+        if (Build.VERSION.SDK_INT >= 29 && isMikoDefaultAssistant()) {
+            continueMikoSetup()
+            return
+        }
+
+        // Android 12/Samsung provides a dedicated system page for choosing the
+        // default voice/digital assistant. Let the user choose Miko there.
+        waitingForAssistantSettings = true
+        val settingsIntent = Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)
+        try {
+            startActivity(settingsIntent)
+        } catch (_: Exception) {
+            waitingForAssistantSettings = false
+            try {
+                startActivity(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
+            } catch (_: Exception) {
+                Toast.makeText(
+                    this,
+                    "Open Settings → Apps → Choose default apps → Digital assistant app.",
+                    Toast.LENGTH_LONG
+                ).show()
             }
-            if (roles.isRoleHeld(RoleManager.ROLE_ASSISTANT)) {
-                continueMikoSetup()
-            } else {
-                startActivityForResult(roles.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT), 904)
-            }
-        } else {
-            runCatching { startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) }
-                .onFailure { Toast.makeText(this, "Open your phone's Digital assistant app setting.", Toast.LENGTH_LONG).show() }
         }
     }
 
@@ -139,6 +148,12 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         refreshSetupButton()
+
+        if (waitingForAssistantSettings) {
+            waitingForAssistantSettings = false
+            if (isMikoDefaultAssistant()) continueMikoSetup()
+        }
+
         if (waitingForOverlayPermission) {
             waitingForOverlayPermission = false
             if (Settings.canDrawOverlays(this) && isMikoDefaultAssistant()) startMikoFloating()
