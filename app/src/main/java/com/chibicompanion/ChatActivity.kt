@@ -37,7 +37,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         val header=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
         val titles=CompanionUi.column(this)
         titles.addView(CompanionUi.text(this,"MIKO • PERSONAL ASSISTANT",10f,CompanionUi.pink,true))
-        titles.addView(CompanionUi.text(this,"Ask me anything ♡",22f,CompanionUi.ink,true))
+        titles.addView(CompanionUi.text(this,"Chat with Miko ♡",22f,CompanionUi.ink,true))
         header.addView(titles,LinearLayout.LayoutParams(0,-2,1f))
         header.addView(CompanionUi.button(this,"Clear") {
             android.app.AlertDialog.Builder(this).setTitle("Clear chat history?")
@@ -46,8 +46,8 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                 .setPositiveButton("Clear") { _, _ -> ChatHistory.clear(this); transcript.text = ChatHistory.read(this) }
                 .show()
         })
-        header.addView(CompanionUi.button(this,"Stop Miko") { stopService(Intent(this,FloatingCompanionService::class.java)); toast("Floating Miko stopped") })
-        header.addView(CompanionUi.button(this,"⚙") { startActivity(Intent(this,SettingsActivity::class.java)) })
+        header.addView(CompanionUi.button(this,"×") { stopService(Intent(this,FloatingCompanionService::class.java)); toast("Floating Miko stopped") }, LinearLayout.LayoutParams(CompanionUi.dp(this,44),CompanionUi.dp(this,48)))
+        header.addView(CompanionUi.button(this,"⚙") { startActivity(Intent(this,SettingsActivity::class.java)) }, LinearLayout.LayoutParams(CompanionUi.dp(this,48),CompanionUi.dp(this,48)))
         root.addView(header)
         root.addView(ModelSlotView(this), LinearLayout.LayoutParams(-1, CompanionUi.dp(this,112)).apply {
             topMargin=CompanionUi.dp(this@ChatActivity,8)
