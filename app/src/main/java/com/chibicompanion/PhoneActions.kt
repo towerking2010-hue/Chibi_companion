@@ -13,7 +13,11 @@ object PhoneActions {
             return "Here is your task list. Let's get things done! ♡"
         }
         if (lower.startsWith("add task ") || lower.startsWith("remember task ") || lower.startsWith("todo ")) {
-            val title = q.substringAfter(' ').trim()
+            val title = when {
+                lower.startsWith("add task ") -> q.substring("add task ".length).trim()
+                lower.startsWith("remember task ") -> q.substring("remember task ".length).trim()
+                else -> q.substring("todo ".length).trim()
+            }
             if (title.isBlank()) return "What should I add to your task list?"
             TaskStore.add(ctx, title)
             return "Added '$title' to your task list. One step at a time! ♡"
