@@ -10,6 +10,8 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Toast
+import android.app.role.RoleManager
+import android.os.Build
 
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +66,28 @@ class MainActivity : Activity() {
                 startService(Intent(this, FloatingCompanionService::class.java))
                 Toast.makeText(this, "Miko's floating panel is ready", Toast.LENGTH_SHORT).show()
             } else startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+        })
+        root.addView(CompanionUi.button(this, "☝  Set Miko as default assistant") {
+            if (Build.VERSION.SDK_INT >= 29) {
+                val roles = getSystemService(RoleManager::class.java)
+                if (roles.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) {
+                    startActivityForResult(roles.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT), 904)
+                } else {
+                    Toast.makeText(this, "This Android build does not expose the assistant role.", Toast.LENGTH_LONG).show()
+                }
+            } else {
+                runCatching { startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) }
+                    .onFailure { Toast.makeText(this, "Open Android Settings → Default apps → Digital assistant app.", Toast.LENGTH_LONG).show() }
+            }
+        })
+        root.addView(CompanionUi.button(this, "＋  Add Miko summon tile to Quick Settings") {
+            if (Build.VERSION.SDK_INT >= 24) {
+                runCatching { startActivity(Intent(Settings.ACTION_ADD_TILE).apply {
+                    putExtra(Settings.EXTRA_COMPONENT, android.content.ComponentName(this@MainActivity, MikoQuickSettingsTileService::class.java))
+                    putExtra(Settings.EXTRA_TILE_LABEL, "Miko")
+                    putExtra(Settings.EXTRA_TILE_ICON, android.graphics.drawable.Icon.createWithResource(this@MainActivity, android.R.drawable.ic_btn_speak_now))
+                }) }.onFailure { Toast.makeText(this, "Open Quick Settings → Edit and add Miko.", Toast.LENGTH_LONG).show() }
+            }
         })
         root.addView(CompanionUi.button(this, "✕  Stop floating Miko") {
             stopService(Intent(this, FloatingCompanionService::class.java).setAction("STOP_COMPANION"))
