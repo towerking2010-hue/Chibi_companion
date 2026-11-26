@@ -6,6 +6,7 @@ import android.net.Uri
 
 object PhoneActions {
     fun tryHandle(ctx:Context, raw:String):String? {
+        return try {
         val q=raw.trim()
         val lower=q.lowercase()
         if (lower in listOf("show tasks", "my tasks", "open tasks", "show my tasks", "task list")) {
@@ -46,7 +47,8 @@ object PhoneActions {
             }
         }
         if (lower.startsWith("create event ") || lower.startsWith("add calendar event ")) {
-            val title = q.substringAfter(' ').trim()
+            val title = if (lower.startsWith("create event ")) q.substring("create event ".length).trim()
+                else q.substring("add calendar event ".length).trim()
             if (title.isBlank()) return "Tell me the event title."
             val event = Intent(Intent.ACTION_INSERT, android.provider.CalendarContract.Events.CONTENT_URI)
                 .putExtra(android.provider.CalendarContract.Events.TITLE, title)
@@ -56,6 +58,7 @@ object PhoneActions {
         }
         if (lower.startsWith("email ")) {
             val recipient = q.substringAfter("email ").trim()
+            if (recipient.isBlank()) return "Who should I address the email to?"
             val mail = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + Uri.encode(recipient)))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             ctx.startActivity(mail)
@@ -165,7 +168,8 @@ object PhoneActions {
             ctx.startActivity(i); return "There! I opened a search for $term. Don't get distracted, okay?"
         }
         if (lower.startsWith("open ") || lower.startsWith("launch ")) {
-            val name=q.substringAfter(' ')
+            val name=q.substringAfter(' ').trim()
+            if (name.isBlank()) return "Which app should I open?"
             val pm=ctx.packageManager
             val launcher=Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
             val matches=pm.queryIntentActivities(launcher,0)
@@ -182,6 +186,9 @@ object PhoneActions {
             }
             return "I couldn't find an app named $name. Check its name and try again."
         }
-        return null
+        null
+        } catch (e: Exception) {
+            "I could not complete that action. Android may not have a compatible app or permission ready."
+        }
     }
 }
