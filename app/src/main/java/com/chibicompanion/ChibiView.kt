@@ -393,12 +393,20 @@ open class ChibiView(context: Context) : View(context) {
             moveTo(174f, 76f); cubicTo(190f, 102f, 185f, 128f, 175f, 150f)
             cubicTo(172f, 126f, 168f, 107f, 160f, 92f); close()
         }
-        // a small understated flower clip
-        oval(c, 160f, 58f, 6f, 6f, Color.rgb(177, 163, 222))
-        oval(c, 168f, 58f, 6f, 6f, Color.rgb(177, 163, 222))
-        oval(c, 164f, 52f, 6f, 6f, Color.rgb(195, 183, 233))
-        oval(c, 164f, 64f, 6f, 6f, Color.rgb(195, 183, 233))
-        oval(c, 164f, 58f, 3f, 3f, Color.rgb(244, 221, 160))
+        // Signature five-petal lavender flower clip, matching the approved reference.
+        oval(c, 157f, 57f, 5.2f, 7f, Color.rgb(157, 172, 224))
+        oval(c, 167f, 57f, 5.2f, 7f, Color.rgb(157, 172, 224))
+        oval(c, 162f, 49f, 5.2f, 7f, Color.rgb(177, 190, 235))
+        oval(c, 162f, 65f, 5.2f, 7f, Color.rgb(177, 190, 235))
+        oval(c, 170f, 64f, 5.2f, 6f, Color.rgb(157, 172, 224))
+        oval(c, 162f, 57f, 3.2f, 3.2f, Color.rgb(244, 183, 153))
+        // Fine flowing outer strands give the long hair a layered silhouette.
+        path(c, Color.rgb(195, 207, 234), true) {
+            moveTo(53f, 116f); cubicTo(43f, 163f, 51f, 209f, 43f, 246f)
+        }
+        path(c, Color.rgb(250, 251, 255), true) {
+            moveTo(187f, 115f); cubicTo(198f, 164f, 189f, 211f, 199f, 245f)
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
