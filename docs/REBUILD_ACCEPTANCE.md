@@ -38,7 +38,8 @@ This branch is a product rebuild, not a branding-only patch.
 - Do not call a release complete until the APK artifact is checked and the user verifies install, launch, overlay, chat, voice and touch behavior on-device.
 - Keep work on this branch; do not merge into main without user approval.
 
-## Implementation status — 2026-11-25
-- The shared renderer is procedural Canvas vector artwork with long twin locks, face states, blinking, breathing, bobbing and sway.
+## Implementation status — 2026-11-26
+- The shared renderer remains procedural Canvas vector artwork. The outfit was refined toward the approved reference (white blouse, navy pinafore, lavender bow, pleated skirt and flower boots); a five-petal lavender hair clip and additional flowing hair strands were added. The face now includes layered sapphire irises, lashes, star / heart eyes, tears, mood-specific brows and speech mouth movement.
+- These are vector refinements, not integration of the supplied flattened reference image. Hair is still animated as a combined layer rather than individually rigged locks.
 - Happy / excited faces should remain open-eyed except for brief natural blinks; sleepy is the only intentionally closed-eye resting state.
 - The app is a functional foundation, not yet the fully featured personal assistant described in the product vision.
