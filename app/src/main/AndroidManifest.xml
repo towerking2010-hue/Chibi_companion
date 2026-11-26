@@ -21,6 +21,12 @@
         <activity android:name=".NotesActivity" android:exported="false" />
         <activity android:name=".ChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
         <activity android:name=".SettingsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".MikoAssistActivity" android:exported="true" android:label="Miko" android:icon="@drawable/miko_launcher_icon">
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
