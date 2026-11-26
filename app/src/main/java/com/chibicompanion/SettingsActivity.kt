@@ -30,6 +30,12 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
         val voice = card("VOICE")
         voice.addView(CompanionUi.text(this, "Choose how Miko sounds", 14f, CompanionUi.ink, true))
         voice.addView(CompanionUi.button(this, "Choose Miko's voice ♡") { showVoicePicker() })
+        voice.addView(CompanionUi.button(this, "Test Miko's voice") {
+            if (::tts.isInitialized) {
+                CompanionVoice.configure(this, tts)
+                tts.speak("H-hello! It's me, Miko. How do I sound?", android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "miko-voice-test")
+            }
+        })
         voice.addView(CompanionUi.button(this, "Install more voice options") {
             runCatching { startActivity(android.content.Intent(android.speech.tts.TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) }
                 .onFailure { toast("Open your phone's Text-to-speech settings to install voices") }
@@ -47,6 +53,8 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
         listOf(provider,key,model,endpoint).forEach { ai.addView(it) }
         providerList = CompanionUi.text(this, "", 11f, CompanionUi.muted)
         ai.addView(providerList)
+        providerList.setOnClickListener { showProviderManager() }
+        ai.addView(CompanionUi.button(this, "Manage saved providers") { showProviderManager() })
         ai.addView(CompanionUi.button(this, "Save provider", true) {
             val p=provider.text.toString().trim().lowercase()
             val k=key.text.toString().trim()
@@ -103,6 +111,19 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
         val list=ProviderStore.all(this)
         providerList.text=if(list.isEmpty()) "No providers saved • basic offline fallback only" else
             "Fallback order:\n"+list.mapIndexed { i,v -> "${i+1}. ${v.name} — ${v.model.ifBlank { "default model" }}" }.joinToString("\n")
+    }
+    private fun showProviderManager() {
+        val providers = ProviderStore.all(this)
+        if (providers.isEmpty()) { toast("No saved providers yet"); return }
+        val labels = providers.mapIndexed { i, p -> "${i + 1}. ${p.name} • ${p.model.ifBlank { "default model" }}" }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Saved AI providers")
+            .setItems(labels) { _, index ->
+                AlertDialog.Builder(this).setTitle("Remove ${providers[index].name}?")
+                    .setMessage("This deletes its encrypted API key from this device.")
+                    .setNegativeButton("Keep", null)
+                    .setPositiveButton("Remove") { _, _ -> ProviderStore.removeAt(this, index); refreshProviders(); toast("Provider removed") }
+                    .show()
+            }.setNegativeButton("Close", null).show()
     }
     private fun showVoicePicker() {
         val voices=CompanionVoice.options(tts)
