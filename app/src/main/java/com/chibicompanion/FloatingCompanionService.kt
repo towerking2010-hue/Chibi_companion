@@ -152,7 +152,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                         ?: runCatching { AiClient.reply(this@FloatingCompanionService,msg) }
                             .getOrElse { error ->
                                 val detail = error.message?.take(180)?.let { " ($it)" }.orEmpty()
-                                "I could not reach your configured AI provider$detail. I am switching to basic offline mode; my reply may be limited.\n\n${OfflineCompanion.reply(msg)}"
+                                OfflineCompanion.reply(msg)
                             }
                     ChatHistory.add(this@FloatingCompanionService,"Miko",answer)
                     mainThread {
