@@ -28,6 +28,14 @@
             </intent-filter>
         </activity>
         <receiver android:name=".ReminderReceiver" android:exported="false" />
+        <service android:name=".MikoQuickSettingsTileService" android:label="Miko" android:icon="@android:drawable/ic_btn_speak_now" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE" android:exported="true">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name=".MikoVoiceInteractionService" android:label="Miko" android:permission="android.permission.BIND_VOICE_INTERACTION" android:exported="true">
+            <meta-data android:name="android.voice_interaction" android:resource="@xml/miko_voice_interaction" />
+            <intent-filter><action android:name="android.service.voice.VoiceInteractionService" /></intent-filter>
+        </service>
+        <service android:name=".MikoVoiceSessionService" android:permission="android.permission.BIND_VOICE_INTERACTION" android:exported="true" />
         <service
             android:name=".FloatingCompanionService"
             android:exported="false"
