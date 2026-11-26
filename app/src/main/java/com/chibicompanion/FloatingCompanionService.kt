@@ -47,6 +47,10 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "STOP_COMPANION") { stopSelf(); return START_NOT_STICKY }
+        if (intent?.action == "OPEN_CHAT") {
+            if (chatPanel == null) showChat()
+            return START_STICKY
+        }
         if (intent?.action == ScreenCaptureActivity.ACTION_SCREEN_CAPTURE_READY) {
             handleCapturedScreen()
             return START_STICKY
