@@ -12,5 +12,5 @@ object ChatHistory {
     }
     fun clear(ctx: Context) { ctx.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit().remove("lines").apply() }
     fun read(ctx:Context):String = ctx.getSharedPreferences(PREF,Context.MODE_PRIVATE).getString("lines","")
-        ?.takeIf { it.isNotBlank() } ?: "Her: Hmph! You finally came to see me?"
+        ?.takeIf { it.isNotBlank() } ?: ""
 }
