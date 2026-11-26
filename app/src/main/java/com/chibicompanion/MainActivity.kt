@@ -80,14 +80,8 @@ class MainActivity : Activity() {
                     .onFailure { Toast.makeText(this, "Open Android Settings → Default apps → Digital assistant app.", Toast.LENGTH_LONG).show() }
             }
         })
-        root.addView(CompanionUi.button(this, "＋  Add Miko summon tile to Quick Settings") {
-            if (Build.VERSION.SDK_INT >= 33) {
-                runCatching { startActivity(Intent(Settings.ACTION_ADD_TILE).apply {
-                    putExtra(Settings.EXTRA_COMPONENT, android.content.ComponentName(this@MainActivity, MikoQuickSettingsTileService::class.java))
-                    putExtra(Settings.EXTRA_TILE_LABEL, "Miko")
-                    putExtra(Settings.EXTRA_TILE_ICON, android.graphics.drawable.Icon.createWithResource(this@MainActivity, android.R.drawable.ic_btn_speak_now))
-                }) }.onFailure { Toast.makeText(this, "Open Quick Settings → Edit and add Miko.", Toast.LENGTH_LONG).show() }
-            }
+        root.addView(CompanionUi.button(this, "＋  Add Miko to Quick Settings") {
+            Toast.makeText(this, "Swipe down twice, tap Edit (pencil), then drag Miko into your Quick Settings tiles.", Toast.LENGTH_LONG).show()
         })
         root.addView(CompanionUi.button(this, "✕  Stop floating Miko") {
             stopService(Intent(this, FloatingCompanionService::class.java).setAction("STOP_COMPANION"))
