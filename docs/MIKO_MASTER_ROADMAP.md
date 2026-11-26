@@ -74,6 +74,39 @@ The product should be useful without a character model, and the model must remai
 - Local model manager, specialist agents and diagnostics.
 - Games, achievements, customization and companion activities.
 
+
+## Owner-requested core experience — Miko lives on the phone
+
+This is a first-class product requirement, not a decorative extra. The goal is to make Miko available across the phone without requiring the user to reopen the Miko app for every interaction.
+
+### Intended interaction
+1. **Summon:** The user invokes Miko from anywhere on the phone using a system-level gesture/assistant invocation where Android and the device support it. Miko's small, recognisable floating character appears above the current app.
+2. **Open chat:** Double-tapping the floating character opens Miko's compact chat panel. The user can type or speak a request. Miko routes it to the appropriate supported phone skill or configured AI provider, and reports honestly when a permission, network connection, provider key or confirmation is needed.
+3. **Keep Miko present:** Closing the chat panel closes only the conversation UI. The floating character remains visible and can be dragged/repositioned; it must not stop the companion service.
+4. **Dismiss:** A second invocation of the chosen summon gesture (or a clearly accessible dismiss control/Quick Settings tile) hides/stops the floating character. The user should not have to open the app to dismiss her.
+5. **Return:** Summoning again restores the floating character. A deliberate user setting controls whether Miko returns in the last position and whether the companion starts automatically after reboot.
+
+### Invocation strategy and Android constraints
+- Preferred path: integrate with Android's default digital-assistant role / VoiceInteractionService where the platform and Samsung firmware allow it. The user must explicitly choose Miko as the default assistant; system navigation gestures then remain controlled by Android/One UI.
+- Provide a Quick Settings tile and persistent notification actions as reliable, user-controlled summon/dismiss fallbacks. These must work while another app is in the foreground.
+- Investigate optional accessibility-based gesture support only if it is genuinely necessary, clearly disclosed, user-enabled in Android Settings, narrowly scoped, and compliant with Play/device policies. Never silently enable accessibility or intercept private input.
+- A custom arbitrary global swipe gesture is not guaranteed to be available to ordinary Android apps. Do not promise Google Assistant's exact gesture on every device. Device model, Android version, One UI settings and assistant-role support must be tested on the owner's Galaxy A31.
+- A wake word is a separate opt-in feature requiring visible microphone state, battery/privacy safeguards and background execution testing. Do not imply it is already implemented.
+
+### Floating companion behaviour
+- Double-tap avatar opens/closes chat; closing chat leaves avatar/service running.
+- Dragging repositions the avatar; long-press or an explicit control may expose dismiss/settings actions.
+- Avatar and chat overlays must respect system bars, keyboard, screen rotation and safe screen bounds.
+- Companion service must have clear notification controls, permission onboarding, crash recovery and battery-conscious behaviour. Do not start a foreground service invisibly or bypass Android background-start restrictions.
+- Summon/dismiss and chat state should be separate states: hidden, floating-idle, chat-open, listening, thinking, speaking and error/permission-needed.
+
+### Acceptance criteria
+- After one-time setup and permissions, user can summon Miko while using another app without opening Miko's launcher activity.
+- Double-tap opens chat; chat close leaves avatar visible; invoking dismiss hides avatar; summon restores it.
+- Supported phone actions work from this floating chat with the same confirmation and permission safeguards as in-app chat.
+- No paid AI calls occur unless explicitly configured/approved; offline limitations remain clearly communicated.
+- Test overlay, assistant invocation, Quick Settings tile, notification controls, battery use, reboot behaviour and gestures on the physical Galaxy A31 before calling this complete.
+
 ## Current implementation checkpoint
 The Android rebuild branch already has native chat, configurable cloud providers, encrypted on-device memory, speech recognition and TTS, a floating service, basic phone intents, opt-in screen capture flow, and the reserved model viewport. It does not yet have a local general-purpose LLM, system-wide wake word, default assistant integration, unrestricted app control, or laptop/TV clients.
 
