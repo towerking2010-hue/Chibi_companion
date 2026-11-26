@@ -17,6 +17,9 @@ object ReminderScheduler {
 
     fun schedule(context: Context, text: String, delayMillis: Long): Boolean {
         if (delayMillis <= 0L) return false
+        if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return false
+        val notifications = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (!notifications.areNotificationsEnabled()) return false
         val id = (System.currentTimeMillis() and 0x7fffffff).toInt()
         val intent = Intent(context, ReminderReceiver::class.java)
             .setAction(ACTION)
