@@ -41,7 +41,9 @@
             <meta-data android:name="android.voice_interaction" android:resource="@xml/miko_voice_interaction" />
             <intent-filter><action android:name="android.service.voice.VoiceInteractionService" /></intent-filter>
         </service>
-        <service android:name=".MikoVoiceSessionService" android:permission="android.permission.BIND_VOICE_INTERACTION" android:exported="true" />
+        <service android:name=".MikoVoiceSessionService" android:permission="android.permission.BIND_VOICE_INTERACTION" android:exported="true">
+            <intent-filter><action android:name="android.service.voice.VoiceInteractionSessionService" /></intent-filter>
+        </service>
         <service
             android:name=".FloatingCompanionService"
             android:exported="false"
