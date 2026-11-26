@@ -17,6 +17,7 @@ class MainActivity : Activity() {
     private var waitingForOverlayPermission = false
     private var waitingForAssistantSettings = false
     private lateinit var setupButton: android.widget.TextView
+    private lateinit var floatingButton: android.widget.TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +60,10 @@ class MainActivity : Activity() {
         root.addView(setupButton)
         root.addView(CompanionUi.text(this, "Set Miko as your phone assistant to summon her with Android's assistant shortcut.", 12f, CompanionUi.muted))
 
+        floatingButton = CompanionUi.button(this, "Show floating Miko", false) { toggleFloatingCompanion() }
+        root.addView(floatingButton)
+        root.addView(CompanionUi.button(this, "Open floating chat", false) { openFloatingChat() })
+
         root.addView(CompanionUi.button(this, "Talk to Miko", true) {
             startActivity(Intent(this, ChatActivity::class.java))
         })
@@ -91,6 +96,10 @@ class MainActivity : Activity() {
     private fun refreshSetupButton() {
         if (::setupButton.isInitialized) {
             setupButton.text = if (isMikoDefaultAssistant()) "✓  Miko is your assistant" else "✦  Enable Miko"
+        }
+        if (::floatingButton.isInitialized) {
+            val active = getSharedPreferences("miko_companion_state", MODE_PRIVATE).getBoolean("floating", false)
+            floatingButton.text = if (active) "Hide floating Miko" else "Show floating Miko"
         }
     }
 
@@ -130,10 +139,39 @@ class MainActivity : Activity() {
         startMikoFloating()
     }
 
+    private fun toggleFloatingCompanion() {
+        val prefs = getSharedPreferences("miko_companion_state", MODE_PRIVATE)
+        val active = prefs.getBoolean("floating", false)
+        if (active) {
+            stopService(Intent(this, FloatingCompanionService::class.java))
+            prefs.edit().putBoolean("floating", false).apply()
+        } else {
+            if (!Settings.canDrawOverlays(this)) {
+                waitingForOverlayPermission = true
+                startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+                return
+            }
+            startMikoFloating()
+        }
+        refreshSetupButton()
+    }
+
+    private fun openFloatingChat() {
+        if (!Settings.canDrawOverlays(this)) {
+            waitingForOverlayPermission = true
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+            return
+        }
+        val intent = Intent(this, FloatingCompanionService::class.java).setAction("OPEN_CHAT")
+        if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
+    }
+
     private fun startMikoFloating() {
         val intent = Intent(this, FloatingCompanionService::class.java)
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
+        getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", true).apply()
         Toast.makeText(this, "Miko is ready ♡", Toast.LENGTH_SHORT).show()
+        refreshSetupButton()
     }
 
     @Deprecated("Deprecated by Android; retained for compatibility with the assistant role prompt")
