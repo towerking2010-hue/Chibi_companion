@@ -8,6 +8,45 @@ object PhoneActions {
     fun tryHandle(ctx:Context, raw:String):String? {
         val q=raw.trim()
         val lower=q.lowercase()
+        if (lower == "what time is it" || lower == "current time" || lower == "tell me the time") {
+            val now = java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault()).format(java.util.Date())
+            return "It's $now."
+        }
+        if (lower == "what's the date" || lower == "what is the date" || lower == "today's date") {
+            val today = java.text.SimpleDateFormat("EEEE, d MMMM yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+            return "Today is $today."
+        }
+        if (lower.startsWith("directions to ") || lower.startsWith("navigate to ") || lower.startsWith("take me to ")) {
+            val destination = q.substringAfter(" to ", "").trim()
+            if (destination.isBlank()) return "Where would you like to go?"
+            val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=" + Uri.encode(destination)))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            return try {
+                ctx.startActivity(mapIntent)
+                "I opened navigation for $destination. Check the route before you start."
+            } catch (_: Exception) {
+                val web = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=" + Uri.encode(destination)))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                ctx.startActivity(web)
+                "I opened Maps search for $destination."
+            }
+        }
+        if (lower.startsWith("create event ") || lower.startsWith("add calendar event ")) {
+            val title = q.substringAfter(' ').trim()
+            if (title.isBlank()) return "Tell me the event title."
+            val event = Intent(Intent.ACTION_INSERT, android.provider.CalendarContract.Events.CONTENT_URI)
+                .putExtra(android.provider.CalendarContract.Events.TITLE, title)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            ctx.startActivity(event)
+            return "I opened a new calendar event titled '$title'. Add the date and time, then save it."
+        }
+        if (lower.startsWith("email ")) {
+            val recipient = q.substringAfter("email ").trim()
+            val mail = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + Uri.encode(recipient)))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            ctx.startActivity(mail)
+            return "I opened an email draft. Review the recipient and message before sending."
+        }
         val navigation = when {
             lower in listOf("go back", "press back", "back") -> "back"
             lower in listOf("go home", "home screen", "press home") -> "home"
