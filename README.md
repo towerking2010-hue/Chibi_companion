@@ -40,3 +40,6 @@ Android may stop background services under battery restrictions. The foreground 
 
 ### Notes
 Miko includes a local notes space. Notes are stored on-device and can be created, edited, searched and deleted. Use the Notes button on the home screen or say “open notes”.
+
+### Local timed reminders
+Miko can schedule a one-off local notification with commands such as “remind me to stretch in 20 minutes”. Android may delay inexact alarms under battery-saving conditions. Notifications must be allowed for the reminder to appear. These reminders are not cloud-synced and are not guaranteed to survive a force-stop or device reboot.
