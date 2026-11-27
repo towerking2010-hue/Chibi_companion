@@ -25,19 +25,17 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor=CompanionUi.bg
-        window.navigationBarColor=CompanionUi.bg
-        window.decorView.systemUiVisibility=0
+        CompanionUi.applySystemBars(this)
         tts=TextToSpeech(this,this)
         val root=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
-            setPadding(CompanionUi.dp(this@ChatActivity,16),CompanionUi.dp(this@ChatActivity,12),CompanionUi.dp(this@ChatActivity,16),CompanionUi.dp(this@ChatActivity,10))
+            setPadding(CompanionUi.dp(this@ChatActivity,18),CompanionUi.dp(this@ChatActivity,16),CompanionUi.dp(this@ChatActivity,18),CompanionUi.dp(this@ChatActivity,14))
             setBackgroundColor(CompanionUi.bg)
         }
         val header=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
         val titles=CompanionUi.column(this)
-        titles.addView(CompanionUi.text(this,"MIKO • PERSONAL ASSISTANT",10f,CompanionUi.pink,true))
-        titles.addView(CompanionUi.text(this,"Chat with Miko ♡",22f,CompanionUi.ink,true))
+        titles.addView(CompanionUi.eyebrow(this,"Your companion"))
+        titles.addView(CompanionUi.heading(this,"Chat with Miko ♡",22f))
         header.addView(titles,LinearLayout.LayoutParams(0,-2,1f))
         header.addView(CompanionUi.button(this,"Clear") {
             android.app.AlertDialog.Builder(this).setTitle("Clear chat history?")
@@ -46,13 +44,13 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                 .setPositiveButton("Clear") { _, _ -> ChatHistory.clear(this); transcript.text = "Miko: Hiii! A fresh start. What would you like to do? ✦" }
                 .show()
         })
-        header.addView(CompanionUi.button(this,"×") { stopService(Intent(this,FloatingCompanionService::class.java)); toast("Floating Miko stopped") }, LinearLayout.LayoutParams(CompanionUi.dp(this,44),CompanionUi.dp(this,48)))
+        header.addView(CompanionUi.button(this,"Done") { finish() })
         header.addView(CompanionUi.button(this,"⚙") { startActivity(Intent(this,SettingsActivity::class.java)) }, LinearLayout.LayoutParams(CompanionUi.dp(this,48),CompanionUi.dp(this,48)))
         root.addView(header)
         root.addView(ModelSlotView(this), LinearLayout.LayoutParams(-1, CompanionUi.dp(this,112)).apply {
             topMargin=CompanionUi.dp(this@ChatActivity,8)
         })
-        val transcriptCard=CompanionUi.column(this,14).apply { background=CompanionUi.panel(this@ChatActivity,android.graphics.Color.rgb(30,36,65),22) }
+        val transcriptCard=CompanionUi.column(this,16).apply { background=CompanionUi.panel(this@ChatActivity,CompanionUi.surface,22) }
         transcript=CompanionUi.text(this,ChatHistory.read(this).ifBlank { "Miko: Hiii! I'm here. What can I help you with? ✦" },14f,CompanionUi.ink)
         transcript.setLineSpacing(CompanionUi.dp(this,4).toFloat(),1f)
         val scroll=ScrollView(this).apply { isFillViewport=true; addView(transcript) }
@@ -63,14 +61,14 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         input=EditText(this).apply {
             hint="Message or give a command…"; textSize=14f; maxLines=3
             setTextColor(CompanionUi.ink); setHintTextColor(CompanionUi.muted)
-            background=CompanionUi.panel(this@ChatActivity,android.graphics.Color.rgb(37,43,76),18)
+            background=CompanionUi.panel(this@ChatActivity,CompanionUi.surfaceRaised,18)
             setPadding(CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12),CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12))
         }
         composer.addView(input,LinearLayout.LayoutParams(0,-2,1f))
         composer.addView(CompanionUi.button(this,"🎙") { startVoiceInput() },LinearLayout.LayoutParams(CompanionUi.dp(this,54),CompanionUi.dp(this,52)).apply { leftMargin=CompanionUi.dp(this@ChatActivity,6) })
         composer.addView(CompanionUi.button(this,"➤",true) { sendMessage() },LinearLayout.LayoutParams(CompanionUi.dp(this,54),CompanionUi.dp(this,52)).apply { leftMargin=CompanionUi.dp(this@ChatActivity,6) })
         root.addView(composer)
-        root.addView(CompanionUi.text(this,"Voice uses Android speech recognition and installed text-to-speech. Cloud AI requires your own provider key; offline mode is basic.",10f,CompanionUi.muted).apply {
+        root.addView(CompanionUi.text(this,"Voice uses your phone's speech services. Cloud AI is optional; offline replies are basic.",10f,CompanionUi.muted).apply {
             gravity=Gravity.CENTER; setPadding(0,CompanionUi.dp(this@ChatActivity,8),0,0)
         })
         setContentView(root)
