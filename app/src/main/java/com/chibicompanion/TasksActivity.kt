@@ -16,20 +16,28 @@ class TasksActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = CompanionUi.bg
-        window.navigationBarColor = CompanionUi.bg
-        window.decorView.systemUiVisibility = 0
+        CompanionUi.applySystemBars(this)
 
-        val root = CompanionUi.column(this, 14).apply { setBackgroundColor(CompanionUi.bg) }
-        val header = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-        val title = CompanionUi.column(this, 2)
-        title.addView(CompanionUi.text(this, "MIKO • YOUR DAY", 10f, CompanionUi.pink, true))
-        title.addView(CompanionUi.text(this, "Tasks & plans", 25f, CompanionUi.ink, true))
+        val root = CompanionUi.column(this, 18).apply {
+            setBackgroundColor(CompanionUi.bg)
+            setPadding(CompanionUi.dp(this@TasksActivity, 20), CompanionUi.dp(this@TasksActivity, 18),
+                CompanionUi.dp(this@TasksActivity, 20), CompanionUi.dp(this@TasksActivity, 24))
+        }
+        val header = CompanionUi.row(this)
+        val title = CompanionUi.column(this, 0)
+        title.addView(CompanionUi.eyebrow(this, "Your day"))
+        title.addView(CompanionUi.heading(this, "Tasks & plans", 25f))
         header.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
-        header.addView(CompanionUi.button(this, "＋ Add", true) { addTask() })
+        header.addView(CompanionUi.button(this, "+ Add", true) { addTask() })
         root.addView(header)
-        root.addView(CompanionUi.text(this, "A simple private task list stored on this phone.", 12f, CompanionUi.muted))
-        root.addView(CompanionUi.button(this, "Clear completed tasks") {
+
+        val summary = CompanionUi.card(this, 16)
+        summary.addView(CompanionUi.text(this, "A little progress adds up.", 15f, CompanionUi.ink, true))
+        summary.addView(CompanionUi.text(this, "Your tasks are saved privately on this phone.", 12f, CompanionUi.muted))
+        root.addView(summary)
+
+        val tools = CompanionUi.row(this)
+        tools.addView(CompanionUi.button(this, "Clear completed") {
             val completed = TaskStore.all(this).count { it.done }
             if (completed == 0) toast("Nothing completed yet")
             else AlertDialog.Builder(this).setTitle("Clear completed tasks?")
@@ -38,11 +46,13 @@ class TasksActivity : Activity() {
                 .setPositiveButton("Clear") { _, _ -> TaskStore.clearCompleted(this); render() }
                 .show()
         })
-        val scroll = ScrollView(this).apply { isFillViewport = true }
-        list = CompanionUi.column(this, 10)
+        root.addView(tools)
+
+        val scroll = ScrollView(this).apply { isFillViewport = true; clipToPadding = false }
+        list = CompanionUi.column(this, 2)
         scroll.addView(list)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        root.addView(CompanionUi.button(this, "← Back to Miko") { finish() })
+        root.addView(CompanionUi.button(this, "←  Back to Miko") { finish() })
         setContentView(root)
         render()
     }
@@ -52,6 +62,7 @@ class TasksActivity : Activity() {
             hint = "What do you need to do?"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             setTextColor(CompanionUi.ink)
+            setHintTextColor(CompanionUi.muted)
         }
         AlertDialog.Builder(this).setTitle("Add a task").setView(field)
             .setNegativeButton("Cancel", null)
@@ -65,31 +76,39 @@ class TasksActivity : Activity() {
         list.removeAllViews()
         val tasks = TaskStore.all(this)
         val remaining = tasks.count { !it.done }
-        list.addView(CompanionUi.text(this, "$remaining remaining • ${tasks.count { it.done }} completed", 12f, CompanionUi.pink, true))
+        val completed = tasks.count { it.done }
+        list.addView(CompanionUi.eyebrow(this, "Your list  •  $remaining remaining  •  $completed done"))
+        CompanionUi.spacer(this, 8).also { list.addView(it) }
         if (tasks.isEmpty()) {
-            val empty = CompanionUi.column(this, 8)
-            empty.addView(CompanionUi.text(this, "Nothing on your list yet. ♡", 17f, CompanionUi.ink, true))
-            empty.addView(CompanionUi.text(this, "Tap Add and Miko will keep your tasks here.", 12f, CompanionUi.muted))
+            val empty = CompanionUi.card(this, 18)
+            empty.addView(CompanionUi.text(this, "A fresh start ✦", 18f, CompanionUi.ink, true))
+            empty.addView(CompanionUi.text(this, "Add your first task and we'll keep it here for you.", 13f, CompanionUi.muted))
             list.addView(empty)
         }
         tasks.forEach { task ->
-            val row = LinearLayout(this).apply {
-                gravity = Gravity.CENTER_VERTICAL
-                background = CompanionUi.panel(this@TasksActivity, android.graphics.Color.rgb(30,36,65), 16)
-                setPadding(CompanionUi.dp(this@TasksActivity, 10), CompanionUi.dp(this@TasksActivity, 6),
-                    CompanionUi.dp(this@TasksActivity, 6), CompanionUi.dp(this@TasksActivity, 6))
+            val row = CompanionUi.row(this).apply {
+                background = CompanionUi.panel(this@TasksActivity, CompanionUi.surface, 17)
+                setPadding(CompanionUi.dp(this@TasksActivity, 10), CompanionUi.dp(this@TasksActivity, 7),
+                    CompanionUi.dp(this@TasksActivity, 7), CompanionUi.dp(this@TasksActivity, 7))
             }
             val check = CheckBox(this).apply {
                 text = task.title
                 isChecked = task.done
                 textSize = 14f
                 setTextColor(if (task.done) CompanionUi.muted else CompanionUi.ink)
-                setOnCheckedChangeListener { _, checked -> TaskStore.setDone(this@TasksActivity, task.id, checked); render() }
+                buttonTintList = android.content.res.ColorStateList.valueOf(CompanionUi.lavender)
+                setOnCheckedChangeListener { _, checked ->
+                    TaskStore.setDone(this@TasksActivity, task.id, checked)
+                    render()
+                }
             }
             row.addView(check, LinearLayout.LayoutParams(0, -2, 1f))
-            row.addView(CompanionUi.button(this, "×") { TaskStore.delete(this, task.id); render() },
-                LinearLayout.LayoutParams(CompanionUi.dp(this, 42), CompanionUi.dp(this, 44)))
-            list.addView(row)
+            row.addView(CompanionUi.button(this, "×") {
+                TaskStore.delete(this, task.id)
+                render()
+            }, LinearLayout.LayoutParams(CompanionUi.dp(this, 42), CompanionUi.dp(this, 44)))
+            val lp = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = CompanionUi.dp(this@TasksActivity, 8) }
+            list.addView(row, lp)
         }
     }
 
