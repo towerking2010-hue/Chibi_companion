@@ -16,7 +16,7 @@
         android:allowBackup="false"
         android:label="Miko"
         android:icon="@drawable/miko_launcher_icon"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        android:theme="@style/MikoTheme">
         <activity android:name=".ScreenCaptureActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".TasksActivity" android:exported="false" />
         <activity android:name=".NotesActivity" android:exported="false" />
