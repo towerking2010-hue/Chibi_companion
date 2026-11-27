@@ -141,22 +141,39 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
     }
     private fun showMemoryManager() {
         val items=CompanionMemory.all(this)
+        val builder=AlertDialog.Builder(this).setTitle("Her memories — stored on this phone")
+        if (items.isEmpty()) {
+            builder.setMessage("Miko hasn't saved any memories yet. Add something important and she'll keep it encrypted on this phone. You can review or delete it here anytime.")
+                .setPositiveButton("＋  Add a memory") { _,_ -> showAddMemoryDialog() }
+                .setNegativeButton("Close",null)
+                .show()
+            return
+        }
         val labels=(items.map { "✦  $it" }+"＋  Add a memory").toTypedArray()
-        AlertDialog.Builder(this).setTitle("Her memories — stored on this phone")
-            .setItems(labels) { _,which ->
-                if(which==items.size) {
-                    val input=EditText(this).apply { hint="Something you want her to remember"; inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES }
-                    AlertDialog.Builder(this).setTitle("Add a memory").setView(input)
-                        .setPositiveButton("Save") { _,_ -> if(CompanionMemory.add(this,input.text.toString())) toast("Memory saved securely ♡") else toast("Please enter more detail") }
-                        .setNegativeButton("Cancel",null).show()
-                } else AlertDialog.Builder(this).setTitle("Delete this memory?")
-                    .setMessage(items[which]).setPositiveButton("Delete") { _,_ -> CompanionMemory.remove(this,which); toast("Memory deleted") }
-                    .setNegativeButton("Keep",null).show()
-            }.setNeutralButton("Clear all") { _,_ ->
-                AlertDialog.Builder(this).setTitle("Clear all memories?").setMessage("This cannot be undone.")
-                    .setPositiveButton("Clear") { _,_ -> CompanionMemory.clear(this); toast("All memories cleared") }
-                    .setNegativeButton("Cancel",null).show()
-            }.setNegativeButton("Close",null).show()
+        builder.setItems(labels) { _,which ->
+            if(which==items.size) showAddMemoryDialog()
+            else AlertDialog.Builder(this).setTitle("Delete this memory?")
+                .setMessage(items[which]).setPositiveButton("Delete") { _,_ -> CompanionMemory.remove(this,which); toast("Memory deleted") }
+                .setNegativeButton("Keep",null).show()
+        }.setNeutralButton("Clear all") { _,_ ->
+            AlertDialog.Builder(this).setTitle("Clear all memories?").setMessage("This cannot be undone.")
+                .setPositiveButton("Clear") { _,_ -> CompanionMemory.clear(this); toast("All memories cleared") }
+                .setNegativeButton("Cancel",null).show()
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun showAddMemoryDialog() {
+        val input=EditText(this).apply {
+            hint="Something you want her to remember"
+            setTextColor(CompanionUi.ink)
+            setHintTextColor(CompanionUi.muted)
+            inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        }
+        AlertDialog.Builder(this).setTitle("Add a memory").setView(input)
+            .setPositiveButton("Save") { _,_ ->
+                if(CompanionMemory.add(this,input.text.toString())) toast("Memory saved securely ♡")
+                else toast("Please enter more detail")
+            }.setNegativeButton("Cancel",null).show()
     }
     override fun onInit(status: Int) { if(status==android.speech.tts.TextToSpeech.SUCCESS) CompanionVoice.configure(this,tts) }
     private fun toast(s:String)=Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
