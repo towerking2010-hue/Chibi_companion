@@ -10,9 +10,9 @@ android {
     defaultConfig {
         applicationId = "com.chibicompanion"
         minSdk = 26
-        targetSdk = 32
-        versionCode = 2
-        versionName = "0.2.0"
+        targetSdk = 35
+        versionCode = 10
+        versionName = "0.7.1"
     }
 
     signingConfigs {

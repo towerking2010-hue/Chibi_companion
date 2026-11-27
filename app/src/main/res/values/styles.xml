@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Material base keeps native AlertDialogs consistent with Miko's custom UI. -->
+    <style name="MikoTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:colorAccent">#AD97FF</item>
+        <item name="android:colorControlActivated">#AD97FF</item>
+        <item name="android:colorControlHighlight">#33AD97FF</item>
+        <item name="android:colorBackground">#171B2D</item>
+        <item name="android:windowBackground">#0C0F1D</item>
+        <item name="android:textColorPrimary">#F6F5FF</item>
+        <item name="android:textColorSecondary">#A4AAC4</item>
+        <item name="android:textColorHint">#A4AAC4</item>
+        <item name="android:editTextColor">#F6F5FF</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:alertDialogTheme">@style/MikoAlertDialogTheme</item>
+    </style>
+
+    <style name="MikoAlertDialogTheme" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">#AD97FF</item>
+        <item name="android:colorControlActivated">#AD97FF</item>
+        <item name="android:colorBackground">#171B2D</item>
+        <item name="android:windowBackground">#171B2D</item>
+        <item name="android:textColorPrimary">#F6F5FF</item>
+        <item name="android:textColorSecondary">#A4AAC4</item>
+        <item name="android:textColorHint">#A4AAC4</item>
+        <item name="android:editTextColor">#F6F5FF</item>
+    </style>
+</resources>

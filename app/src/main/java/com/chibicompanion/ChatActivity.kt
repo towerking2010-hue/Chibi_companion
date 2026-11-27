@@ -1,267 +1,155 @@
 package com.chibicompanion
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.RecognitionListener
-import android.content.Intent
-import android.provider.Settings
-import android.text.InputType
-import android.os.Bundle
 import android.speech.tts.TextToSpeech
-import android.graphics.Color
+import android.speech.tts.UtteranceProgressListener
 import android.view.Gravity
 import android.view.View
 import android.widget.*
-import java.util.Locale
 import java.util.concurrent.Executors
 
 class ChatActivity : Activity(), TextToSpeech.OnInitListener {
-    private lateinit var log: TextView
-    private lateinit var entry: EditText
-    private var speechRecognizer: SpeechRecognizer? = null
+    private lateinit var transcript: TextView
+    private lateinit var input: EditText
     private lateinit var tts: TextToSpeech
+    private var recognizer: SpeechRecognizer? = null
     private val worker = Executors.newSingleThreadExecutor()
+    private var replySequence = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = CompanionUi.bg
-        window.navigationBarColor = CompanionUi.bg
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-        tts = TextToSpeech(this, this)
-
-        val root = CompanionUi.column(this, 18).apply { setBackgroundColor(CompanionUi.bg) }
-        val heading = CompanionUi.column(this)
-        heading.addView(CompanionUi.text(this, "YOUR LITTLE CHAT SPACE", 10f, CompanionUi.pink, true))
-        heading.addView(CompanionUi.text(this, "Let's talk ♡", 26f, CompanionUi.ink, true))
-        heading.addView(CompanionUi.text(this, "She may act tough, but she's happy you're here.", 12f, CompanionUi.muted))
-        root.addView(heading)
-        root.addView(CompanionUi.spacer(this, 14))
-
-        val chatCard = CompanionUi.column(this, 15).apply { background = CompanionUi.panel(this@ChatActivity, Color.WHITE, 24) }
-        log = CompanionUi.text(this, "Ayaya… you finally came to see me? ♡\n\nAdd an AI provider below when you're ready for cloud conversations.", 15f)
-        log.setLineSpacing(CompanionUi.dp(this,3).toFloat(), 1f)
-        chatCard.addView(ScrollView(this).apply { isFillViewport = true; addView(log) }, LinearLayout.LayoutParams(-1,0,1f))
-        root.addView(chatCard, LinearLayout.LayoutParams(-1,0,1f))
-        root.addView(CompanionUi.spacer(this, 12))
-
-        entry = EditText(this).apply {
-            hint = "Say something to her…"
-            textSize = 15f
-            setTextColor(CompanionUi.ink)
-            setHintTextColor(CompanionUi.muted)
-            background = CompanionUi.panel(this@ChatActivity, Color.WHITE, 18)
-            setPadding(CompanionUi.dp(this@ChatActivity,16), CompanionUi.dp(this@ChatActivity,13), CompanionUi.dp(this@ChatActivity,16), CompanionUi.dp(this@ChatActivity,13))
+        CompanionUi.applySystemBars(this)
+        tts=TextToSpeech(this,this)
+        val root=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            setPadding(CompanionUi.dp(this@ChatActivity,18),CompanionUi.dp(this@ChatActivity,16),CompanionUi.dp(this@ChatActivity,18),CompanionUi.dp(this@ChatActivity,14))
+            setBackgroundColor(CompanionUi.bg)
         }
-        root.addView(entry)
-        root.addView(CompanionUi.spacer(this, 6))
-        root.addView(CompanionUi.button(this, "🎙  Tap to talk") { startVoiceInput() })
-        root.addView(CompanionUi.spacer(this, 8))
-        root.addView(CompanionUi.button(this, "Send message  ➜", true) {
-            val message = entry.text.toString().trim()
-            if (message.isNotEmpty()) {
-                log.append("\n\nYou: $message\n\nHer: thinking…")
-                ChatHistory.add(this@ChatActivity, "You", message)
-                entry.text.clear()
-                worker.execute {
-                    val explicitMemory = CompanionMemory.handleExplicitRequest(this@ChatActivity, message)
-                    val asksAboutScreen = message.contains("screen", true) || message.contains("what am I looking at", true) || message.contains("what is on", true)
-                    val prompt = if (asksAboutScreen) message + "\n\nSCREEN CONTEXT (user requested this):\n" + ScreenContext.describe() else message
-                    val answer = explicitMemory ?: PhoneActions.tryHandle(this@ChatActivity, message) ?: runCatching { AiClient.reply(this@ChatActivity, prompt) }
-                        .getOrElse { OfflineCompanion.reply(message) }
-                    ChatHistory.add(this@ChatActivity, "Her", answer)
-                    runOnUiThread {
-                        log.text = log.text.toString().replace("Her: thinking…", "Her: $answer")
-                        tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "reply")
-                    }
-                }
-            }
+        val header=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
+        val titles=CompanionUi.column(this)
+        titles.addView(CompanionUi.eyebrow(this,"Your companion"))
+        titles.addView(CompanionUi.heading(this,"Chat with Miko ♡",22f))
+        header.addView(titles,LinearLayout.LayoutParams(0,-2,1f))
+        header.addView(CompanionUi.button(this,"Clear") {
+            android.app.AlertDialog.Builder(this).setTitle("Clear chat history?")
+                .setMessage("This removes the saved conversation from this phone.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Clear") { _, _ -> ChatHistory.clear(this); transcript.text = "Miko: Hiii! A fresh start. What would you like to do? ✦" }
+                .show()
         })
-        root.addView(CompanionUi.spacer(this, 12))
-
-        val settingsCard = CompanionUi.column(this, 14).apply { background = CompanionUi.panel(this@ChatActivity, Color.rgb(245,242,250), 22) }
-        settingsCard.addView(CompanionUi.text(this, "VOICE & AI CONNECTIONS  ✦", 12f, CompanionUi.ink, true))
-        settingsCard.addView(CompanionUi.spacer(this, 6))
-        settingsCard.addView(CompanionUi.button(this, "Choose companion voice ♡") { showVoicePicker() })
-        settingsCard.addView(CompanionUi.spacer(this, 6))
-        settingsCard.addView(CompanionUi.button(this, "Install more voice options") {
-            runCatching { startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) }
-                .onFailure { toast("Open your phone's Text-to-speech settings to install voices") }
+        header.addView(CompanionUi.button(this,"Done") { finish() })
+        header.addView(CompanionUi.button(this,"⚙") { startActivity(Intent(this,SettingsActivity::class.java)) }, LinearLayout.LayoutParams(CompanionUi.dp(this,48),CompanionUi.dp(this,48)))
+        root.addView(header)
+        root.addView(ModelSlotView(this), LinearLayout.LayoutParams(-1, CompanionUi.dp(this,112)).apply {
+            topMargin=CompanionUi.dp(this@ChatActivity,8)
         })
-        val provider = EditText(this).apply { hint = "Provider: gemini, groq, openrouter, or custom"; setSingleLine(); textSize=13f }
-        val key = EditText(this).apply {
-            hint = "API key (encrypted on this device)"
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-            setSingleLine(); textSize=13f
+        val transcriptCard=CompanionUi.column(this,16).apply { background=CompanionUi.panel(this@ChatActivity,CompanionUi.surface,22) }
+        transcript=CompanionUi.text(this,ChatHistory.read(this).ifBlank { "Miko: Hiii! I'm here. What can I help you with? ✦" },14f,CompanionUi.ink)
+        transcript.setLineSpacing(CompanionUi.dp(this,4).toFloat(),1f)
+        val scroll=ScrollView(this).apply { isFillViewport=true; addView(transcript) }
+        transcriptCard.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
+        val cardLp=LinearLayout.LayoutParams(-1,0,1f); cardLp.topMargin=CompanionUi.dp(this,12); cardLp.bottomMargin=CompanionUi.dp(this,10)
+        root.addView(transcriptCard,cardLp)
+        val composer=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; orientation=LinearLayout.HORIZONTAL }
+        input=EditText(this).apply {
+            hint="Message or give a command…"; textSize=14f; maxLines=3
+            setTextColor(CompanionUi.ink); setHintTextColor(CompanionUi.muted)
+            background=CompanionUi.panel(this@ChatActivity,CompanionUi.surfaceRaised,18)
+            setPadding(CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12),CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12))
         }
-        val model = EditText(this).apply { hint = "Model (optional)"; setSingleLine(); textSize=13f }
-        val endpoint = EditText(this).apply { hint = "Custom HTTPS endpoint (custom only)"; setSingleLine(); textSize=13f }
-        listOf(provider,key,model,endpoint).forEach {
-            it.setPadding(CompanionUi.dp(this,12), CompanionUi.dp(this,10), CompanionUi.dp(this,12), CompanionUi.dp(this,10))
-            it.background = CompanionUi.panel(this, Color.WHITE, 14)
-            val lp = LinearLayout.LayoutParams(-1, -2); lp.topMargin = CompanionUi.dp(this,6); settingsCard.addView(it,lp)
-        }
-        val providerList = CompanionUi.text(this, "", 11f, CompanionUi.muted)
-        fun refreshProviders() {
-            val list = ProviderStore.all(this)
-            providerList.text = if (list.isEmpty()) "No providers saved. Add one to enable cloud AI." else
-                "Fallback order:\n" + list.mapIndexed { i,v -> "${i+1}. ${v.name} — ${v.model.ifBlank { "default model" }}" }.joinToString("\n")
-        }
-        settingsCard.addView(CompanionUi.spacer(this,6)); settingsCard.addView(providerList)
-        settingsCard.addView(CompanionUi.spacer(this,8))
-        settingsCard.addView(CompanionUi.button(this, "Save provider", true) {
-            val p = provider.text.toString().trim().lowercase()
-            val k = key.text.toString().trim()
-            val url = endpoint.text.toString().trim()
-            if (p !in listOf("gemini","groq","openrouter","custom") || k.isBlank() || (p=="custom" && !url.startsWith("https://"))) {
-                toast("Choose a supported provider, enter a key, and use HTTPS for custom providers")
-            } else {
-                ProviderStore.add(this@ChatActivity,p,k,model.text.toString().trim(),url)
-                toast("Provider saved ♡"); key.text.clear(); refreshProviders()
-            }
+        composer.addView(input,LinearLayout.LayoutParams(0,-2,1f))
+        composer.addView(CompanionUi.button(this,"🎙") { startVoiceInput() },LinearLayout.LayoutParams(CompanionUi.dp(this,54),CompanionUi.dp(this,52)).apply { leftMargin=CompanionUi.dp(this@ChatActivity,6) })
+        composer.addView(CompanionUi.button(this,"➤",true) { sendMessage() },LinearLayout.LayoutParams(CompanionUi.dp(this,54),CompanionUi.dp(this,52)).apply { leftMargin=CompanionUi.dp(this@ChatActivity,6) })
+        root.addView(composer)
+        root.addView(CompanionUi.text(this,"Voice uses your phone's speech services. Cloud AI is optional; offline replies are basic.",10f,CompanionUi.muted).apply {
+            gravity=Gravity.CENTER; setPadding(0,CompanionUi.dp(this@ChatActivity,8),0,0)
         })
-        settingsCard.addView(CompanionUi.spacer(this,6))
-        settingsCard.addView(CompanionUi.button(this, "Clear saved providers") {
-            ProviderStore.clear(this@ChatActivity); refreshProviders(); toast("Saved provider keys cleared")
-        })
-        refreshProviders()
-        val settingsScroll = ScrollView(this).apply { addView(settingsCard) }
-        root.addView(settingsScroll, LinearLayout.LayoutParams(-1, CompanionUi.dp(this,280)))
-        val assistantCard = CompanionUi.column(this, 12).apply {
-            background = CompanionUi.panel(this@ChatActivity, Color.rgb(241,239,252), 22)
-        }
-        assistantCard.addView(CompanionUi.text(this, "PHONE AWARENESS & MEMORY  ✦", 12f, CompanionUi.ink, true))
-        assistantCard.addView(CompanionUi.text(this, "Optional permissions stay under your control.", 11f, CompanionUi.muted))
-        assistantCard.addView(CompanionUi.button(this, "Enable / manage Screen Awareness") {
-            AssistantPreferences.setScreenAwarenessEnabled(this@ChatActivity, true)
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        })
-        assistantCard.addView(CompanionUi.text(this, "To inspect another app, double-tap your floating chibi and choose 'Look at the app behind me'.", 11f, CompanionUi.muted))
-        assistantCard.addView(CompanionUi.text(this, "For visual screen analysis, use the floating chibi button: Look at the app behind me.", 11f, CompanionUi.muted))
-        assistantCard.addView(CompanionUi.button(this, "View and manage my memories") { showMemoryManager() })
-        assistantCard.addView(CompanionUi.button(this, "Proactive behavior: " + AssistantPreferences.proactiveMode(this).uppercase()) {
-            val modes = arrayOf("Quiet — only respond when I interact", "Optional — occasional helpful check-ins", "Active — proactively suggest useful actions")
-            val values = arrayOf(AssistantPreferences.QUIET, AssistantPreferences.OPTIONAL, AssistantPreferences.ACTIVE)
-            val selected = values.indexOf(AssistantPreferences.proactiveMode(this))
-            AlertDialog.Builder(this@ChatActivity).setTitle("How proactive should she be?")
-                .setSingleChoiceItems(modes, selected) { dialog, which ->
-                    AssistantPreferences.setProactiveMode(this@ChatActivity, values[which])
-                    dialog.dismiss()
-                    toast("Assistant behavior updated")
-                }.setNegativeButton("Cancel", null).show()
-        })
-        settingsCard.addView(assistantCard)
         setContentView(root)
+        intent.getStringExtra(EXTRA_PROMPT)?.let { prompt ->
+            input.setText(prompt); input.setSelection(input.text.length)
+            if (prompt.endsWith(" ")) input.requestFocus() else input.post { sendMessage() }
+        }
     }
 
+    private fun sendMessage() {
+        val message=input.text.toString().trim()
+        if(message.isEmpty()) return
+        input.text.clear()
+        ChatHistory.add(this,"You",message)
+        transcript.text=ChatHistory.read(this)+"\n\nMiko: thinking…"
+        val sequence=++replySequence
+        worker.execute {
+            val answer=CompanionMemory.handleExplicitRequest(this,message)
+                ?: PhoneActions.tryHandle(this,message)
+                ?: runCatching { AiClient.reply(this,message) }.getOrElse { error ->
+                    val detail=error.message?.take(150)?.let { " ("+it+")" }.orEmpty()
+                    OfflineCompanion.reply(message)
+                }
+            ChatHistory.add(this,"Miko",answer)
+            runOnUiThread {
+                if(isFinishing || isDestroyed) return@runOnUiThread
+                transcript.text=ChatHistory.read(this)
+                (transcript.parent as? ScrollView)?.post { (transcript.parent as? ScrollView)?.fullScroll(View.FOCUS_DOWN) }
+                if(::tts.isInitialized) {
+                    CompanionVoice.configure(this,tts)
+                    tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"miko-"+sequence)
+                }
+            }
+        }
+    }
 
     private fun startVoiceInput() {
-        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            toast("Speech recognition is not available on this phone")
-            return
+        if(!SpeechRecognizer.isRecognitionAvailable(this)){ toast("Speech recognition isn't available on this phone"); return }
+        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO),VOICE_PERMISSION); return
         }
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), VOICE_PERMISSION_REQUEST)
-            return
-        }
-        val recognizer = SpeechRecognizer.createSpeechRecognizer(this)
-        speechRecognizer?.destroy()
-        speechRecognizer = recognizer
-        recognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) { toast("Listening… speak naturally") }
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(rmsdB: Float) {}
-            override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() { toast("Finishing…") }
-            override fun onError(error: Int) { toast("I couldn't hear that clearly. Try again.") }
-            override fun onResults(results: Bundle?) {
-                val words = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                if (!words.isNullOrBlank()) entry.setText(words)
-            }
-            override fun onPartialResults(partialResults: Bundle?) {}
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-        })
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        }
-        recognizer.startListening(intent)
-    }
-
-    @Deprecated("Android permission callback")
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == VOICE_PERMISSION_REQUEST && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-            startVoiceInput()
-        } else if (requestCode == VOICE_PERMISSION_REQUEST) {
-            toast("Microphone permission is needed for voice input")
-        }
-    }
-
-    private fun isScreenServiceEnabled(): Boolean {
-        val expected = android.content.ComponentName(this, CompanionAccessibilityService::class.java).flattenToString()
-        val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
-        return enabled.split(':').any { it.equals(expected, true) }
-    }
-
-    private fun showMemoryManager() {
-        val items = CompanionMemory.all(this)
-        val labels = (items.map { "✦  $it" } + "＋  Add a memory").toTypedArray()
-        AlertDialog.Builder(this).setTitle("Her memories — stored on this phone")
-            .setItems(labels) { _, which ->
-                if (which == items.size) {
-                    val field = EditText(this).apply { hint = "Something you want her to remember"; inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES }
-                    AlertDialog.Builder(this).setTitle("Add a memory").setView(field)
-                        .setPositiveButton("Save") { _, _ ->
-                            if (CompanionMemory.add(this, field.text.toString())) toast("Memory saved securely ♡")
-                            else toast("Please enter a little more detail")
-                        }.setNegativeButton("Cancel", null).show()
-                } else {
-                    AlertDialog.Builder(this).setTitle("Delete this memory?")
-                        .setMessage(items[which]).setPositiveButton("Delete") { _, _ ->
-                            CompanionMemory.remove(this, which); toast("Memory deleted")
-                        }.setNegativeButton("Keep", null).show()
+        recognizer?.destroy()
+        recognizer=SpeechRecognizer.createSpeechRecognizer(this).also { r ->
+            r.setRecognitionListener(object:RecognitionListener {
+                override fun onReadyForSpeech(params:Bundle?){toast("Listening…")}
+                override fun onBeginningOfSpeech(){}
+                override fun onRmsChanged(rmsdB:Float){}
+                override fun onBufferReceived(buffer:ByteArray?){}
+                override fun onEndOfSpeech(){}
+                override fun onError(error:Int){toast("I couldn't hear that clearly. Try again.")}
+                override fun onResults(results:Bundle?){
+                    val words=results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+                    if(!words.isNullOrBlank()) { input.setText(words); sendMessage() }
                 }
-            }.setNeutralButton("Clear all") { _, _ ->
-                AlertDialog.Builder(this).setTitle("Clear all memories?")
-                    .setMessage("This cannot be undone.")
-                    .setPositiveButton("Clear") { _, _ -> CompanionMemory.clear(this); toast("All memories cleared") }
-                    .setNegativeButton("Cancel", null).show()
-            }.setNegativeButton("Close", null).show()
-    }
-
-    private fun showVoicePicker() {
-        val voices = CompanionVoice.options(tts)
-        if (voices.isEmpty()) {
-            AlertDialog.Builder(this).setTitle("No extra voices found")
-                .setMessage("Your phone's text-to-speech engine has not exposed any English voices. Use 'Install more voice options' and download a voice pack, then return here.")
-                .setPositiveButton("OK", null).show()
-            return
-        }
-        val selected = CompanionVoice.selectedName(this)
-        val labels = voices.map { CompanionVoice.label(it) }.toTypedArray()
-        val checked = voices.indexOfFirst { it.name == selected }
-        AlertDialog.Builder(this)
-            .setTitle("Choose her voice")
-            .setSingleChoiceItems(labels, checked) { dialog, which ->
-                CompanionVoice.select(this, tts, voices[which])
-                toast("Voice updated ♡")
-                dialog.dismiss()
+                override fun onPartialResults(partialResults:Bundle?){}
+                override fun onEvent(eventType:Int,params:Bundle?){}
+            })
+            val intent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+            r.startListening(intent)
+        }
     }
 
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) CompanionVoice.configure(this, tts)
+    override fun onRequestPermissionsResult(requestCode:Int,permissions:Array<out String>,grantResults:IntArray){
+        super.onRequestPermissionsResult(requestCode,permissions,grantResults)
+        if(requestCode==VOICE_PERMISSION && grantResults.firstOrNull()==PackageManager.PERMISSION_GRANTED) startVoiceInput()
+        else if(requestCode==VOICE_PERMISSION) toast("Microphone permission is needed for voice input")
     }
-    companion object { private const val VOICE_PERMISSION_REQUEST = 702 }
-
-    private fun toast(s: String) = Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
-    override fun onDestroy() {
-        worker.shutdownNow(); speechRecognizer?.destroy(); tts.stop(); tts.shutdown(); super.onDestroy()
+    override fun onInit(status:Int) {
+        if(status==TextToSpeech.SUCCESS) CompanionVoice.configure(this,tts)
+    }
+    private fun toast(s:String)=Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
+    override fun onDestroy(){
+        worker.shutdownNow(); recognizer?.destroy()
+        if(::tts.isInitialized){tts.stop();tts.shutdown()}
+        super.onDestroy()
+    }
+    companion object {
+        const val EXTRA_PROMPT="com.chibicompanion.EXTRA_PROMPT"
+        private const val VOICE_PERMISSION=702
     }
 }

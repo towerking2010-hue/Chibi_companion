@@ -17,20 +17,39 @@ import java.util.concurrent.Executors
 
 class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private lateinit var wm: WindowManager
-    private var avatar: ChibiView? = null
+    private var avatar: ModelSlotView? = null
     private var chatPanel: LinearLayout? = null
     private var chatParams: WindowManager.LayoutParams? = null
     private var avatarParams: WindowManager.LayoutParams? = null
     private var lastTap = 0L
-    private var downX = 0f; private var downY = 0f; private var originX = 0; private var originY = 0; private var dragging = false
+    private var downX = 0f; private var downY = 0f; private var originX = 0; private var originY = 0; private var downAt = 0L; private var dragging = false
     private val worker = Executors.newSingleThreadExecutor()
     private lateinit var tts: TextToSpeech
+
+    private val POS_PREFS = "miko_floating_position"
+    private val POS_X = "pos_x"
+    private val POS_Y = "pos_y"
+
+    private fun loadSavedPosition(): Pair<Int, Int> {
+        val prefs = getSharedPreferences(POS_PREFS, MODE_PRIVATE)
+        val x = prefs.getInt(POS_X, -1)
+        val y = prefs.getInt(POS_Y, -1)
+        return Pair(x, y)
+    }
+
+    private fun savePosition(x: Int, y: Int) {
+        getSharedPreferences(POS_PREFS, MODE_PRIVATE).edit()
+            .putInt(POS_X, x)
+            .putInt(POS_Y, y)
+            .apply()
+    }
 
     override fun onCreate() {
         super.onCreate()
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
         tts = TextToSpeech(this, this)
         startForeground(41, notification())
+        getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", true).apply()
         showAvatar()
     }
 
@@ -40,12 +59,16 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             NotificationChannel(id, "Floating companion", NotificationManager.IMPORTANCE_LOW))
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, FloatingCompanionService::class.java).setAction("STOP_COMPANION"), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        return Notification.Builder(this, id).setContentTitle("Chibi Companion is active")
-            .setContentText("Double-tap your companion to chat").setSmallIcon(android.R.drawable.sym_def_app_icon)
+        return Notification.Builder(this, id).setContentTitle("Miko is here")
+            .setContentText("Double-tap Miko to chat").setSmallIcon(android.R.drawable.sym_def_app_icon)
             .setContentIntent(open).addAction(android.R.drawable.ic_menu_close_clear_cancel, "Turn off", stop).setOngoing(true).build()
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "STOP_COMPANION") { stopSelf(); return START_NOT_STICKY }
+        if (intent?.action == "OPEN_CHAT") {
+            if (chatPanel == null) showChat()
+            return START_STICKY
+        }
         if (intent?.action == ScreenCaptureActivity.ACTION_SCREEN_CAPTURE_READY) {
             handleCapturedScreen()
             return START_STICKY
@@ -55,24 +78,66 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
 
     private fun overlayType() = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
     private fun showAvatar() {
-        val v = ChibiView(this)
-        val lp = WindowManager.LayoutParams(136, 164, overlayType(),
+        val v = ModelSlotView(this)
+        // WindowManager.LayoutParams dimensions are pixels, so convert dp explicitly.
+        // The old 136x164 raw-pixel window rendered Miko as a tiny sticker on high-density phones.
+        val overlayWidth = CompanionUi.dp(this, 136)
+        val overlayHeight = CompanionUi.dp(this, 178)
+
+        // Load saved position
+        val (savedX, savedY) = loadSavedPosition()
+        val metrics = resources.displayMetrics
+        val defaultX = 8
+        val defaultY = CompanionUi.dp(this@FloatingCompanionService, 150)
+        val maxX = (metrics.widthPixels - overlayWidth).coerceAtLeast(0)
+        val maxY = (metrics.heightPixels - overlayHeight - CompanionUi.dp(this, 28)).coerceAtLeast(0)
+
+        val startX = if (savedX >= 0) savedX.coerceIn(0, maxX) else defaultX
+        val startY = if (savedY >= 0) savedY.coerceIn(CompanionUi.dp(this, 24), maxY) else defaultY
+
+        val lp = WindowManager.LayoutParams(overlayWidth, overlayHeight, overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 12; y = 220 }
+            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = startX; y = startY }
+
         v.setOnTouchListener { _, e ->
             when (e.action) {
-                MotionEvent.ACTION_DOWN -> { downX=e.rawX; downY=e.rawY; originX=lp.x; originY=lp.y; dragging=false; true }
+                MotionEvent.ACTION_DOWN -> {
+                    downX=e.rawX; downY=e.rawY; originX=lp.x; originY=lp.y
+                    downAt=System.currentTimeMillis(); dragging=false
+                    true
+                }
                 MotionEvent.ACTION_MOVE -> {
                     val dx=e.rawX-downX; val dy=e.rawY-downY
                     if (kotlin.math.abs(dx)>8 || kotlin.math.abs(dy)>8) dragging=true
-                    if (dragging) { lp.x=originX+dx.toInt(); lp.y=originY+dy.toInt(); runCatching { wm.updateViewLayout(v,lp) } }
+                    if (dragging) {
+                        lp.x=originX+dx.toInt(); lp.y=originY+dy.toInt()
+                        runCatching { wm.updateViewLayout(v,lp) }
+                    }
                     true
                 }
                 MotionEvent.ACTION_UP -> {
                     val now=System.currentTimeMillis()
-                    if (!dragging && now-lastTap < 420) { lastTap=0L; toggleChat() } else if (!dragging) lastTap=now
+                    val held=now-downAt
+                    if (dragging) {
+                        // Keep Miko wherever the user drops her; only clamp to visible screen bounds.
+                        val maxX = (metrics.widthPixels - lp.width).coerceAtLeast(0)
+                        val maxY = (metrics.heightPixels - lp.height - CompanionUi.dp(this, 28)).coerceAtLeast(0)
+                        lp.x = lp.x.coerceIn(0, maxX)
+                        lp.y = lp.y.coerceIn(CompanionUi.dp(this, 24), maxY)
+                        runCatching { wm.updateViewLayout(v, lp) }
+                        // Save position
+                        savePosition(lp.x, lp.y)
+                    } else if (held>=550L) {
+                        lastTap=0L
+                    } else if (now-lastTap < 420L) {
+                        lastTap=0L
+                        toggleChat()
+                    } else {
+                        lastTap=now
+                    }
                     true
                 }
+                MotionEvent.ACTION_CANCEL -> true
                 else -> false
             }
         }
@@ -83,15 +148,18 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private fun showChat() {
         val panel = LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL; setPadding(16,14,16,12)
-            background=GradientDrawable().apply { setColor(Color.rgb(248,250,255)); cornerRadius=28f; setStroke(2,Color.rgb(174,196,239)) }
+            background=GradientDrawable().apply { setColor(Color.rgb(20,27,53)); cornerRadius=28f; setStroke(2,Color.rgb(104,112,164)) }
             elevation=18f
         }
         val header=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
-        header.addView(TextView(this).apply { text="Mou… I was waiting. ♡"; textSize=18f; setTextColor(Color.rgb(53,70,111)) }, LinearLayout.LayoutParams(0,-2,1f))
+        header.addView(TextView(this).apply { text="Miko • Assistant"; textSize=18f; setTextColor(Color.rgb(226,224,255)) }, LinearLayout.LayoutParams(0,-2,1f))
+        header.addView(Button(this).apply { text="⚙"; setOnClickListener {
+            startActivity(Intent(this@FloatingCompanionService, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } })
         header.addView(Button(this).apply { text="×"; setOnClickListener { hideChat() } })
         panel.addView(header)
         panel.addView(Button(this).apply {
-            text = "👀 Look at the app behind me"
+            text = "👀 Understand my screen"
             setOnClickListener {
                 val consent = AlertDialog.Builder(this@FloatingCompanionService)
                     .setTitle("Share one screen capture?")
@@ -107,11 +175,11 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                 consent.show()
             }
         })
-        val transcript=TextView(this).apply { text=ChatHistory.read(this@FloatingCompanionService); textSize=15f; setTextColor(Color.DKGRAY); setPadding(4,12,4,12) }
+        val transcript=TextView(this).apply { text=ChatHistory.read(this@FloatingCompanionService); textSize=15f; setTextColor(Color.rgb(245,242,255)); setPadding(4,12,4,12) }
         val scroll=ScrollView(this).apply { addView(transcript) }
         panel.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
-        val input=EditText(this).apply { hint="Talk to me…"; maxLines=3; textSize=15f }
+        val input=EditText(this).apply { hint="Talk to Miko…"; maxLines=3; textSize=15f; setTextColor(Color.WHITE); setHintTextColor(Color.LTGRAY) }
         row.addView(input,LinearLayout.LayoutParams(0,-2,1f))
         row.addView(Button(this).apply { text="Send"; setOnClickListener {
             val msg=input.text.toString().trim(); if(msg.isNotEmpty()) { input.text.clear(); ChatHistory.add(this@FloatingCompanionService,"You",msg); transcript.append("\n\nYou: $msg\nHer: …"); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
@@ -119,23 +187,18 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     val answer = CompanionMemory.handleExplicitRequest(this@FloatingCompanionService, msg)
                         ?: PhoneActions.tryHandle(this@FloatingCompanionService,msg)
                         ?: runCatching { AiClient.reply(this@FloatingCompanionService,msg) }
-                            .getOrElse { OfflineCompanion.reply(msg) }
-                    ChatHistory.add(this@FloatingCompanionService,"Her",answer)
+                            .getOrElse { error ->
+                                val detail = error.message?.take(180)?.let { " ($it)" }.orEmpty()
+                                OfflineCompanion.reply(msg)
+                            }
+                    ChatHistory.add(this@FloatingCompanionService,"Miko",answer)
                     mainThread {
                         transcript.text=ChatHistory.read(this@FloatingCompanionService)
                         scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
-                        val mood = when {
-                            answer.contains("sorry",true) || answer.contains("sad",true) -> "shy"
-                            answer.contains("baka",true) || answer.contains("annoy",true) -> "angry"
-                            answer.contains("happy",true) || answer.contains("glad",true) || answer.contains("♡") -> "happy"
-                            else -> "talking"
-                        }
-                        avatar?.setMood(mood)
-                        if (::tts.isInitialized) {
+                                    if (::tts.isInitialized) {
                             CompanionVoice.configure(this@FloatingCompanionService, tts)
                             tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"chibi-reply")
                         }
-                        android.os.Handler(mainLooper).postDelayed({ avatar?.setMood("neutral") }, 3500)
                     }
                 }
             }
@@ -161,7 +224,6 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             screenshot.fill(0)
             ChatHistory.add(this@FloatingCompanionService, "Her", answer)
             mainThread {
-                avatar?.setMood("happy")
                 if (::tts.isInitialized) {
                     CompanionVoice.configure(this@FloatingCompanionService, tts)
                     tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "screen-vision")
@@ -176,18 +238,16 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         if(status==TextToSpeech.SUCCESS) {
             CompanionVoice.configure(this, tts)
             tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) { mainThread { avatar?.setMood("talking") } }
+                override fun onStart(utteranceId: String?) { }
                 override fun onDone(utteranceId: String?) {
-                    mainThread {
-                        avatar?.setMood("happy")
-                        android.os.Handler(mainLooper).postDelayed({ avatar?.setMood("neutral") }, 900)
-                    }
+                    
                 }
-                override fun onError(utteranceId: String?) { mainThread { avatar?.setMood("neutral") } }
+                override fun onError(utteranceId: String?) { }
             })
         }
     }
     override fun onDestroy() {
+        getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", false).apply()
         hideChat(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
         worker.shutdownNow(); if(::tts.isInitialized) { tts.stop(); tts.shutdown() }
         super.onDestroy()
