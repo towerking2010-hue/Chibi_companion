@@ -14,16 +14,17 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = CompanionUi.bg
-        window.navigationBarColor = CompanionUi.bg
-        window.decorView.systemUiVisibility = 0
+        CompanionUi.applySystemBars(this)
         tts = android.speech.tts.TextToSpeech(this, this)
 
         val scroll = ScrollView(this).apply { setBackgroundColor(CompanionUi.bg); isFillViewport = true }
-        val root = CompanionUi.column(this, 18)
+        val root = CompanionUi.column(this, 18).apply {
+            setPadding(CompanionUi.dp(this@SettingsActivity, 20), CompanionUi.dp(this@SettingsActivity, 18),
+                CompanionUi.dp(this@SettingsActivity, 20), CompanionUi.dp(this@SettingsActivity, 26))
+        }
         scroll.addView(root)
-        root.addView(CompanionUi.text(this, "MIKO • SETTINGS", 10f, CompanionUi.pink, true))
-        root.addView(CompanionUi.text(this, "Make her yours ♡", 26f, CompanionUi.ink, true))
+        root.addView(CompanionUi.eyebrow(this, "Personalise"))
+        root.addView(CompanionUi.heading(this, "Make her yours ♡", 26f))
         root.addView(CompanionUi.text(this, "Your choices stay on this phone unless a feature says otherwise.", 12f, CompanionUi.muted))
         root.addView(CompanionUi.spacer(this, 8))
 
@@ -96,7 +97,7 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
     }
 
     private fun card(label: String) = CompanionUi.column(this,14).apply {
-        background=CompanionUi.panel(this@SettingsActivity,Color.rgb(30,36,65),22)
+        background=CompanionUi.panel(this@SettingsActivity,CompanionUi.surface,20)
         addView(CompanionUi.text(this@SettingsActivity,label,10f,CompanionUi.pink,true))
         addView(CompanionUi.spacer(this@SettingsActivity,4))
     }
@@ -104,7 +105,7 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
         hint=hintText; setSingleLine(); textSize=13f
         setTextColor(CompanionUi.ink); setHintTextColor(CompanionUi.muted)
         setPadding(CompanionUi.dp(this@SettingsActivity,12),CompanionUi.dp(this@SettingsActivity,11),CompanionUi.dp(this@SettingsActivity,12),CompanionUi.dp(this@SettingsActivity,11))
-        background=CompanionUi.panel(this@SettingsActivity,Color.rgb(37,43,76),14)
+        background=CompanionUi.panel(this@SettingsActivity,CompanionUi.surfaceRaised,14)
         val lp=android.widget.LinearLayout.LayoutParams(-1,-2); lp.topMargin=CompanionUi.dp(this@SettingsActivity,6); layoutParams=lp
     }
     private fun refreshProviders() {
