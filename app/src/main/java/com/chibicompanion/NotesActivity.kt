@@ -20,15 +20,17 @@ class NotesActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = CompanionUi.bg
-        window.navigationBarColor = CompanionUi.bg
-        window.decorView.systemUiVisibility = 0
+        CompanionUi.applySystemBars(this)
 
-        val root = CompanionUi.column(this, 14).apply { setBackgroundColor(CompanionUi.bg) }
+        val root = CompanionUi.column(this, 18).apply {
+            setBackgroundColor(CompanionUi.bg)
+            setPadding(CompanionUi.dp(this@NotesActivity, 20), CompanionUi.dp(this@NotesActivity, 18),
+                CompanionUi.dp(this@NotesActivity, 20), CompanionUi.dp(this@NotesActivity, 24))
+        }
         val header = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-        val titles = CompanionUi.column(this, 2)
-        titles.addView(CompanionUi.text(this, "MIKO • YOUR SPACE", 10f, CompanionUi.pink, true))
-        titles.addView(CompanionUi.text(this, "Private notes", 25f, CompanionUi.ink, true))
+        val titles = CompanionUi.column(this, 0)
+        titles.addView(CompanionUi.eyebrow(this, "Your space"))
+        titles.addView(CompanionUi.heading(this, "Private notes", 25f))
         header.addView(titles, LinearLayout.LayoutParams(0, -2, 1f))
         header.addView(CompanionUi.button(this, "＋ New", true) { editNote(null) })
         root.addView(header)
@@ -47,7 +49,10 @@ class NotesActivity : Activity() {
             })
         }
         root.addView(search)
-        root.addView(CompanionUi.text(this, "Notes are encrypted on this phone with Android Keystore.", 11f, CompanionUi.muted))
+        val privacy = CompanionUi.card(this, 13)
+        privacy.addView(CompanionUi.text(this, "🔒  Private on this device", 13f, CompanionUi.success, true))
+        privacy.addView(CompanionUi.text(this, "Notes are encrypted with Android Keystore and aren't synced to a cloud service.", 11f, CompanionUi.muted))
+        root.addView(privacy)
         val scroll = ScrollView(this).apply { isFillViewport = true }
         list = CompanionUi.column(this, 2)
         scroll.addView(list)
@@ -70,8 +75,8 @@ class NotesActivity : Activity() {
             return
         }
         notes.forEach { note ->
-            val card = CompanionUi.column(this, 12).apply {
-                background = CompanionUi.panel(this@NotesActivity, android.graphics.Color.rgb(30,36,65), 18)
+            val card = CompanionUi.column(this, 14).apply {
+                background = CompanionUi.panel(this@NotesActivity, CompanionUi.surface, 18)
                 setOnClickListener { editNote(note) }
                 isClickable = true
                 isFocusable = true
