@@ -26,9 +26,9 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private val worker = Executors.newSingleThreadExecutor()
     private lateinit var tts: TextToSpeech
 
-    private const val POS_PREFS = "miko_floating_position"
-    private const val POS_X = "pos_x"
-    private const val POS_Y = "pos_y"
+    private val POS_PREFS = "miko_floating_position"
+    private val POS_X = "pos_x"
+    private val POS_Y = "pos_y"
 
     private fun loadSavedPosition(): Pair<Int, Int> {
         val prefs = getSharedPreferences(POS_PREFS, MODE_PRIVATE)
