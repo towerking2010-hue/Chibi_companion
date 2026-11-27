@@ -91,6 +91,23 @@ class MainActivity : Activity() {
         quick.addView(quickRow)
         root.addView(quick)
 
+        val overview = CompanionUi.card(this, 16)
+        overview.addView(CompanionUi.eyebrow(this, "A little overview"))
+        overview.addView(CompanionUi.spacer(this, 8))
+        val overviewRow = CompanionUi.row(this)
+        val taskCount = TaskStore.all(this).count { !it.done }
+        val noteCount = NoteStore.all(this).size
+        val tasksSummary = CompanionUi.column(this, 0)
+        tasksSummary.addView(CompanionUi.heading(this, taskCount.toString(), 23f))
+        tasksSummary.addView(CompanionUi.text(this, "Tasks left", 11f, CompanionUi.muted))
+        val notesSummary = CompanionUi.column(this, 0)
+        notesSummary.addView(CompanionUi.heading(this, noteCount.toString(), 23f))
+        notesSummary.addView(CompanionUi.text(this, "Private notes", 11f, CompanionUi.muted))
+        overviewRow.addView(tasksSummary, LinearLayout.LayoutParams(0, -2, 1f))
+        overviewRow.addView(notesSummary, LinearLayout.LayoutParams(0, -2, 1f))
+        overview.addView(overviewRow)
+        root.addView(overview)
+
         val companionCard = CompanionUi.card(this, 16)
         companionCard.addView(CompanionUi.eyebrow(this, "Always within reach"))
         companionCard.addView(CompanionUi.spacer(this, 5))
