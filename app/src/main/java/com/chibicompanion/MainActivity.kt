@@ -51,9 +51,9 @@ class MainActivity : Activity() {
 
         val header = CompanionUi.row(this)
         val brand = CompanionUi.column(this, 0)
-        brand.addView(CompanionUi.eyebrow(this, "Your companion"))
-        brand.addView(CompanionUi.heading(this, "Good ${greeting()},", 25f))
-        brand.addView(CompanionUi.text(this, "I'm right here with you.", 13f, CompanionUi.muted))
+        brand.addView(CompanionUi.eyebrow(this, "CHIBI COMPANION"))
+        brand.addView(CompanionUi.heading(this, "Your little world ♡", 25f))
+        brand.addView(CompanionUi.text(this, "A tiny friend, always nearby.", 13f, CompanionUi.muted))
         header.addView(brand, LinearLayout.LayoutParams(0, -2, 1f))
         header.addView(CompanionUi.button(this, "⚙") {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -66,17 +66,39 @@ class MainActivity : Activity() {
         // The owner's current model placeholder is intentionally unchanged.
         val hero = CompanionUi.column(this, 14).apply {
             gravity = Gravity.CENTER
-            background = CompanionUi.gradient(this@MainActivity, Color.rgb(39, 35, 72), Color.rgb(22, 48, 67), 26)
+            background = CompanionUi.gradient(this@MainActivity, Color.rgb(255, 235, 244), Color.rgb(239, 234, 255), 30)
             setPadding(CompanionUi.dp(this@MainActivity, 12), CompanionUi.dp(this@MainActivity, 10),
                 CompanionUi.dp(this@MainActivity, 12), CompanionUi.dp(this@MainActivity, 16))
         }
         val heroAvatar = MikoSpriteView(this)
         hero.addView(heroAvatar, LinearLayout.LayoutParams(-1, CompanionUi.dp(this, 390)))
-        hero.addView(CompanionUi.text(this, "A little company, whenever you need it.", 13f, Color.rgb(222, 220, 244)).apply {
+        hero.addView(CompanionUi.text(this, "Hmph… I was waiting for you!", 17f, CompanionUi.ink, true).apply {
+            gravity = Gravity.CENTER
+        })
+        hero.addView(CompanionUi.text(this, "A tiny friend, always nearby.", 13f, CompanionUi.muted).apply {
             gravity = Gravity.CENTER
         })
         root.addView(hero)
+        root.addView(CompanionUi.button(this, "♡  Start floating companion", true) { toggleFloatingCompanion() })
         root.addView(CompanionUi.button(this, "Import Miko mouth images") { pickMikoImages() })
+        val quickLinks = CompanionUi.row(this)
+        quickLinks.addView(CompanionUi.button(this, "Chat & AI settings") {
+            startActivity(Intent(this, ChatActivity::class.java))
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        quickLinks.addView(CompanionUi.button(this, "Stop floating") {
+            stopService(Intent(this, FloatingCompanionService::class.java))
+            refreshSetupButton()
+            Toast.makeText(this, "Floating companion stopped", Toast.LENGTH_SHORT).show()
+        }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = CompanionUi.dp(this@MainActivity, 8) })
+        root.addView(quickLinks)
+        val productivity = CompanionUi.row(this)
+        productivity.addView(CompanionUi.button(this, "Tasks") {
+            startActivity(Intent(this, TasksActivity::class.java))
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        productivity.addView(CompanionUi.button(this, "Notes") {
+            startActivity(Intent(this, NotesActivity::class.java))
+        }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = CompanionUi.dp(this@MainActivity, 8) })
+        root.addView(productivity)
 
         val quick = CompanionUi.card(this, 16)
         quick.addView(CompanionUi.eyebrow(this, "Quick access"))
