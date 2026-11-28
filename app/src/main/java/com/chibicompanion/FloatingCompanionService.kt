@@ -48,6 +48,12 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "STOP_COMPANION") { stopSelf(); return START_NOT_STICKY }
+        if (intent?.action == "RELOAD_MIKO_ASSETS") {
+            avatar?.let { runCatching { wm.removeView(it) } }
+            avatar = null
+            showAvatar()
+            return START_STICKY
+        }
         if (intent?.action == ScreenCaptureActivity.ACTION_SCREEN_CAPTURE_READY) {
             handleCapturedScreen()
             return START_STICKY
