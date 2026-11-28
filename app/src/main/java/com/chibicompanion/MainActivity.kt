@@ -2,6 +2,7 @@ package com.chibicompanion
 
 import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -13,6 +14,10 @@ import android.widget.*
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 801)
+        }
         window.statusBarColor = CompanionUi.bg
         window.navigationBarColor = CompanionUi.bg
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
