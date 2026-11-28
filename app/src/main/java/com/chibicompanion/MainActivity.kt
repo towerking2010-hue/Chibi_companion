@@ -87,12 +87,19 @@ class MainActivity : Activity() {
         quickControl.addView(CompanionUi.eyebrow(this, "Always within reach"))
         quickControl.addView(CompanionUi.text(this, "Control Miko without opening this app", 15f, CompanionUi.ink, true))
         quickControl.addView(CompanionUi.text(this,
-            "Add the Miko tile to Quick Settings once. Then tap Summon Miko or Hide Miko from anywhere.",
+            "Fastest: long-press the Miko app icon and tap Summon Miko. Or add the Quick Settings tile once to summon or hide her from anywhere.",
             12f, CompanionUi.muted))
         quickControl.addView(CompanionUi.button(this, "How to add the Quick Settings tile") {
             android.app.AlertDialog.Builder(this)
                 .setTitle("Add Miko to Quick Settings")
                 .setMessage("1. Swipe down from the top of your screen twice.\n\n2. Tap the pencil or Edit button.\n\n3. Find the Miko tile in available tiles.\n\n4. Drag it into your active tiles and tap Done.\n\nNow you can summon or hide Miko without opening her app.")
+                .setPositiveButton("Got it", null)
+                .show()
+        })
+        quickControl.addView(CompanionUi.button(this, "How to use the fast summon shortcut") {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Summon Miko faster")
+                .setMessage("From your home screen, press and hold the Miko app icon. Tap the Summon Miko shortcut.\n\nFor a control available from any app, swipe down twice and tap Edit. Drag the Miko tile into your active Quick Settings tiles. Tap it once to summon Miko, and again to hide her.")
                 .setPositiveButton("Got it", null)
                 .show()
         })
@@ -102,10 +109,12 @@ class MainActivity : Activity() {
         quickLinks.addView(CompanionUi.button(this, "Chat & AI settings") {
             startActivity(Intent(this, ChatActivity::class.java))
         }, LinearLayout.LayoutParams(0, -2, 1f))
-        quickLinks.addView(CompanionUi.button(this, "Stop floating") {
+        quickLinks.addView(CompanionUi.button(this, "Hide Miko") {
             stopService(Intent(this, FloatingCompanionService::class.java))
+            getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", false).apply()
             refreshSetupButton()
-            Toast.makeText(this, "Floating companion stopped", Toast.LENGTH_SHORT).show()
+            refreshFloatingButton()
+            Toast.makeText(this, "Miko is hidden", Toast.LENGTH_SHORT).show()
         }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = CompanionUi.dp(this@MainActivity, 8) })
         root.addView(quickLinks)
         val productivity = CompanionUi.row(this)
