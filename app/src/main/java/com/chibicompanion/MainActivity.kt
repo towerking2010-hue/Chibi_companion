@@ -77,7 +77,22 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
         })
         root.addView(hero)
-        root.addView(CompanionUi.button(this, "♡  Start floating companion", true) { toggleFloatingCompanion() })
+        root.addView(CompanionUi.button(this, "♡  Start / stop floating Miko", true) { toggleFloatingCompanion() })
+
+        val quickControl = CompanionUi.card(this, 15)
+        quickControl.addView(CompanionUi.eyebrow(this, "Always within reach"))
+        quickControl.addView(CompanionUi.text(this, "Control Miko without opening this app", 15f, CompanionUi.ink, true))
+        quickControl.addView(CompanionUi.text(this,
+            "Add the Miko tile to Quick Settings once. Then tap Summon Miko or Hide Miko from anywhere.",
+            12f, CompanionUi.muted))
+        quickControl.addView(CompanionUi.button(this, "How to add the Quick Settings tile") {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Add Miko to Quick Settings")
+                .setMessage("1. Swipe down from the top of your screen twice.\n\n2. Tap the pencil or Edit button.\n\n3. Find the Miko tile in available tiles.\n\n4. Drag it into your active tiles and tap Done.\n\nNow you can summon or hide Miko without opening her app.")
+                .setPositiveButton("Got it", null)
+                .show()
+        })
+        root.addView(quickControl)
         root.addView(CompanionUi.button(this, "Import Miko mouth images") { pickMikoImages() })
         val quickLinks = CompanionUi.row(this)
         quickLinks.addView(CompanionUi.button(this, "Chat & AI settings") {
