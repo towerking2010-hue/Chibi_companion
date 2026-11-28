@@ -156,6 +156,17 @@ class MainActivity : Activity() {
         root.addView(CompanionUi.text(this, "Private by default  ·  No paid AI calls unless you configure a provider",
             10f, CompanionUi.muted).apply { gravity = Gravity.CENTER; setPadding(0, CompanionUi.dp(this@MainActivity, 8), 0, 0) })
         setContentView(scroll)
+        // Light staggered entrance: native ViewPropertyAnimator, no animation framework dependency.
+        for (index in 0 until root.childCount) {
+            val child = root.getChildAt(index)
+            child.alpha = 0f
+            child.translationY = CompanionUi.dp(this, 12).toFloat()
+            child.animate().alpha(1f).translationY(0f)
+                .setStartDelay((index * 32L).coerceAtMost(320L))
+                .setDuration(260)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        }
         refreshSetupButton()
         refreshFloatingButton()
         if (intent?.action == ACTION_SUMMON_MIKO) {
