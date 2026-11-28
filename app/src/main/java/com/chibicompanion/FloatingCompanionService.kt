@@ -63,7 +63,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
         tts = TextToSpeech(this, this)
         startForeground(41, notification())
-        getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", true).apply()
+        MikoPresenceStore.setVisible(this, true)
         refreshQuickSettingsTile()
         showAvatar()
     }
@@ -442,7 +442,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         }
     }
     override fun onDestroy() {
-        getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", false).apply()
+        MikoPresenceStore.setVisible(this, false)
         refreshQuickSettingsTile()
         hideChat(); hideReplyBubble(); avatar?.stopTalking(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
         worker.shutdownNow(); if(::tts.isInitialized) { tts.stop(); tts.shutdown() }
