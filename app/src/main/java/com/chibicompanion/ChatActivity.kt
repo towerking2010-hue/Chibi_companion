@@ -280,6 +280,11 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (::log.isInitialized) log.text = ChatHistory.read(this)
+    }
+
     private fun startVoiceInput() {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             toast("Speech recognition is not available on this phone")
