@@ -29,6 +29,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private var pendingAttachment: Uri? = null
     private var pendingAttachmentName: String = ""
     private var pendingAttachmentMime: String = ""
+    private var pendingVoiceText: String = ""
     private var avatarParams: WindowManager.LayoutParams? = null
     private var lastTap = 0L
     private var downX = 0f; private var downY = 0f; private var originX = 0; private var originY = 0; private var downAt = 0L; private var dragging = false
@@ -78,6 +79,18 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             avatar?.let { runCatching { wm.removeView(it) } }
             avatar = null
             showAvatar()
+            return START_STICKY
+        }
+        if (intent?.action == ACTION_ATTACHMENT_READY) {
+            pendingAttachment = intent.data
+            pendingAttachmentName = intent.getStringExtra(EXTRA_ATTACHMENT_NAME) ?: "attachment"
+            pendingAttachmentMime = intent.getStringExtra(EXTRA_ATTACHMENT_MIME) ?: "application/octet-stream"
+            hideChat(); showChat()
+            return START_STICKY
+        }
+        if (intent?.action == ACTION_VOICE_READY) {
+            pendingVoiceText = intent.getStringExtra(EXTRA_VOICE_TEXT).orEmpty()
+            hideChat(); showChat()
             return START_STICKY
         }
         if (intent?.action == "OPEN_CHAT") {
@@ -211,7 +224,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             setPadding(CompanionUi.dp(this@FloatingCompanionService, 12), CompanionUi.dp(this@FloatingCompanionService, 9),
                 CompanionUi.dp(this@FloatingCompanionService, 12), CompanionUi.dp(this@FloatingCompanionService, 9))
         }
-        row.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
+        if (pendingVoiceText.isNotBlank()) { input.setText(pendingVoiceText); input.setSelection(input.text.length); pendingVoiceText = "" }\n        row.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
         val send = TextView(this).apply {
             text = "➤"; textSize = 22f; gravity = Gravity.CENTER; setTextColor(Color.WHITE)
             setPadding(12, 0, 6, 0)
@@ -233,7 +246,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
 
         val width = (resources.displayMetrics.widthPixels - CompanionUi.dp(this, 20)).coerceAtLeast(CompanionUi.dp(this, 260))
         val lp = WindowManager.LayoutParams(width, WindowManager.LayoutParams.WRAP_CONTENT, overlayType(),
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT).apply {
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
             y = CompanionUi.dp(this@FloatingCompanionService, 18)
