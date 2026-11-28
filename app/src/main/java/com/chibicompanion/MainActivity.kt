@@ -97,6 +97,16 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun reloadFloatingIfRunning() {
+        val manager = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+        val running = manager.getRunningServices(Int.MAX_VALUE).any {
+            it.service.className == FloatingCompanionService::class.java.name
+        }
+        if (running) {
+            startService(Intent(this, FloatingCompanionService::class.java).setAction("RELOAD_MIKO_ASSETS"))
+        }
+    }
+
     private fun importMouthSprites(uri: Uri) {
         val expected = setOf("miko_mouth_closed.webp", "miko_mouth_half.webp", "miko_mouth_open.webp")
         val destination = File(filesDir, "miko_assets").apply { mkdirs() }
@@ -129,6 +139,7 @@ class MainActivity : Activity() {
                 "ZIP must contain all three Miko mouth WebP images"
             }
             Toast.makeText(this, "Miko's three mouth images imported ♡", Toast.LENGTH_LONG).show()
+            reloadFloatingIfRunning()
             recreate()
         } catch (error: Exception) {
             expected.forEach { File(destination, it).delete() }
