@@ -65,7 +65,7 @@ class MikoSpriteView(context: Context) : FrameLayout(context) {
         while (bounds.outWidth / sample > 640 || bounds.outHeight / sample > 900) sample *= 2
         return BitmapFactory.decodeFile(file.absolutePath, BitmapFactory.Options().apply {
             inSampleSize = sample
-            inPreferredConfig = Bitmap.Config.RGB_565
+            inPreferredConfig = Bitmap.Config.ARGB_8888
         })
     }
 
