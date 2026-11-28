@@ -142,13 +142,6 @@ class MainActivity : Activity() {
         startActivityForResult(pick, importSpritesRequest)
     }
 
-    @Deprecated("Activity result API retained for compatibility")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != importSpritesRequest || resultCode != RESULT_OK || data?.data == null) return
-        importMouthSprites(data.data!!)
-    }
-
     private fun importMouthSprites(uri: Uri) {
         val expected = setOf("miko_mouth_closed.webp", "miko_mouth_half.webp", "miko_mouth_open.webp")
         val destination = File(filesDir, "miko_assets").apply { mkdirs() }
@@ -277,9 +270,13 @@ class MainActivity : Activity() {
         refreshSetupButton()
     }
 
-    @Deprecated("Deprecated by Android; retained for compatibility with the assistant role prompt")
+    @Deprecated("Deprecated by Android; retained for compatibility with assistant setup and ZIP import")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == importSpritesRequest) {
+            if (resultCode == RESULT_OK && data?.data != null) importMouthSprites(data.data!!)
+            return
+        }
         if (requestCode == 904) {
             if (isMikoDefaultAssistant()) continueMikoSetup()
             else Toast.makeText(this, "Miko wasn't selected. You can try again anytime.", Toast.LENGTH_LONG).show()
