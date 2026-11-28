@@ -16,7 +16,8 @@ import android.widget.*
 import java.util.concurrent.Executors
 
 class ChatActivity : Activity(), TextToSpeech.OnInitListener {
-    private lateinit var transcript: TextView
+    private lateinit var transcriptList: LinearLayout
+    private lateinit var transcriptScroll: ScrollView
     private lateinit var input: EditText
     private lateinit var tts: TextToSpeech
     private var recognizer: SpeechRecognizer? = null
@@ -60,10 +61,14 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             background=CompanionUi.panel(this@ChatActivity,CompanionUi.white,24)
             elevation=CompanionUi.dp(this@ChatActivity,2).toFloat()
         }
-        transcript=CompanionUi.text(this,ChatHistory.read(this).ifBlank { "Miko: Hiii! I'm here. What can I help you with? ✦" },14f,CompanionUi.ink)
-        transcript.setLineSpacing(CompanionUi.dp(this,4).toFloat(),1f)
-        val scroll=ScrollView(this).apply { isFillViewport=true; addView(transcript) }
-        transcriptCard.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
+        transcriptList = CompanionUi.column(this, 4)
+        transcriptScroll = ScrollView(this).apply {
+            isFillViewport = true
+            clipToPadding = false
+            setPadding(0, 0, 0, CompanionUi.dp(this@ChatActivity, 8))
+            addView(transcriptList)
+        }
+        transcriptCard.addView(transcriptScroll,LinearLayout.LayoutParams(-1,0,1f))
         val cardLp=LinearLayout.LayoutParams(-1,0,1f); cardLp.topMargin=CompanionUi.dp(this,12); cardLp.bottomMargin=CompanionUi.dp(this,10)
         root.addView(transcriptCard,cardLp)
         val composer=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; orientation=LinearLayout.HORIZONTAL }
@@ -82,10 +87,48 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             gravity=Gravity.CENTER; setPadding(0,CompanionUi.dp(this@ChatActivity,8),0,0)
         })
         setContentView(root)
+        renderTranscript()
         intent.getStringExtra(EXTRA_PROMPT)?.let { prompt ->
             input.setText(prompt); input.setSelection(input.text.length)
             if (prompt.endsWith(" ")) input.requestFocus() else input.post { sendMessage() }
         }
+    }
+
+    private fun renderTranscript(showThinking: Boolean = false) {
+        if (!::transcriptList.isInitialized) return
+        transcriptList.removeAllViews()
+        val saved = ChatHistory.read(this)
+        val entries = saved.split("\n\n").filter { it.isNotBlank() }
+        if (entries.isEmpty()) {
+            addMessageBubble("Miko", "Hiii! I'm here. What can I help you with? ✦")
+        } else {
+            entries.forEach { entry ->
+                val separator = entry.indexOf(": ")
+                val role = if (separator > 0) entry.substring(0, separator).trim() else "Miko"
+                val message = if (separator > 0) entry.substring(separator + 2).trim() else entry
+                addMessageBubble(role, message)
+            }
+        }
+        if (showThinking) addMessageBubble("Miko", "Thinking…", isThinking = true)
+        transcriptScroll.post { transcriptScroll.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    private fun addMessageBubble(role: String, message: String, isThinking: Boolean = false) {
+        val fromUser = role.equals("You", true)
+        val line = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = if (fromUser) Gravity.END else Gravity.START
+            setPadding(0, CompanionUi.dp(this@ChatActivity, 4), 0, CompanionUi.dp(this@ChatActivity, 4))
+        }
+        val bubble = CompanionUi.column(this, 12).apply {
+            background = if (fromUser) CompanionUi.panel(this@ChatActivity, Color.rgb(244, 240, 250), 18)
+                else CompanionUi.gradient(this@ChatActivity, Color.rgb(255, 237, 246), Color.rgb(239, 234, 255), 18)
+            maxWidth = CompanionUi.dp(this@ChatActivity, 292)
+        }
+        bubble.addView(CompanionUi.eyebrow(this, if (fromUser) "YOU" else "MIKO"))
+        bubble.addView(CompanionUi.text(this, message, 14f, CompanionUi.ink, isThinking))
+        line.addView(bubble, LinearLayout.LayoutParams(-2, -2))
+        transcriptList.addView(line, LinearLayout.LayoutParams(-1, -2))
     }
 
     private fun sendMessage() {
@@ -93,7 +136,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         if(message.isEmpty()) return
         input.text.clear()
         ChatHistory.add(this,"You",message)
-        transcript.text=ChatHistory.read(this)+"\n\nMiko: thinking…"
+        renderTranscript(showThinking = true)
         val sequence=++replySequence
         worker.execute {
             val answer=CompanionMemory.handleExplicitRequest(this,message)
@@ -105,8 +148,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             ChatHistory.add(this,"Miko",answer)
             runOnUiThread {
                 if(isFinishing || isDestroyed) return@runOnUiThread
-                transcript.text=ChatHistory.read(this)
-                (transcript.parent as? ScrollView)?.post { (transcript.parent as? ScrollView)?.fullScroll(View.FOCUS_DOWN) }
+                renderTranscript()
                 if(::tts.isInitialized) {
                     CompanionVoice.configure(this,tts)
                     tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"miko-"+sequence)
