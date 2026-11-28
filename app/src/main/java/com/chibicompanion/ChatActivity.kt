@@ -71,7 +71,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                     val asksAboutScreen = message.contains("screen", true) || message.contains("what am I looking at", true) || message.contains("what is on", true)
                     val prompt = if (asksAboutScreen) message + "\n\nSCREEN CONTEXT (user requested this):\n" + ScreenContext.describe() else message
                     val answer = explicitMemory ?: PhoneActions.tryHandle(this@ChatActivity, message) ?: runCatching { AiClient.reply(this@ChatActivity, prompt) }
-                        .getOrElse { OfflineCompanion.reply(message) }
+                        .getOrElse { OfflineCompanion.reply(message, this@ChatActivity) }
                     ChatHistory.add(this@ChatActivity, "Her", answer)
                     runOnUiThread {
                         log.text = log.text.toString().replace("Her: thinking…", "Her: $answer")
