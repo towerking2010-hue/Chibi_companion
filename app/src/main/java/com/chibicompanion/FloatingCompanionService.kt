@@ -17,7 +17,7 @@ import java.util.concurrent.Executors
 
 class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private lateinit var wm: WindowManager
-    private var avatar: ChibiView? = null
+    private var avatar: MikoSpriteView? = null
     private var chatPanel: LinearLayout? = null
     private var chatParams: WindowManager.LayoutParams? = null
     private var bubbleView: TextView? = null
@@ -57,7 +57,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
 
     private fun overlayType() = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
     private fun showAvatar() {
-        val v = ChibiView(this)
+        val v = MikoSpriteView(this)
         val lp = WindowManager.LayoutParams(136, 164, overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 12; y = 220 }
@@ -302,14 +302,15 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         if(status==TextToSpeech.SUCCESS) {
             CompanionVoice.configure(this, tts)
             tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) { mainThread { avatar?.setMood("talking") } }
+                override fun onStart(utteranceId: String?) { mainThread { avatar?.startTalking() } }
                 override fun onDone(utteranceId: String?) {
                     mainThread {
+                        avatar?.stopTalking()
                         avatar?.setMood("happy")
                         android.os.Handler(mainLooper).postDelayed({ avatar?.setMood("neutral") }, 900)
                     }
                 }
-                override fun onError(utteranceId: String?) { mainThread { avatar?.setMood("neutral") } }
+                override fun onError(utteranceId: String?) { mainThread { avatar?.stopTalking(); avatar?.setMood("neutral") } }
             })
         }
     }
