@@ -90,6 +90,6 @@ object CompanionUi {
     fun applySystemBars(activity: android.app.Activity) {
         activity.window.statusBarColor = bg
         activity.window.navigationBarColor = bg
-        activity.window.decorView.systemUiVisibility = 0
+        activity.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
     }
 }
