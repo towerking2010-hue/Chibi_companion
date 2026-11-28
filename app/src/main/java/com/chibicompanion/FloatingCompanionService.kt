@@ -231,6 +231,16 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickCameraActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
         row.addView(camera, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
+        val screen = TextView(this).apply {
+            text = "▣"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(CompanionUi.cyan)
+            contentDescription = "Share screen with Miko"
+            setOnClickListener {
+                startActivity(Intent(this@FloatingCompanionService, ScreenCaptureActivity::class.java)
+                    .putExtra(ScreenCaptureActivity.EXTRA_NOTIFY_SERVICE, true)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+        }
+        row.addView(screen, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
         val voice = TextView(this).apply {
             text = "🎙"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(CompanionUi.lavender)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickVoiceActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
