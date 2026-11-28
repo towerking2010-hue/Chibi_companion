@@ -11,8 +11,8 @@ android {
         applicationId = "com.chibicompanion"
         minSdk = 26
         targetSdk = 35
-        versionCode = 18
-        versionName = "0.9.5"
+        versionCode = 19
+        versionName = "0.9.6"
     }
 
     signingConfigs {
