@@ -15,7 +15,7 @@
     <application
         android:allowBackup="false"
         android:label="Miko"
-        android:icon="@drawable/miko_launcher_icon"
+        android:icon="@drawable/miko_launcher_art"
         android:theme="@style/MikoTheme">
         <activity android:name=".ScreenCaptureActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".TasksActivity" android:exported="false" />
@@ -25,7 +25,7 @@
         <activity android:name=".QuickCameraActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".ChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
         <activity android:name=".SettingsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
-        <activity android:name=".MikoAssistActivity" android:exported="true" android:label="Miko" android:icon="@drawable/miko_launcher_icon" android:description="@string/assist_description">
+        <activity android:name=".MikoAssistActivity" android:exported="true" android:label="Miko" android:icon="@drawable/miko_launcher_art" android:description="@string/assist_description">
             <intent-filter>
                 <action android:name="android.intent.action.ASSIST" />
                 <category android:name="android.intent.category.DEFAULT" />
