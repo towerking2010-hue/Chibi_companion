@@ -91,6 +91,16 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             gravity=Gravity.CENTER; setPadding(0,CompanionUi.dp(this@ChatActivity,8),0,0)
         })
         setContentView(root)
+        for (index in 0 until root.childCount) {
+            val child = root.getChildAt(index)
+            child.alpha = 0f
+            child.translationY = CompanionUi.dp(this, 10).toFloat()
+            child.animate().alpha(1f).translationY(0f)
+                .setStartDelay((index * 45L).coerceAtMost(220L))
+                .setDuration(260)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        }
         renderTranscript()
         intent.getStringExtra(EXTRA_PROMPT)?.let { prompt ->
             input.setText(prompt); input.setSelection(input.text.length)
