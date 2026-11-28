@@ -237,7 +237,8 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             setPadding(CompanionUi.dp(this@FloatingCompanionService, 12), CompanionUi.dp(this@FloatingCompanionService, 9),
                 CompanionUi.dp(this@FloatingCompanionService, 12), CompanionUi.dp(this@FloatingCompanionService, 9))
         }
-        if (pendingVoiceText.isNotBlank()) { input.setText(pendingVoiceText); input.setSelection(input.text.length); pendingVoiceText = "" }\n        row.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
+        if (pendingVoiceText.isNotBlank()) { input.setText(pendingVoiceText); input.setSelection(input.text.length); pendingVoiceText = "" }
+        row.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
         val send = TextView(this).apply {
             text = "➤"; textSize = 22f; gravity = Gravity.CENTER; setTextColor(Color.WHITE)
             setPadding(12, 0, 6, 0)
