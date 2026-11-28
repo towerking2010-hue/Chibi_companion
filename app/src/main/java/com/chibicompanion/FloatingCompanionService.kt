@@ -113,6 +113,15 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             }
         })
         header.addView(Button(this).apply {
+            text = "Voice"
+            setOnClickListener {
+                hideChat()
+                startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java)
+                    .putExtra(ChatActivity.EXTRA_START_VOICE_INPUT, true)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+        })
+        header.addView(Button(this).apply {
             text = "Full chat"
             setOnClickListener {
                 hideChat()
@@ -170,7 +179,8 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                             bubbleDismiss?.let { android.os.Handler(mainLooper).removeCallbacks(it) }
                             val dismiss = Runnable { hideBubble() }
                             bubbleDismiss = dismiss
-                            android.os.Handler(mainLooper).postDelayed(dismiss, 9000)
+                            val timeout = BubblePreferences.timeoutMs(this@FloatingCompanionService)
+                            if (timeout > 0L) android.os.Handler(mainLooper).postDelayed(dismiss, timeout)
                             android.os.Handler(mainLooper).postDelayed({ avatar?.setMood("neutral") }, 3500)
                         }
                     }
@@ -228,16 +238,19 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             }
         }
         val avatarY = avatarParams?.y ?: 220
+        val bubbleWidth = (resources.displayMetrics.widthPixels * 0.68f).toInt().coerceAtLeast(210)
+        val screenWidth = resources.displayMetrics.widthPixels
+        val avatarX = avatarParams?.x ?: 12
         val lp = WindowManager.LayoutParams(
-            (resources.displayMetrics.widthPixels * 0.68f).toInt().coerceAtLeast(210),
+            bubbleWidth,
             WindowManager.LayoutParams.WRAP_CONTENT,
             overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = (avatarParams?.x ?: 12).coerceAtLeast(8)
-            y = (avatarY - 112).coerceAtLeast(24)
+            x = avatarX.coerceIn(8, (screenWidth - bubbleWidth - 8).coerceAtLeast(8))
+            y = if (avatarY > 170) (avatarY - 112).coerceAtLeast(24) else avatarY + 174
         }
         runCatching { wm.addView(bubble, lp); bubbleView = bubble }
     }
