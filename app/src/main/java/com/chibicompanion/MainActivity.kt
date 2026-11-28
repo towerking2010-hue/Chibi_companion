@@ -16,7 +16,6 @@ import java.util.zip.ZipInputStream
 
 class MainActivity : Activity() {
     private val importSpritesRequest = 802
-    private val importAnimationsRequest = 803
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,17 +64,6 @@ class MainActivity : Activity() {
         root.addView(CompanionUi.button(this, "Import Miko mouth images") {
             pickZip(importSpritesRequest)
         })
-        root.addView(CompanionUi.spacer(this, 8))
-        root.addView(CompanionUi.button(this, "Import Miko animation pack (.zip)") {
-            pickZip(importAnimationsRequest)
-        })
-        val installed = MikoAnimationStore.installed(this)
-        root.addView(CompanionUi.text(
-            this,
-            if (installed.isEmpty()) "No animated WebP clips installed yet." else
-                "Installed animations: " + installed.joinToString(", "),
-            11f, CompanionUi.muted
-        ))
         root.addView(CompanionUi.spacer(this, 9))
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         row.addView(CompanionUi.button(this, "Chat & AI settings") {
@@ -106,7 +94,6 @@ class MainActivity : Activity() {
         if (resultCode != RESULT_OK || data?.data == null) return
         when (requestCode) {
             importSpritesRequest -> importMouthSprites(data.data!!)
-            importAnimationsRequest -> importAnimationPack(data.data!!)
         }
     }
 
@@ -149,14 +136,5 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun importAnimationPack(uri: Uri) {
-        try {
-            val count = contentResolver.openInputStream(uri)?.use { MikoAnimationStore.importZip(this, it) }
-                ?: error("Unable to open selected ZIP")
-            Toast.makeText(this, "Imported $count Miko animation clips ♡", Toast.LENGTH_LONG).show()
-            recreate()
-        } catch (error: Exception) {
-            Toast.makeText(this, "Animation import failed: ${error.message ?: "invalid ZIP"}", Toast.LENGTH_LONG).show()
-        }
-    }
+
 }
