@@ -366,5 +366,11 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         worker.shutdownNow(); if(::tts.isInitialized) { tts.stop(); tts.shutdown() }
         super.onDestroy()
     }
-    override fun onBind(intent:Intent?):IBinder?=null\n\n    companion object {\n        const val ACTION_ATTACHMENT_READY = "com.chibicompanion.QUICK_ATTACHMENT_READY"\n        const val EXTRA_ATTACHMENT_NAME = "attachment_name"\n        const val EXTRA_ATTACHMENT_MIME = "attachment_mime"\n    }
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    companion object {
+        const val ACTION_ATTACHMENT_READY = "com.chibicompanion.QUICK_ATTACHMENT_READY"
+        const val EXTRA_ATTACHMENT_NAME = "attachment_name"
+        const val EXTRA_ATTACHMENT_MIME = "attachment_mime"
+    }
 }
