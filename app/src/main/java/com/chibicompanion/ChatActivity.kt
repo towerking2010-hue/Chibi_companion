@@ -60,24 +60,63 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             setPadding(CompanionUi.dp(this@ChatActivity,16), CompanionUi.dp(this@ChatActivity,13), CompanionUi.dp(this@ChatActivity,16), CompanionUi.dp(this@ChatActivity,13))
         }
         root.addView(entry)
+        val attachmentRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        attachmentRow.addView(CompanionUi.button(this, "📎 Attach") { openAttachmentPicker() },
+            LinearLayout.LayoutParams(0, -2, 1f))
+        attachmentRow.addView(View(this), LinearLayout.LayoutParams(CompanionUi.dp(this, 8), 1))
+        attachmentRow.addView(CompanionUi.button(this, "📷 Camera") { openCamera() },
+            LinearLayout.LayoutParams(0, -2, 1f))
+        root.addView(attachmentRow)
+        attachmentLabel = CompanionUi.text(this, "No attachment selected", 11f, CompanionUi.muted)
+        root.addView(attachmentLabel)
         root.addView(CompanionUi.spacer(this, 6))
         root.addView(CompanionUi.button(this, "🎙  Tap to talk") { startVoiceInput() })
         root.addView(CompanionUi.spacer(this, 8))
         root.addView(CompanionUi.button(this, "Send message  ➜", true) {
             val message = entry.text.toString().trim()
-            if (message.isNotEmpty()) {
-                log.append("\n\nYou: $message\n\nHer: thinking…")
-                ChatHistory.add(this@ChatActivity, "You", message)
+            val attachment = selectedAttachment
+            if (message.isNotEmpty() || attachment != null) {
+                val userLine = (if (message.isNotBlank()) message else "") +
+                    (if (attachment != null) "\n📎 " + attachment.description() else "")
+                log.append("\n\nYou: " + userLine + "\n\nHer: thinking…")
+                ChatHistory.add(this@ChatActivity, "You", userLine)
                 entry.text.clear()
+                selectedAttachment = null
+                attachmentLabel.text = "No attachment selected"
                 worker.execute {
-                    val explicitMemory = CompanionMemory.handleExplicitRequest(this@ChatActivity, message)
-                    val asksAboutScreen = message.contains("screen", true) || message.contains("what am I looking at", true) || message.contains("what is on", true)
-                    val prompt = if (asksAboutScreen) message + "\n\nSCREEN CONTEXT (user requested this):\n" + ScreenContext.describe() else message
-                    val answer = explicitMemory ?: PhoneActions.tryHandle(this@ChatActivity, message) ?: runCatching { AiClient.reply(this@ChatActivity, prompt) }
-                        .getOrElse { OfflineCompanion.reply(message, this@ChatActivity) }
+                    val answer = when {
+                        attachment != null && attachment.isImage -> {
+                            val jpeg = AttachmentStore.jpegForVision(attachment)
+                            if (jpeg == null) "I saved the image, but couldn't open it for visual analysis. Could you try another image?"
+                            else try {
+                                AiClient.replyWithImage(this@ChatActivity,
+                                    if (message.isBlank()) "Please describe this image and help me understand it." else message, jpeg)
+                            } catch (e: Exception) {
+                                "I saved your image, but couldn't reach the vision AI provider. " +
+                                    (e.message ?: "Please check your connection and provider settings.")
+                            } finally { jpeg.fill(0) }
+                        }
+                        attachment != null && AttachmentStore.readSmallText(attachment) != null -> {
+                            val extracted = AttachmentStore.readSmallText(attachment).orEmpty()
+                            runCatching {
+                                AiClient.reply(this@ChatActivity,
+                                    (if (message.isBlank()) "Please read and summarize this text file." else message) +
+                                        "\n\nUSER-ATTACHED TEXT FILE (" + attachment.displayName + "):\n" + extracted)
+                            }.getOrElse { OfflineCompanion.reply(message, this@ChatActivity) }
+                        }
+                        attachment != null -> "I've saved " + attachment.displayName +
+                            " in this conversation. I can attach it here, but I can't inspect this file type yet. Images and small text files can be analysed."
+                        else -> {
+                            val explicitMemory = CompanionMemory.handleExplicitRequest(this@ChatActivity, message)
+                            val asksAboutScreen = message.contains("screen", true) || message.contains("what am I looking at", true) || message.contains("what is on", true)
+                            val prompt = if (asksAboutScreen) message + "\n\nSCREEN CONTEXT (user requested this):\n" + ScreenContext.describe() else message
+                            explicitMemory ?: PhoneActions.tryHandle(this@ChatActivity, message) ?: runCatching { AiClient.reply(this@ChatActivity, prompt) }
+                                .getOrElse { OfflineCompanion.reply(message, this@ChatActivity) }
+                        }
+                    }
                     ChatHistory.add(this@ChatActivity, "Her", answer)
                     runOnUiThread {
-                        log.text = log.text.toString().replace("Her: thinking…", "Her: $answer")
+                        log.text = ChatHistory.read(this@ChatActivity)
                         tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "reply")
                     }
                 }
@@ -169,8 +208,63 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         })
         settingsCard.addView(assistantCard)
         setContentView(root)
+        if (intent.getBooleanExtra(EXTRA_OPEN_ATTACHMENT_PICKER, false)) {
+            window.decorView.post { openAttachmentPicker() }
+        }
     }
 
+    private fun openAttachmentPicker() {
+        val picker = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+                "image/*", "video/*", "application/pdf", "text/plain",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ))
+        }
+        runCatching { startActivityForResult(picker, REQUEST_ATTACHMENT) }
+            .onFailure { toast("Couldn't open the file picker") }
+    }
+
+    private fun openCamera() {
+        val camera = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+        if (camera.resolveActivity(packageManager) == null) {
+            toast("No camera app is available")
+            return
+        }
+        runCatching { startActivityForResult(camera, REQUEST_CAMERA) }
+            .onFailure { toast("Couldn't open the camera") }
+    }
+
+    @Deprecated("Legacy activity result callback")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK) return
+        try {
+            when (requestCode) {
+                REQUEST_ATTACHMENT -> {
+                    val uri = data?.data ?: return
+                    selectedAttachment = AttachmentStore.importUri(this, uri)
+                    attachmentLabel.text = "Selected: " + (selectedAttachment?.description() ?: "")
+                    toast("Attachment added ♡")
+                }
+                REQUEST_CAMERA -> {
+                    val bitmap = data?.extras?.get("data") as? Bitmap
+                    if (bitmap == null) {
+                        toast("The camera didn't return a photo")
+                        return
+                    }
+                    selectedAttachment = AttachmentStore.saveCameraBitmap(this, bitmap)
+                    bitmap.recycle()
+                    attachmentLabel.text = "Selected: " + (selectedAttachment?.description() ?: "")
+                    toast("Photo added ♡")
+                }
+            }
+        } catch (e: Exception) {
+            toast("Couldn't add that attachment: " + (e.message ?: "unknown error"))
+        }
+    }
 
     private fun startVoiceInput() {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
@@ -272,7 +366,12 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) CompanionVoice.configure(this, tts)
     }
-    companion object { private const val VOICE_PERMISSION_REQUEST = 702 }
+    companion object {
+        private const val VOICE_PERMISSION_REQUEST = 702
+        private const val REQUEST_ATTACHMENT = 703
+        private const val REQUEST_CAMERA = 704
+        const val EXTRA_OPEN_ATTACHMENT_PICKER = "open_attachment_picker"
+    }
 
     private fun toast(s: String) = Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
     override fun onDestroy() {
