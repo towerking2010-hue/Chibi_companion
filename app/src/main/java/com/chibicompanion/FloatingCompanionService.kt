@@ -216,7 +216,17 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             setPadding(6, 0, 10, 0)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickAttachmentActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
-        row.addView(attach, LinearLayout.LayoutParams(CompanionUi.dp(this, 38), CompanionUi.dp(this, 48)))
+        row.addView(attach, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
+        val camera = TextView(this).apply {
+            text = "📷"; textSize = 19f; gravity = Gravity.CENTER; setTextColor(Color.WHITE)
+            setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickCameraActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        }
+        row.addView(camera, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
+        val voice = TextView(this).apply {
+            text = "🎙"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(Color.WHITE)
+            setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickVoiceActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        }
+        row.addView(voice, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
         val input = EditText(this).apply {
             hint = "Ask Miko anything…"; textSize = 14f; maxLines = 3
             setTextColor(Color.WHITE); setHintTextColor(Color.LTGRAY)
@@ -385,5 +395,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         const val ACTION_ATTACHMENT_READY = "com.chibicompanion.QUICK_ATTACHMENT_READY"
         const val EXTRA_ATTACHMENT_NAME = "attachment_name"
         const val EXTRA_ATTACHMENT_MIME = "attachment_mime"
+        const val ACTION_VOICE_READY = "com.chibicompanion.QUICK_VOICE_READY"
+        const val EXTRA_VOICE_TEXT = "voice_text"
     }
 }
