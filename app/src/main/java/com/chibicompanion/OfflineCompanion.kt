@@ -6,7 +6,7 @@ import android.content.Context
 object OfflineCompanion {
     fun reply(message: String, context: Context? = null): String {
         val q = message.lowercase().trim()
-            .replace(Regex("[^a-z0-9? ]"), "")
+            .replace(Regex("[^\\p{L}0-9? ]"), "")
             .replace(Regex("\\s+"), " ")
         val style = context?.let { MikoLanguage.selected(it) } ?: MikoLanguage.NATURAL
         val japanese = when {
@@ -16,11 +16,11 @@ object OfflineCompanion {
                 if (style == MikoLanguage.ENGLISH) "You're welcome! Ehehe. ♡" else "Dou itashimashite! You're welcome. ♡"
             q.matches(Regex("^(oyasumi|oyasuminasai|おやすみ)$")) ->
                 if (style == MikoLanguage.ENGLISH) "Good night! Sweet dreams, okay? ♡" else "Oyasumi! Yoi yume mite ne! ♡"
-            q.matches(Regex("^(genki|genki\??|genki desu ka|元気)$")) ->
+            q.matches(Regex("^(genki|genki\\??|genki desu ka|元気)$")) ->
                 if (style == MikoLanguage.ENGLISH) "I'm doing well! How about you?" else "Un, genki da yo! How about you?"
-            q.matches(Regex("^(daijoubu|daijobu|daijoubu\??|大丈夫)$")) ->
+            q.matches(Regex("^(daijoubu|daijobu|daijoubu\\??|大丈夫)$")) ->
                 if (style == MikoLanguage.ENGLISH) "I'm okay! Don't worry about me. ♡" else "Un, daijoubu! Don't worry. ♡"
-            q.matches(Regex("^(nani shiteru|nani shiteru\??)$")) ->
+            q.matches(Regex("^(nani shiteru|nani shiteru\\??)$")) ->
                 if (style == MikoLanguage.ENGLISH) "I'm here chatting with you, silly!" else "Ima kimi to hanashiteru yo! Just talking with you!"
             else -> null
         }
