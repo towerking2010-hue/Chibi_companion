@@ -184,9 +184,9 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             setPadding(CompanionUi.dp(this@FloatingCompanionService, 10), CompanionUi.dp(this@FloatingCompanionService, 8),
                 CompanionUi.dp(this@FloatingCompanionService, 10), CompanionUi.dp(this@FloatingCompanionService, 8))
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                intArrayOf(Color.rgb(255, 250, 255), Color.rgb(239, 237, 255))).apply {
+                intArrayOf(Color.rgb(18, 25, 55), Color.rgb(28, 39, 78))).apply {
                 cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 24).toFloat()
-                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), Color.rgb(220, 211, 244))
+                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), CompanionUi.stroke)
             }
             elevation = CompanionUi.dp(this@FloatingCompanionService, 14).toFloat()
         }
@@ -197,21 +197,21 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         }
         top.addView(TextView(this).apply {
             text = "✦  MIKO  ·  QUICK CHAT"; textSize = 11f; letterSpacing = .08f
-            setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(Color.rgb(112, 94, 157))
+            setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(CompanionUi.cyan)
         }, LinearLayout.LayoutParams(0, -2, 1f))
         top.addView(TextView(this).apply {
             text = "FULL CHAT ↗"; textSize = 10f; setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(Color.rgb(122, 105, 177)); setPadding(8, 7, 8, 7)
+            setTextColor(CompanionUi.muted); setPadding(8, 7, 8, 7)
             setOnClickListener { hideChat(); startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         })
         top.addView(TextView(this).apply {
-            text = "×"; textSize = 21f; setTextColor(Color.rgb(103, 91, 133)); setPadding(12, 0, 4, 0)
+            text = "×"; textSize = 21f; setTextColor(CompanionUi.muted); setPadding(12, 0, 4, 0)
             setOnClickListener { hideChat() }
         })
         panel.addView(top)
 
         val attachment = TextView(this).apply {
-            tag = "miko_attachment"; textSize = 11f; setTextColor(Color.rgb(190, 215, 255))
+            tag = "miko_attachment"; textSize = 11f; setTextColor(CompanionUi.muted)
             visibility = if (pendingAttachment != null) View.VISIBLE else View.GONE
             text = if (pendingAttachment != null) "📎 $pendingAttachmentName" else ""
             setPadding(8, 4, 8, 4)
@@ -221,27 +221,27 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
 
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val attach = TextView(this).apply {
-            text = "＋"; textSize = 24f; setTextColor(Color.rgb(139, 116, 190)); gravity = Gravity.CENTER
+            text = "＋"; textSize = 24f; setTextColor(CompanionUi.lavender); gravity = Gravity.CENTER
             setPadding(6, 0, 10, 0)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickAttachmentActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
         row.addView(attach, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
         val camera = TextView(this).apply {
-            text = "📷"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(Color.rgb(139, 116, 190))
+            text = "📷"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(CompanionUi.lavender)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickCameraActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
         row.addView(camera, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
         val voice = TextView(this).apply {
-            text = "🎙"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(Color.rgb(139, 116, 190))
+            text = "🎙"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(CompanionUi.lavender)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickVoiceActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
         row.addView(voice, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
         val input = EditText(this).apply {
             hint = "Say something to Miko…"; textSize = 14f; maxLines = 3
-            setTextColor(Color.rgb(64, 57, 83)); setHintTextColor(Color.rgb(157, 148, 177))
+            setTextColor(CompanionUi.ink); setHintTextColor(CompanionUi.muted)
             background = GradientDrawable().apply {
-                setColor(Color.WHITE); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 17).toFloat()
-                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), Color.rgb(231, 224, 243))
+                setColor(CompanionUi.surfaceRaised); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 17).toFloat()
+                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), CompanionUi.stroke)
             }
             setPadding(CompanionUi.dp(this@FloatingCompanionService, 12), CompanionUi.dp(this@FloatingCompanionService, 9),
                 CompanionUi.dp(this@FloatingCompanionService, 12), CompanionUi.dp(this@FloatingCompanionService, 9))
@@ -251,7 +251,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         val send = TextView(this).apply {
             text = "➤"; textSize = 21f; gravity = Gravity.CENTER; setTextColor(Color.WHITE)
             background = GradientDrawable().apply {
-                setColor(Color.rgb(169, 143, 211)); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 16).toFloat()
+                setColor(CompanionUi.lavender); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 16).toFloat()
             }
             setPadding(8, 0, 8, 0)
             setOnClickListener {
@@ -367,21 +367,21 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             setPadding(CompanionUi.dp(this@FloatingCompanionService, 14), CompanionUi.dp(this@FloatingCompanionService, 10),
                 CompanionUi.dp(this@FloatingCompanionService, 10), CompanionUi.dp(this@FloatingCompanionService, 10))
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                intArrayOf(Color.rgb(255, 245, 251), Color.rgb(235, 232, 255))).apply {
+                intArrayOf(Color.rgb(27, 45, 88), Color.rgb(39, 37, 82))).apply {
                 cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 22).toFloat()
-                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), Color.rgb(218, 207, 241))
+                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), CompanionUi.stroke)
             }
             elevation = CompanionUi.dp(this@FloatingCompanionService, 10).toFloat()
         }
         val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         header.addView(TextView(this).apply {
             text = "✦  MIKO'S REPLY"; textSize = 10f; letterSpacing = .08f
-            setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(Color.rgb(105, 87, 153))
+            setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(CompanionUi.cyan)
         }, LinearLayout.LayoutParams(0, -2, 1f))
-        header.addView(TextView(this).apply { text = "×"; textSize = 20f; setTextColor(Color.rgb(86, 78, 150)); setOnClickListener { hideReplyBubble() } })
+        header.addView(TextView(this).apply { text = "×"; textSize = 20f; setTextColor(CompanionUi.muted); setOnClickListener { hideReplyBubble() } })
         bubble.addView(header)
         bubble.addView(TextView(this).apply {
-            text = message; textSize = 14f; setTextColor(Color.rgb(57, 48, 77)); maxLines = 8
+            text = message; textSize = 14f; setTextColor(CompanionUi.ink); maxLines = 8
             setLineSpacing(CompanionUi.dp(this@FloatingCompanionService, 2).toFloat(), 1f)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         })
