@@ -177,6 +177,17 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         }
         assistantCard.addView(CompanionUi.text(this, "PHONE AWARENESS & MEMORY  ✦", 12f, CompanionUi.ink, true))
         assistantCard.addView(CompanionUi.text(this, "Optional permissions stay under your control.", 11f, CompanionUi.muted))
+        assistantCard.addView(CompanionUi.button(this, "Reply bubble: " + BubblePreferences.label(BubblePreferences.timeoutMs(this))) {
+            val values = longArrayOf(5000L, 9000L, 15000L, BubblePreferences.NEVER)
+            val labels = arrayOf("5 seconds", "9 seconds", "15 seconds", "Until I dismiss it")
+            val selected = values.indexOf(BubblePreferences.timeoutMs(this)).coerceAtLeast(0)
+            AlertDialog.Builder(this@ChatActivity).setTitle("How long should Miko's reply bubble stay?")
+                .setSingleChoiceItems(labels, selected) { dialog, which ->
+                    BubblePreferences.setTimeoutMs(this@ChatActivity, values[which])
+                    dialog.dismiss()
+                    toast("Reply bubble setting updated")
+                }.setNegativeButton("Cancel", null).show()
+        })
         assistantCard.addView(CompanionUi.button(this, "Reply language: " + MikoLanguage.label(MikoLanguage.selected(this))) {
             val values = arrayOf(MikoLanguage.NATURAL, MikoLanguage.ROMAJI, MikoLanguage.ENGLISH)
             val labels = arrayOf("Natural bilingual — English with occasional Japanese", "Japanese / Romaji — mainly short Romaji replies", "English — understand Japanese, reply in English")
@@ -210,6 +221,9 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         setContentView(root)
         if (intent.getBooleanExtra(EXTRA_OPEN_ATTACHMENT_PICKER, false)) {
             window.decorView.post { openAttachmentPicker() }
+        }
+        if (intent.getBooleanExtra(EXTRA_START_VOICE_INPUT, false)) {
+            window.decorView.post { startVoiceInput() }
         }
     }
 
@@ -371,6 +385,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         private const val REQUEST_ATTACHMENT = 703
         private const val REQUEST_CAMERA = 704
         const val EXTRA_OPEN_ATTACHMENT_PICKER = "open_attachment_picker"
+        const val EXTRA_START_VOICE_INPUT = "start_voice_input"
     }
 
     private fun toast(s: String) = Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
