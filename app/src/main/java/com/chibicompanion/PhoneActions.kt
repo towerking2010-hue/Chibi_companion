@@ -20,7 +20,7 @@ object PhoneActions {
         if (navigation != null) {
             val ok = CompanionAccessibilityService.navigateCurrent(navigation)
             return if (ok) "Done. I used Android's accessibility navigation." else
-                "To control navigation, first enable Chibi Companion in Android Accessibility settings."
+                "Accessibility navigation is unavailable in this reduced-permission diagnostic build. You can still use Miko's floating companion, chat, voice, and screen-capture flow."
         }
         if (lower == "open folder" || lower == "choose folder" || lower.startsWith("browse folder")) {
             val i=Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
