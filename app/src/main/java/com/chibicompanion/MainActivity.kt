@@ -21,6 +21,8 @@ import java.util.Date
 import java.util.Locale
 
 class MainActivity : Activity() {
+    companion object { private const val ACTION_SUMMON_MIKO = "com.chibicompanion.action.SUMMON_MIKO" }
+
     private val importSpritesRequest = 802
 
     private var waitingForOverlayPermission = false
@@ -149,6 +151,24 @@ class MainActivity : Activity() {
         setContentView(scroll)
         refreshSetupButton()
         refreshFloatingButton()
+        if (intent?.action == ACTION_SUMMON_MIKO) {
+            window.decorView.post { summonMikoFromShortcut() }
+        }
+    }
+
+    private fun summonMikoFromShortcut() {
+        val running = getSharedPreferences("miko_companion_state", MODE_PRIVATE)
+            .getBoolean("floating", false)
+        if (running) {
+            Toast.makeText(this, "Miko is already here ♡", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!Settings.canDrawOverlays(this)) {
+            waitingForOverlayPermission = true
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+            return
+        }
+        startMikoFloating()
     }
 
 
