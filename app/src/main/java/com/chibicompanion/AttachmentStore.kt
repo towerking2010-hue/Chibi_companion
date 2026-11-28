@@ -48,9 +48,10 @@ object AttachmentStore {
                 }
             }
         }
-        name = name.replace(Regex("[^A-Za-z0-9._ -]"), "_").take(100).ifBlank { "attachment" }
-        val extension = name.substringAfterLast('.', "")
-        val safeName = if (extension.isBlank()) name else name.substringBeforeLast('.')
+        name = name.take(120).ifBlank { "attachment" }
+        val safeFileName = name.replace(Regex("[^A-Za-z0-9._ -]"), "_").take(100).ifBlank { "attachment" }
+        val extension = safeFileName.substringAfterLast('.', "")
+        val safeName = if (extension.isBlank()) safeFileName else safeFileName.substringBeforeLast('.')
         val destination = File(directory(context), UUID.randomUUID().toString() + "_" + safeName +
             if (extension.isNotBlank()) ".$extension" else "")
         val input = resolver.openInputStream(uri) ?: throw IllegalArgumentException("Could not open the selected attachment")
