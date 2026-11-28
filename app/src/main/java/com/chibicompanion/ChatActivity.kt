@@ -12,7 +12,9 @@ import android.provider.Settings
 import android.text.InputType
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.graphics.Color
+import android.graphics.Bitmap
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -21,9 +23,12 @@ import java.util.concurrent.Executors
 
 class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var log: TextView
+    private lateinit var chatScroll: ScrollView
     private lateinit var entry: EditText
     private var speechRecognizer: SpeechRecognizer? = null
     private lateinit var tts: TextToSpeech
+    private var selectedAttachment: ChatAttachment? = null
+    private lateinit var attachmentLabel: TextView
     private val worker = Executors.newSingleThreadExecutor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,9 +47,10 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         root.addView(CompanionUi.spacer(this, 14))
 
         val chatCard = CompanionUi.column(this, 15).apply { background = CompanionUi.panel(this@ChatActivity, Color.WHITE, 24) }
-        log = CompanionUi.text(this, "Ayaya… you finally came to see me? ♡\n\nAdd an AI provider below when you're ready for cloud conversations.", 15f)
+        log = CompanionUi.text(this, ChatHistory.read(this), 15f)
         log.setLineSpacing(CompanionUi.dp(this,3).toFloat(), 1f)
-        chatCard.addView(ScrollView(this).apply { isFillViewport = true; addView(log) }, LinearLayout.LayoutParams(-1,0,1f))
+        chatScroll = ScrollView(this).apply { isFillViewport = true; addView(log) }
+        chatCard.addView(chatScroll, LinearLayout.LayoutParams(-1,0,1f))
         root.addView(chatCard, LinearLayout.LayoutParams(-1,0,1f))
         root.addView(CompanionUi.spacer(this, 12))
 
@@ -57,24 +63,73 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             setPadding(CompanionUi.dp(this@ChatActivity,16), CompanionUi.dp(this@ChatActivity,13), CompanionUi.dp(this@ChatActivity,16), CompanionUi.dp(this@ChatActivity,13))
         }
         root.addView(entry)
+        val attachmentRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        attachmentRow.addView(CompanionUi.button(this, "📎 Attach") { openAttachmentPicker() },
+            LinearLayout.LayoutParams(0, -2, 1f))
+        attachmentRow.addView(View(this), LinearLayout.LayoutParams(CompanionUi.dp(this, 8), 1))
+        attachmentRow.addView(CompanionUi.button(this, "📷 Camera") { openCamera() },
+            LinearLayout.LayoutParams(0, -2, 1f))
+        root.addView(attachmentRow)
+        attachmentLabel = CompanionUi.text(this, "No attachment selected", 11f, CompanionUi.muted)
+        root.addView(attachmentLabel)
         root.addView(CompanionUi.spacer(this, 6))
         root.addView(CompanionUi.button(this, "🎙  Tap to talk") { startVoiceInput() })
         root.addView(CompanionUi.spacer(this, 8))
         root.addView(CompanionUi.button(this, "Send message  ➜", true) {
             val message = entry.text.toString().trim()
-            if (message.isNotEmpty()) {
-                log.append("\n\nYou: $message\n\nHer: thinking…")
-                ChatHistory.add(this@ChatActivity, "You", message)
+            val attachment = selectedAttachment
+            if (message.isNotEmpty() || attachment != null) {
+                val userLine = (if (message.isNotBlank()) message else "") +
+                    (if (attachment != null) "\n📎 " + attachment.description() else "")
+                log.append("\n\nYou: " + userLine + "\n\nHer: thinking…")
+                ChatHistory.add(this@ChatActivity, "You", userLine)
                 entry.text.clear()
+                selectedAttachment = null
+                attachmentLabel.text = "No attachment selected"
                 worker.execute {
-                    val explicitMemory = CompanionMemory.handleExplicitRequest(this@ChatActivity, message)
-                    val asksAboutScreen = message.contains("screen", true) || message.contains("what am I looking at", true) || message.contains("what is on", true)
-                    val prompt = if (asksAboutScreen) message + "\n\nSCREEN CONTEXT (user requested this):\n" + ScreenContext.describe() else message
-                    val answer = explicitMemory ?: PhoneActions.tryHandle(this@ChatActivity, message) ?: runCatching { AiClient.reply(this@ChatActivity, prompt) }
-                        .getOrElse { OfflineCompanion.reply(message) }
+                    val answer = when {
+                        attachment != null && (attachment.isImage || attachment.isVideo || attachment.isPdf) -> {
+                            val jpeg = when {
+                                attachment.isImage -> AttachmentStore.jpegForVision(attachment)
+                                attachment.isVideo -> AttachmentStore.videoPreviewJpeg(attachment)
+                                else -> AttachmentStore.pdfPreviewJpeg(attachment)
+                            }
+                            val task = when {
+                                attachment.isVideo -> "This is a contact sheet of five frames sampled from the attached video. Describe the visible events and sequence. The preview contains no audio."
+                                attachment.isPdf -> "This image shows up to the first three pages of the attached PDF. Read the visible content and summarize it. Mention that only the first pages are shown."
+                                else -> "Please describe this image and help me understand it."
+                            }
+                            if (jpeg == null) "I saved the attachment, but couldn't create a preview for analysis. Please try another file."
+                            else try {
+                                AiClient.replyWithImage(this@ChatActivity,
+                                    if (message.isBlank()) task else message + "\\n\\n" + task, jpeg)
+                            } catch (e: Exception) {
+                                "I saved your attachment, but couldn't reach the vision AI provider. " +
+                                    (e.message ?: "Please check your connection and provider settings.")
+                            } finally { jpeg.fill(0) }
+                        }
+                        attachment != null && AttachmentStore.readSmallText(attachment) != null -> {
+                            val extracted = AttachmentStore.readSmallText(attachment).orEmpty()
+                            runCatching {
+                                AiClient.reply(this@ChatActivity,
+                                    (if (message.isBlank()) "Please read and summarize this text file." else message) +
+                                        "\n\nUSER-ATTACHED TEXT FILE (" + attachment.displayName + "):\n" + extracted)
+                            }.getOrElse { OfflineCompanion.reply(message, this@ChatActivity) }
+                        }
+                        attachment != null -> "I've saved " + attachment.displayName +
+                            " in this conversation. I can attach it here, but this format cannot be previewed by Miko yet."
+                        else -> {
+                            val explicitMemory = CompanionMemory.handleExplicitRequest(this@ChatActivity, message)
+                            val asksAboutScreen = message.contains("screen", true) || message.contains("what am I looking at", true) || message.contains("what is on", true)
+                            val prompt = if (asksAboutScreen) message + "\n\nSCREEN CONTEXT (user requested this):\n" + ScreenContext.describe() else message
+                            explicitMemory ?: PhoneActions.tryHandle(this@ChatActivity, message) ?: runCatching { AiClient.reply(this@ChatActivity, prompt) }
+                                .getOrElse { OfflineCompanion.reply(message, this@ChatActivity) }
+                        }
+                    }
                     ChatHistory.add(this@ChatActivity, "Her", answer)
                     runOnUiThread {
-                        log.text = log.text.toString().replace("Her: thinking…", "Her: $answer")
+                        log.text = ChatHistory.read(this@ChatActivity)
+                        chatScroll.post { chatScroll.fullScroll(View.FOCUS_DOWN) }
                         tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "reply")
                     }
                 }
@@ -135,12 +190,36 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         }
         assistantCard.addView(CompanionUi.text(this, "PHONE AWARENESS & MEMORY  ✦", 12f, CompanionUi.ink, true))
         assistantCard.addView(CompanionUi.text(this, "Optional permissions stay under your control.", 11f, CompanionUi.muted))
-        assistantCard.addView(CompanionUi.button(this, "Enable / manage Screen Awareness") {
-            AssistantPreferences.setScreenAwarenessEnabled(this@ChatActivity, true)
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        assistantCard.addView(CompanionUi.button(this, "Reply bubble: " + BubblePreferences.label(BubblePreferences.timeoutMs(this))) {
+            val values = longArrayOf(5000L, 9000L, 15000L, BubblePreferences.NEVER)
+            val labels = arrayOf("5 seconds", "9 seconds", "15 seconds", "Until I dismiss it")
+            val selected = values.indexOf(BubblePreferences.timeoutMs(this)).coerceAtLeast(0)
+            AlertDialog.Builder(this@ChatActivity).setTitle("How long should Miko's reply bubble stay?")
+                .setSingleChoiceItems(labels, selected) { dialog, which ->
+                    BubblePreferences.setTimeoutMs(this@ChatActivity, values[which])
+                    dialog.dismiss()
+                    toast("Reply bubble setting updated")
+                }.setNegativeButton("Cancel", null).show()
         })
-        assistantCard.addView(CompanionUi.text(this, "To inspect another app, double-tap your floating chibi and choose 'Look at the app behind me'.", 11f, CompanionUi.muted))
-        assistantCard.addView(CompanionUi.text(this, "For visual screen analysis, use the floating chibi button: Look at the app behind me.", 11f, CompanionUi.muted))
+        assistantCard.addView(CompanionUi.button(this, "Reply language: " + MikoLanguage.label(MikoLanguage.selected(this))) {
+            val values = arrayOf(MikoLanguage.NATURAL, MikoLanguage.ROMAJI, MikoLanguage.ENGLISH)
+            val labels = arrayOf("Natural bilingual — English with occasional Japanese", "Japanese / Romaji — mainly short Romaji replies", "English — understand Japanese, reply in English")
+            val selected = values.indexOf(MikoLanguage.selected(this)).coerceAtLeast(0)
+            AlertDialog.Builder(this@ChatActivity).setTitle("How should Miko reply?")
+                .setSingleChoiceItems(labels, selected) { dialog, which ->
+                    MikoLanguage.set(this@ChatActivity, values[which])
+                    dialog.dismiss()
+                    recreate()
+                }.setNegativeButton("Cancel", null).show()
+        })
+        assistantCard.addView(CompanionUi.button(this, "Screen Awareness — unavailable in this diagnostic build") {
+            AlertDialog.Builder(this@ChatActivity)
+                .setTitle("Screen Awareness temporarily disabled")
+                .setMessage("This test version removes Android's Accessibility service to check whether it caused Google Play Protect to block installation. Floating Miko, chat, voice and the three mouth images remain available.")
+                .setPositiveButton("OK", null)
+                .show()
+        })
+        assistantCard.addView(CompanionUi.text(this, "Screen Awareness and Accessibility navigation are disabled in this reduced-permission test build.", 11f, CompanionUi.muted))
         assistantCard.addView(CompanionUi.button(this, "View and manage my memories") { showMemoryManager() })
         assistantCard.addView(CompanionUi.button(this, "Proactive behavior: " + AssistantPreferences.proactiveMode(this).uppercase()) {
             val modes = arrayOf("Quiet — only respond when I interact", "Optional — occasional helpful check-ins", "Active — proactively suggest useful actions")
@@ -155,8 +234,74 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         })
         settingsCard.addView(assistantCard)
         setContentView(root)
+        if (intent.getBooleanExtra(EXTRA_OPEN_ATTACHMENT_PICKER, false)) {
+            window.decorView.post { openAttachmentPicker() }
+        }
+        if (intent.getBooleanExtra(EXTRA_START_VOICE_INPUT, false)) {
+            window.decorView.post { startVoiceInput() }
+        }
     }
 
+    private fun openAttachmentPicker() {
+        val picker = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+                "image/*", "video/*", "application/pdf", "text/plain",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ))
+        }
+        runCatching { startActivityForResult(picker, REQUEST_ATTACHMENT) }
+            .onFailure { toast("Couldn't open the file picker") }
+    }
+
+    private fun openCamera() {
+        val camera = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+        if (camera.resolveActivity(packageManager) == null) {
+            toast("No camera app is available")
+            return
+        }
+        runCatching { startActivityForResult(camera, REQUEST_CAMERA) }
+            .onFailure { toast("Couldn't open the camera") }
+    }
+
+    @Deprecated("Legacy activity result callback")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK) return
+        try {
+            when (requestCode) {
+                REQUEST_ATTACHMENT -> {
+                    val uri = data?.data ?: return
+                    selectedAttachment = AttachmentStore.importUri(this, uri)
+                    attachmentLabel.text = "Selected: " + (selectedAttachment?.description() ?: "")
+                    toast("Attachment added ♡")
+                }
+                REQUEST_CAMERA -> {
+                    val bitmap = data?.extras?.get("data") as? Bitmap
+                    if (bitmap == null) {
+                        toast("The camera didn't return a photo")
+                        return
+                    }
+                    selectedAttachment = AttachmentStore.saveCameraBitmap(this, bitmap)
+                    bitmap.recycle()
+                    attachmentLabel.text = "Selected: " + (selectedAttachment?.description() ?: "")
+                    toast("Photo added ♡")
+                }
+            }
+        } catch (e: Exception) {
+            toast("Couldn't add that attachment: " + (e.message ?: "unknown error"))
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::log.isInitialized) {
+            log.text = ChatHistory.read(this)
+            chatScroll.post { chatScroll.fullScroll(View.FOCUS_DOWN) }
+        }
+    }
 
     private fun startVoiceInput() {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
@@ -256,9 +401,28 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) CompanionVoice.configure(this, tts)
+        if (status == TextToSpeech.SUCCESS) {
+            CompanionVoice.configure(this, tts)
+            tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) {
+                    sendBroadcast(Intent(FloatingCompanionService.ACTION_CHAT_TTS_STARTED).setPackage(packageName))
+                }
+                override fun onDone(utteranceId: String?) {
+                    sendBroadcast(Intent(FloatingCompanionService.ACTION_CHAT_TTS_FINISHED).setPackage(packageName))
+                }
+                override fun onError(utteranceId: String?) {
+                    sendBroadcast(Intent(FloatingCompanionService.ACTION_CHAT_TTS_FINISHED).setPackage(packageName))
+                }
+            })
+        }
     }
-    companion object { private const val VOICE_PERMISSION_REQUEST = 702 }
+    companion object {
+        private const val VOICE_PERMISSION_REQUEST = 702
+        private const val REQUEST_ATTACHMENT = 703
+        private const val REQUEST_CAMERA = 704
+        const val EXTRA_OPEN_ATTACHMENT_PICKER = "open_attachment_picker"
+        const val EXTRA_START_VOICE_INPUT = "start_voice_input"
+    }
 
     private fun toast(s: String) = Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
     override fun onDestroy() {
