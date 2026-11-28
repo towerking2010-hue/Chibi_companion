@@ -370,15 +370,23 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             orientation = LinearLayout.VERTICAL
             setPadding(CompanionUi.dp(this@FloatingCompanionService, 14), CompanionUi.dp(this@FloatingCompanionService, 10),
                 CompanionUi.dp(this@FloatingCompanionService, 10), CompanionUi.dp(this@FloatingCompanionService, 10))
-            background = GradientDrawable().apply { setColor(Color.rgb(231, 229, 255)); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 18).toFloat() }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                intArrayOf(Color.rgb(255, 245, 251), Color.rgb(235, 232, 255))).apply {
+                cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 22).toFloat()
+                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), Color.rgb(218, 207, 241))
+            }
             elevation = CompanionUi.dp(this@FloatingCompanionService, 10).toFloat()
         }
         val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        header.addView(TextView(this).apply { text = "MIKO  ·  REPLY"; textSize = 10f; setTextColor(Color.rgb(86, 78, 150)) }, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(TextView(this).apply {
+            text = "✦  MIKO'S REPLY"; textSize = 10f; letterSpacing = .08f
+            setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(Color.rgb(105, 87, 153))
+        }, LinearLayout.LayoutParams(0, -2, 1f))
         header.addView(TextView(this).apply { text = "×"; textSize = 20f; setTextColor(Color.rgb(86, 78, 150)); setOnClickListener { hideReplyBubble() } })
         bubble.addView(header)
         bubble.addView(TextView(this).apply {
-            text = message; textSize = 14f; setTextColor(Color.rgb(39, 38, 70)); maxLines = 7
+            text = message; textSize = 14f; setTextColor(Color.rgb(57, 48, 77)); maxLines = 8
+            setLineSpacing(CompanionUi.dp(this@FloatingCompanionService, 2).toFloat(), 1f)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         })
         val screenW = resources.displayMetrics.widthPixels
