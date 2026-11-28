@@ -275,7 +275,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private fun submitQuickMessage(message: String, uri: Uri?, name: String, mime: String) {
         val userLine = buildString {
             if (message.isNotBlank()) append(message)
-            if (uri != null) { if (isNotEmpty()) append("\\n"); append("[Attachment: ").append(name).append("]") }
+            if (uri != null) { if (isNotEmpty()) append("\n"); append("[Attachment: ").append(name).append("]") }
         }
         ChatHistory.add(this, "You", userLine)
         showReplyBubble("Miko is thinking…")
@@ -313,7 +313,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     mime.startsWith("text/") || name.endsWith(".txt", true) || name.endsWith(".md", true) || name.endsWith(".csv", true) -> {
                         val text = (contentResolver.openInputStream(uri) ?: throw IllegalStateException("Could not open file")).bufferedReader().use { it.readText().take(24000) }
                         AiClient.reply(this@FloatingCompanionService,
-                            (message + "\\n\\nAttached file ($name):\\n" + text).trim())
+                            (message + "\n\nAttached file ($name):\n" + text).trim())
                     }
                     else -> "I attached $name, but I can currently read images, text files, the first page of PDFs, and an opening video frame. Office documents and other binary formats are not readable yet."
                 }
