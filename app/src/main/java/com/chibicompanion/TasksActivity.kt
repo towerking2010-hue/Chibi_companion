@@ -40,11 +40,10 @@ class TasksActivity : Activity() {
         tools.addView(CompanionUi.button(this, "Clear completed") {
             val completed = TaskStore.all(this).count { it.done }
             if (completed == 0) toast("Nothing completed yet")
-            else AlertDialog.Builder(this).setTitle("Clear completed tasks?")
-                .setMessage("Remove $completed completed task(s)?")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Clear") { _, _ -> TaskStore.clearCompleted(this); render() }
-                .show()
+            else MikoSheet.show(this, "YOUR DAY", "Clear completed tasks?", "Remove $completed completed task(s) from this phone?", actionLabel = "Clear completed") {
+                TaskStore.clearCompleted(this)
+                render()
+            }
         })
         root.addView(tools)
 
