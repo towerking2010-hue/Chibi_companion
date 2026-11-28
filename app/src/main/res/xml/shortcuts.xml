@@ -3,7 +3,7 @@
     <shortcut
         android:shortcutId="summon_miko"
         android:enabled="true"
-        android:icon="@drawable/miko_launcher_icon"
+        android:icon="@drawable/miko_launcher_art"
         android:shortcutShortLabel="@string/shortcut_summon_miko"
         android:shortcutLongLabel="@string/shortcut_summon_miko_long">
         <intent
