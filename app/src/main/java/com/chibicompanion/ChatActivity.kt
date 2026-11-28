@@ -33,7 +33,12 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             setPadding(CompanionUi.dp(this@ChatActivity,18),CompanionUi.dp(this@ChatActivity,16),CompanionUi.dp(this@ChatActivity,18),CompanionUi.dp(this@ChatActivity,14))
             setBackgroundColor(CompanionUi.bg)
         }
-        val header=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
+        val header=LinearLayout(this).apply {
+            gravity=Gravity.CENTER_VERTICAL
+            background=CompanionUi.panel(this@ChatActivity,CompanionUi.white,18)
+            setPadding(CompanionUi.dp(this@ChatActivity,12),CompanionUi.dp(this@ChatActivity,8),
+                CompanionUi.dp(this@ChatActivity,8),CompanionUi.dp(this@ChatActivity,8))
+        }
         val titles=CompanionUi.column(this)
         titles.addView(CompanionUi.eyebrow(this,"Your companion"))
         titles.addView(CompanionUi.heading(this,"Chat with Miko ♡",22f))
@@ -52,7 +57,10 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         root.addView(avatar, LinearLayout.LayoutParams(-1, CompanionUi.dp(this,170)).apply {
             topMargin=CompanionUi.dp(this@ChatActivity,8)
         })
-        val transcriptCard=CompanionUi.column(this,16).apply { background=CompanionUi.panel(this@ChatActivity,CompanionUi.surface,22) }
+        val transcriptCard=CompanionUi.column(this,16).apply {
+            background=CompanionUi.panel(this@ChatActivity,CompanionUi.white,24)
+            elevation=CompanionUi.dp(this@ChatActivity,2).toFloat()
+        }
         transcript=CompanionUi.text(this,ChatHistory.read(this).ifBlank { "Miko: Hiii! I'm here. What can I help you with? ✦" },14f,CompanionUi.ink)
         transcript.setLineSpacing(CompanionUi.dp(this,4).toFloat(),1f)
         val scroll=ScrollView(this).apply { isFillViewport=true; addView(transcript) }
@@ -64,6 +72,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             hint="Message or give a command…"; textSize=14f; maxLines=3
             setTextColor(CompanionUi.ink); setHintTextColor(CompanionUi.muted)
             background=CompanionUi.panel(this@ChatActivity,CompanionUi.surfaceRaised,18)
+            minHeight=CompanionUi.dp(this@ChatActivity,50)
             setPadding(CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12),CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12))
         }
         composer.addView(input,LinearLayout.LayoutParams(0,-2,1f))
