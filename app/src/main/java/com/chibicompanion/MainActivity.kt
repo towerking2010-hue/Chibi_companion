@@ -141,6 +141,7 @@ class MainActivity : Activity() {
             "Use the launcher shortcut for a fast summon, or keep her Quick Settings tile available while using your phone.",
             12f, CompanionUi.muted))
         presenceCard.addView(CompanionUi.button(this, "Set up summon & Quick Settings") { showSummonOptions() })
+        presenceCard.addView(CompanionUi.button(this, "Import Miko's three mouth images") { pickMikoImages() })
         root.addView(presenceCard)
 
         val setupCard = CompanionUi.card(this, 18, Color.rgb(246, 242, 251))
