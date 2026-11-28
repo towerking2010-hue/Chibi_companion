@@ -88,7 +88,7 @@ object AiClient {
         "and emotionally attentive. Never claim you performed phone actions unless the app actually did so. Keep replies natural and concise. " +
         "Respect the user's privacy. Screen context is supplied only when the user asks about their screen. " +
         "Use saved memories only when relevant; do not pretend to remember details that are not supplied.\n\nUser memories:\n" +
-        CompanionMemory.promptContext(ctx)
+        CompanionMemory.promptContext(ctx) + "\n\n" + MikoLanguage.instructions(ctx)
 
     private fun gemini(ctx: Context, p: Provider, message: String): String {
         val model = p.model.ifBlank { "gemini-2.5-flash" }
