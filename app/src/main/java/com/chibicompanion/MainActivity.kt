@@ -47,8 +47,8 @@ class MainActivity : Activity() {
             setBackgroundColor(CompanionUi.bg)
         }
         val root = CompanionUi.column(this, 18).apply {
-            setPadding(CompanionUi.dp(this@MainActivity, 20), CompanionUi.dp(this@MainActivity, 16),
-                CompanionUi.dp(this@MainActivity, 20), CompanionUi.dp(this@MainActivity, 30))
+            setPadding(CompanionUi.dp(this@MainActivity, 24), CompanionUi.dp(this@MainActivity, 22),
+                CompanionUi.dp(this@MainActivity, 24), CompanionUi.dp(this@MainActivity, 42))
         }
         scroll.addView(root)
 
@@ -161,6 +161,10 @@ class MainActivity : Activity() {
         // Light staggered entrance: native ViewPropertyAnimator, no animation framework dependency.
         for (index in 0 until root.childCount) {
             val child = root.getChildAt(index)
+            (child.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+                params.bottomMargin = CompanionUi.dp(this, 16)
+                child.layoutParams = params
+            }
             child.alpha = 0f
             child.translationY = CompanionUi.dp(this, 12).toFloat()
             child.animate().alpha(1f).translationY(0f)
