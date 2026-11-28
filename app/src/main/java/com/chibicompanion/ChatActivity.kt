@@ -12,6 +12,7 @@ import android.provider.Settings
 import android.text.InputType
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.graphics.Color
 import android.graphics.Bitmap
 import android.view.Gravity
@@ -398,7 +399,20 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) CompanionVoice.configure(this, tts)
+        if (status == TextToSpeech.SUCCESS) {
+            CompanionVoice.configure(this, tts)
+            tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) {
+                    sendBroadcast(Intent(FloatingCompanionService.ACTION_CHAT_TTS_STARTED).setPackage(packageName))
+                }
+                override fun onDone(utteranceId: String?) {
+                    sendBroadcast(Intent(FloatingCompanionService.ACTION_CHAT_TTS_FINISHED).setPackage(packageName))
+                }
+                override fun onError(utteranceId: String?) {
+                    sendBroadcast(Intent(FloatingCompanionService.ACTION_CHAT_TTS_FINISHED).setPackage(packageName))
+                }
+            })
+        }
     }
     companion object {
         private const val VOICE_PERMISSION_REQUEST = 702
