@@ -13,6 +13,9 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.view.*
 import android.view.inputmethod.InputMethodManager
+import android.graphics.pdf.PdfRenderer
+import android.os.ParcelFileDescriptor
+import android.media.MediaMetadataRetriever
 import android.widget.*
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -286,11 +289,26 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     mime.startsWith("image/") -> {
                         val bitmap = contentResolver.openInputStream(uri).use { BitmapFactory.decodeStream(it) }
                             ?: throw IllegalStateException("Couldn't read that image")
-                        val out = ByteArrayOutputStream()
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 82, out)
-                        bitmap.recycle()
-                        AiClient.replyWithImage(this@FloatingCompanionService,
-                            message.ifBlank { "Please look at this image and help me with it." }, out.toByteArray())
+                        askWithBitmap(message.ifBlank { "Please look at this image and help me with it." }, bitmap)
+                    }
+                    mime == "application/pdf" || name.endsWith(".pdf", true) -> {
+                        val fd = contentResolver.openFileDescriptor(uri, "r") ?: throw IllegalStateException("Couldn't open that PDF")
+                        val renderer = PdfRenderer(fd)
+                        if (renderer.pageCount == 0) { renderer.close(); fd.close(); throw IllegalStateException("That PDF has no pages") }
+                        val page = renderer.openPage(0)
+                        val scale = minOf(1f, 1500f / maxOf(page.width, page.height))
+                        val bitmap = Bitmap.createBitmap((page.width * scale).toInt().coerceAtLeast(1), (page.height * scale).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        page.close(); renderer.close(); fd.close()
+                        askWithBitmap("This is the first page of the attached PDF $name. " + message, bitmap)
+                    }
+                    mime.startsWith("video/") -> {
+                        val retriever = MediaMetadataRetriever()
+                        retriever.setDataSource(this@FloatingCompanionService, uri)
+                        val bitmap = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                            ?: throw IllegalStateException("Couldn't extract a frame from that video")
+                        retriever.release()
+                        askWithBitmap("This is an opening frame from the attached video $name, not the full video. " + message, bitmap)
                     }
                     mime.startsWith("text/") || name.endsWith(".txt", true) || name.endsWith(".md", true) || name.endsWith(".csv", true) -> {
                         val text = (contentResolver.openInputStream(uri) ?: throw IllegalStateException("Could not open file")).bufferedReader().use { it.readText().take(24000) }
@@ -311,6 +329,14 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                 }
             }
         }
+    }
+
+    private fun askWithBitmap(prompt: String, bitmap: Bitmap): String {
+        val out = ByteArrayOutputStream()
+        try {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 82, out)
+            return AiClient.replyWithImage(this, prompt, out.toByteArray())
+        } finally { bitmap.recycle() }
     }
 
     /** A separate coloured reply card, positioned clear of Miko where screen space allows. */
