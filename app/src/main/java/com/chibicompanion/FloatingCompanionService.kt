@@ -29,6 +29,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private var chatParams: WindowManager.LayoutParams? = null
     private var replyBubble: LinearLayout? = null
     private var replyParams: WindowManager.LayoutParams? = null
+    private var replyPulse: android.animation.ObjectAnimator? = null
     private var pendingAttachment: Uri? = null
     private var pendingAttachmentName: String = ""
     private var pendingAttachmentMime: String = ""
@@ -392,6 +393,8 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
 
     /** A separate coloured reply card, positioned clear of Miko where screen space allows. */
     private fun showReplyBubble(message: String) {
+        replyPulse?.cancel()
+        replyPulse = null
         replyBubble?.let { runCatching { wm.removeView(it) } }
         val bubble = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -419,7 +422,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         }
         bubble.addView(replyText)
         if (message.contains("thinking", true)) {
-            android.animation.ObjectAnimator.ofFloat(replyText, View.ALPHA, .48f, 1f).apply {
+            replyPulse = android.animation.ObjectAnimator.ofFloat(replyText, View.ALPHA, .48f, 1f).apply {
                 duration = 650L; repeatCount = android.animation.ValueAnimator.INFINITE
                 repeatMode = android.animation.ValueAnimator.REVERSE; start()
             }
@@ -455,6 +458,8 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     }
 
     private fun hideReplyBubble() {
+        replyPulse?.cancel()
+        replyPulse = null
         replyBubble?.let { runCatching { wm.removeView(it) } }
         replyBubble = null; replyParams = null
     }
