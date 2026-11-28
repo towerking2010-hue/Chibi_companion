@@ -3,6 +3,10 @@ package com.chibicompanion
 import android.app.*
 import android.content.*
 import android.graphics.PixelFormat
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import java.io.ByteArrayOutputStream
 import android.os.Build
 import android.os.IBinder
 import android.speech.tts.TextToSpeech
@@ -20,6 +24,11 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private var avatar: MikoSpriteView? = null
     private var chatPanel: LinearLayout? = null
     private var chatParams: WindowManager.LayoutParams? = null
+    private var replyBubble: LinearLayout? = null
+    private var replyParams: WindowManager.LayoutParams? = null
+    private var pendingAttachment: Uri? = null
+    private var pendingAttachmentName: String = ""
+    private var pendingAttachmentMime: String = ""
     private var avatarParams: WindowManager.LayoutParams? = null
     private var lastTap = 0L
     private var downX = 0f; private var downY = 0f; private var originX = 0; private var originY = 0; private var downAt = 0L; private var dragging = false
@@ -151,73 +160,174 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     }
 
     private fun toggleChat() { if (chatPanel == null) showChat() else hideChat() }
+
+    /** Compact Google-Assistant-style composer: it never opens a transcript-sized overlay. */
     private fun showChat() {
         val panel = LinearLayout(this).apply {
-            orientation=LinearLayout.VERTICAL; setPadding(16,14,16,12)
-            background=GradientDrawable().apply { setColor(Color.rgb(20,27,53)); cornerRadius=28f; setStroke(2,Color.rgb(104,112,164)) }
-            elevation=18f
+            orientation = LinearLayout.VERTICAL
+            setPadding(CompanionUi.dp(this@FloatingCompanionService, 10), CompanionUi.dp(this@FloatingCompanionService, 8),
+                CompanionUi.dp(this@FloatingCompanionService, 10), CompanionUi.dp(this@FloatingCompanionService, 8))
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(28, 31, 58)); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 24).toFloat()
+                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), Color.rgb(133, 128, 205))
+            }
+            elevation = CompanionUi.dp(this@FloatingCompanionService, 12).toFloat()
         }
-        val header=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
-        header.addView(TextView(this).apply { text="Miko • Assistant"; textSize=18f; setTextColor(Color.rgb(226,224,255)) }, LinearLayout.LayoutParams(0,-2,1f))
-        header.addView(Button(this).apply { text="⚙"; setOnClickListener {
-            startActivity(Intent(this@FloatingCompanionService, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        } })
-        header.addView(Button(this).apply { text="×"; setOnClickListener { hideChat() } })
-        panel.addView(header)
-        panel.addView(Button(this).apply {
-            text = "👀 Understand my screen"
-            setOnClickListener {
-                val consent = AlertDialog.Builder(this@FloatingCompanionService)
-                    .setTitle("Share one screen capture?")
-                    .setMessage("Android will ask for screen-capture permission. If you continue, one screenshot of the app behind the chibi will be sent to your configured AI provider for analysis. Avoid passwords, banking screens, private chats or other sensitive content.")
-                    .setPositiveButton("Continue") { _, _ ->
-                        hideChat()
-                        startActivity(Intent(this@FloatingCompanionService, ScreenCaptureActivity::class.java)
-                            .putExtra(ScreenCaptureActivity.EXTRA_NOTIFY_SERVICE, true)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    }
-                    .setNegativeButton("Cancel", null).create()
-                consent.window?.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
-                consent.show()
-            }
+        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        top.addView(TextView(this).apply {
+            text = "Miko  ·  Quick chat"; textSize = 13f; setTextColor(Color.rgb(220, 218, 255))
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        top.addView(TextView(this).apply {
+            text = "Open chat ↗"; textSize = 12f; setTextColor(Color.rgb(170, 190, 255))
+            setPadding(8, 4, 8, 4)
+            setOnClickListener { hideChat(); startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         })
-        val transcript=TextView(this).apply { text=ChatHistory.read(this@FloatingCompanionService); textSize=15f; setTextColor(Color.rgb(245,242,255)); setPadding(4,12,4,12) }
-        val scroll=ScrollView(this).apply { addView(transcript) }
-        panel.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-        val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
-        val input=EditText(this).apply { hint="Talk to Miko…"; maxLines=3; textSize=15f; setTextColor(Color.WHITE); setHintTextColor(Color.LTGRAY) }
-        row.addView(input,LinearLayout.LayoutParams(0,-2,1f))
-        row.addView(Button(this).apply { text="Send"; setOnClickListener {
-            val msg=input.text.toString().trim(); if(msg.isNotEmpty()) { input.text.clear(); ChatHistory.add(this@FloatingCompanionService,"You",msg); transcript.append("\n\nYou: $msg\nHer: …"); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
-                worker.execute {
-                    val answer = CompanionMemory.handleExplicitRequest(this@FloatingCompanionService, msg)
-                        ?: PhoneActions.tryHandle(this@FloatingCompanionService,msg)
-                        ?: runCatching { AiClient.reply(this@FloatingCompanionService,msg) }
-                            .getOrElse { error ->
-                                val detail = error.message?.take(180)?.let { " ($it)" }.orEmpty()
-                                OfflineCompanion.reply(msg)
-                            }
-                    ChatHistory.add(this@FloatingCompanionService,"Miko",answer)
-                    mainThread {
-                        transcript.text=ChatHistory.read(this@FloatingCompanionService)
-                        scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
-                                    if (::tts.isInitialized) {
-                            CompanionVoice.configure(this@FloatingCompanionService, tts)
-                            tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"chibi-reply")
-                        }
-                    }
-                }
+        top.addView(TextView(this).apply {
+            text = "×"; textSize = 22f; setTextColor(Color.WHITE); setPadding(12, 0, 4, 0)
+            setOnClickListener { hideChat() }
+        })
+        panel.addView(top)
+
+        val attachment = TextView(this).apply {
+            tag = "miko_attachment"; textSize = 11f; setTextColor(Color.rgb(190, 215, 255))
+            visibility = if (pendingAttachment != null) View.VISIBLE else View.GONE
+            text = if (pendingAttachment != null) "📎 $pendingAttachmentName" else ""
+            setPadding(8, 4, 8, 4)
+            setOnClickListener { pendingAttachment = null; pendingAttachmentName = ""; pendingAttachmentMime = ""; visibility = View.GONE }
+        }
+        panel.addView(attachment)
+
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val attach = TextView(this).apply {
+            text = "＋"; textSize = 25f; setTextColor(Color.rgb(205, 205, 255)); gravity = Gravity.CENTER
+            setPadding(6, 0, 10, 0)
+            setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickAttachmentActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        }
+        row.addView(attach, LinearLayout.LayoutParams(CompanionUi.dp(this, 38), CompanionUi.dp(this, 48)))
+        val input = EditText(this).apply {
+            hint = "Ask Miko anything…"; textSize = 14f; maxLines = 3
+            setTextColor(Color.WHITE); setHintTextColor(Color.LTGRAY)
+            background = GradientDrawable().apply { setColor(Color.rgb(48, 51, 82)); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 18).toFloat() }
+            setPadding(CompanionUi.dp(this@FloatingCompanionService, 12), CompanionUi.dp(this@FloatingCompanionService, 9),
+                CompanionUi.dp(this@FloatingCompanionService, 12), CompanionUi.dp(this@FloatingCompanionService, 9))
+        }
+        row.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
+        val send = TextView(this).apply {
+            text = "➤"; textSize = 22f; gravity = Gravity.CENTER; setTextColor(Color.WHITE)
+            setPadding(12, 0, 6, 0)
+            setOnClickListener {
+                val typed = input.text.toString().trim()
+                val uri = pendingAttachment
+                if (typed.isEmpty() && uri == null) return@setOnClickListener
+                input.text.clear()
+                val name = pendingAttachmentName
+                val mime = pendingAttachmentMime
+                pendingAttachment = null; pendingAttachmentName = ""; pendingAttachmentMime = ""
+                attachment.visibility = View.GONE
+                hideChat()
+                submitQuickMessage(typed, uri, name, mime)
             }
-        } })
+        }
+        row.addView(send, LinearLayout.LayoutParams(CompanionUi.dp(this, 42), CompanionUi.dp(this, 48)))
         panel.addView(row)
-        val lp=WindowManager.LayoutParams((resources.displayMetrics.widthPixels-28).coerceAtLeast(280), (resources.displayMetrics.heightPixels*0.56f).toInt(), overlayType(),
+
+        val width = (resources.displayMetrics.widthPixels - CompanionUi.dp(this, 20)).coerceAtLeast(CompanionUi.dp(this, 260))
+        val lp = WindowManager.LayoutParams(width, WindowManager.LayoutParams.WRAP_CONTENT, overlayType(),
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
-            PixelFormat.TRANSLUCENT).apply { gravity=Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL; y=20; softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE }
-        lp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-        runCatching { wm.addView(panel,lp); chatPanel=panel; chatParams=lp; input.requestFocus(); input.post { (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input,InputMethodManager.SHOW_IMPLICIT) } }
+            PixelFormat.TRANSLUCENT).apply {
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            y = CompanionUi.dp(this@FloatingCompanionService, 18)
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+        }
+        runCatching {
+            wm.addView(panel, lp); chatPanel = panel; chatParams = lp
+            input.requestFocus()
+            input.post { (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input, InputMethodManager.SHOW_IMPLICIT) }
+        }
     }
 
-    private fun handleCapturedScreen() {
+    private fun submitQuickMessage(message: String, uri: Uri?, name: String, mime: String) {
+        val userLine = buildString {
+            if (message.isNotBlank()) append(message)
+            if (uri != null) { if (isNotEmpty()) append("\\n"); append("[Attachment: ").append(name).append("]") }
+        }
+        ChatHistory.add(this, "You", userLine)
+        showReplyBubble("Miko is thinking…")
+        worker.execute {
+            val answer = try {
+                if (uri == null) {
+                    CompanionMemory.handleExplicitRequest(this@FloatingCompanionService, message)
+                        ?: PhoneActions.tryHandle(this@FloatingCompanionService, message)
+                        ?: AiClient.reply(this@FloatingCompanionService, message)
+                } else when {
+                    mime.startsWith("image/") -> {
+                        val bitmap = contentResolver.openInputStream(uri).use { BitmapFactory.decodeStream(it) }
+                            ?: throw IllegalStateException("Couldn't read that image")
+                        val out = ByteArrayOutputStream()
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 82, out)
+                        bitmap.recycle()
+                        AiClient.replyWithImage(this@FloatingCompanionService,
+                            message.ifBlank { "Please look at this image and help me with it." }, out.toByteArray())
+                    }
+                    mime.startsWith("text/") || name.endsWith(".txt", true) || name.endsWith(".md", true) || name.endsWith(".csv", true) -> {
+                        val text = contentResolver.openInputStream(uri).bufferedReader().use { it.readText().take(24000) }
+                        AiClient.reply(this@FloatingCompanionService,
+                            (message + "\\n\\nAttached file ($name):\\n" + text).trim())
+                    }
+                    else -> "I attached $name, but this build can only read images and text files. PDF and video understanding still needs to be added."
+                }
+            } catch (e: Exception) {
+                OfflineCompanion.reply(message.ifBlank { "I couldn't read that attachment." })
+            }
+            ChatHistory.add(this@FloatingCompanionService, "Miko", answer)
+            mainThread {
+                showReplyBubble(answer)
+                if (::tts.isInitialized) {
+                    CompanionVoice.configure(this@FloatingCompanionService, tts)
+                    tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "miko-quick-reply")
+                }
+            }
+        }
+    }
+
+    /** A separate coloured reply card, positioned clear of Miko where screen space allows. */
+    private fun showReplyBubble(message: String) {
+        replyBubble?.let { runCatching { wm.removeView(it) } }
+        val bubble = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(CompanionUi.dp(this@FloatingCompanionService, 14), CompanionUi.dp(this@FloatingCompanionService, 10),
+                CompanionUi.dp(this@FloatingCompanionService, 10), CompanionUi.dp(this@FloatingCompanionService, 10))
+            background = GradientDrawable().apply { setColor(Color.rgb(231, 229, 255)); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 18).toFloat() }
+            elevation = CompanionUi.dp(this@FloatingCompanionService, 10).toFloat()
+        }
+        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        header.addView(TextView(this).apply { text = "MIKO  ·  REPLY"; textSize = 10f; setTextColor(Color.rgb(86, 78, 150)) }, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(TextView(this).apply { text = "×"; textSize = 20f; setTextColor(Color.rgb(86, 78, 150)); setOnClickListener { hideReplyBubble() } })
+        bubble.addView(header)
+        bubble.addView(TextView(this).apply {
+            text = message; textSize = 14f; setTextColor(Color.rgb(39, 38, 70)); maxLines = 7
+            setOnClickListener { startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        })
+        val screenW = resources.displayMetrics.widthPixels
+        val avatarY = avatarParams?.y ?: CompanionUi.dp(this, 150)
+        val bubbleW = (screenW - CompanionUi.dp(this, 24)).coerceAtLeast(CompanionUi.dp(this, 240))
+        val lp = WindowManager.LayoutParams(bubbleW, WindowManager.LayoutParams.WRAP_CONTENT, overlayType(),
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT).apply {
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            y = if (avatarY > CompanionUi.dp(this@FloatingCompanionService, 190))
+                (avatarY - CompanionUi.dp(this@FloatingCompanionService, 120)).coerceAtLeast(CompanionUi.dp(this@FloatingCompanionService, 28))
+            else avatarY + CompanionUi.dp(this@FloatingCompanionService, 280)
+        }
+        runCatching { wm.addView(bubble, lp); replyBubble = bubble; replyParams = lp }
+    }
+
+    private fun hideReplyBubble() {
+        replyBubble?.let { runCatching { wm.removeView(it) } }
+        replyBubble = null; replyParams = null
+    }
+
+        private fun handleCapturedScreen() {
         val screenshot = ScreenCaptureStore.latestJpeg ?: return
         ScreenCaptureStore.latestJpeg = null
         worker.execute {
@@ -252,9 +362,9 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     }
     override fun onDestroy() {
         getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", false).apply()
-        hideChat(); avatar?.stopTalking(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
+        hideChat(); hideReplyBubble(); avatar?.stopTalking(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
         worker.shutdownNow(); if(::tts.isInitialized) { tts.stop(); tts.shutdown() }
         super.onDestroy()
     }
-    override fun onBind(intent:Intent?):IBinder?=null
+    override fun onBind(intent:Intent?):IBinder?=null\n\n    companion object {\n        const val ACTION_ATTACHMENT_READY = "com.chibicompanion.QUICK_ATTACHMENT_READY"\n        const val EXTRA_ATTACHMENT_NAME = "attachment_name"\n        const val EXTRA_ATTACHMENT_MIME = "attachment_mime"\n    }
 }
