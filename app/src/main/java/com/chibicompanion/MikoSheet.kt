@@ -28,12 +28,12 @@ object MikoSheet {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(context, 24), dp(context, 12), dp(context, 24), dp(context, 26))
             background = GradientDrawable().apply {
-                setColor(Color.WHITE)
+                setColor(Color.rgb(18, 25, 55))
                 cornerRadii = floatArrayOf(dp(context, 26).toFloat(), dp(context, 26).toFloat(), dp(context, 26).toFloat(), dp(context, 26).toFloat(), 0f, 0f, 0f, 0f)
             }
         }
         val handle = View(context).apply {
-            background = GradientDrawable().apply { setColor(Color.rgb(220, 214, 229)); cornerRadius = dp(context, 8).toFloat() }
+            background = GradientDrawable().apply { setColor(Color.rgb(70, 96, 160)); cornerRadius = dp(context, 8).toFloat() }
         }
         content.addView(handle, LinearLayout.LayoutParams(dp(context, 38), dp(context, 4)).apply {
             gravity = Gravity.CENTER
@@ -59,7 +59,7 @@ object MikoSheet {
             val number = label(context, (index + 1).toString().padStart(2, '0'), 12f, CompanionUi.lavender, true).apply {
                 gravity = Gravity.CENTER
                 background = GradientDrawable().apply {
-                    setColor(Color.rgb(244, 239, 251))
+                    setColor(Color.rgb(30, 47, 94))
                     cornerRadius = dp(context, 10).toFloat()
                 }
             }
@@ -74,7 +74,7 @@ object MikoSheet {
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(CompanionUi.pink, CompanionUi.lavender)).apply { cornerRadius = dp(context, 16).toFloat() }
+                intArrayOf(Color.rgb(32, 125, 255), Color.rgb(139, 65, 255))).apply { cornerRadius = dp(context, 16).toFloat() }
             minHeight = dp(context, 50)
             setOnClickListener { dialog.dismiss(); onAction?.invoke() }
         }
@@ -86,7 +86,7 @@ object MikoSheet {
                 setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
                 setGravity(Gravity.BOTTOM)
                 addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                attributes = attributes.apply { dimAmount = .34f }
+                attributes = attributes.apply { dimAmount = .58f }
             }
         }
         dialog.setCanceledOnTouchOutside(true)
