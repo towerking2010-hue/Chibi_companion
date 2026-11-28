@@ -46,8 +46,19 @@ class MikoSpriteView(context: Context) : FrameLayout(context) {
     }
 
     private fun loadSuppliedImages() {
-        val directory = File(context.filesDir, "miko_assets")
+        val directory = File(context.filesDir, "miko_assets").apply { mkdirs() }
         val names = listOf("miko_mouth_closed.webp", "miko_mouth_half.webp", "miko_mouth_open.webp")
+        // Fresh installs get the supplied mouth frames automatically. Existing user-imported frames win.
+        names.forEach { name ->
+            val target = File(directory, name)
+            if (!target.isFile || target.length() == 0L) {
+                runCatching {
+                    context.assets.open("miko_assets/$name").use { input ->
+                        target.outputStream().use { output -> input.copyTo(output) }
+                    }
+                }
+            }
+        }
         val loaded = names.map { name ->
             val file = File(directory, name)
             if (!file.isFile || file.length() == 0L) null else decodeForDevice(file)
