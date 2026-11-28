@@ -39,7 +39,7 @@ class NotesActivity : Activity() {
             setSingleLine(true)
             setTextColor(CompanionUi.ink)
             setHintTextColor(CompanionUi.muted)
-            background = CompanionUi.panel(this@NotesActivity, android.graphics.Color.rgb(37,43,76), 16)
+            background = CompanionUi.panel(this@NotesActivity, CompanionUi.surfaceRaised, 16)
             setPadding(CompanionUi.dp(this@NotesActivity, 14), CompanionUi.dp(this@NotesActivity, 12),
                 CompanionUi.dp(this@NotesActivity, 14), CompanionUi.dp(this@NotesActivity, 12))
             addTextChangedListener(object : android.text.TextWatcher {

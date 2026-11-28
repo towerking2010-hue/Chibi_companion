@@ -14,17 +14,17 @@ import android.widget.TextView
  * Kept dependency-free so the app stays light on mid-range devices.
  */
 object CompanionUi {
-    val ink = Color.rgb(61, 57, 80)
-    val muted = Color.rgb(135, 132, 151)
-    val pink = Color.rgb(237, 151, 187)
-    val lavender = Color.rgb(181, 164, 226)
-    val cyan = Color.rgb(132, 190, 218)
-    val bg = Color.rgb(250, 248, 253)
+    val ink = Color.rgb(54, 46, 72)
+    val muted = Color.rgb(126, 117, 145)
+    val pink = Color.rgb(229, 153, 190)
+    val lavender = Color.rgb(171, 148, 216)
+    val cyan = Color.rgb(139, 193, 215)
+    val bg = Color.rgb(248, 246, 252)
     val white = Color.rgb(255, 255, 255)
-    val surface = Color.rgb(248, 245, 252)
-    val surfaceRaised = Color.rgb(243, 239, 249)
-    val stroke = Color.rgb(237, 231, 244)
-    val success = Color.rgb(75, 154, 123)
+    val surface = Color.rgb(244, 240, 250)
+    val surfaceRaised = Color.rgb(255, 255, 255)
+    val stroke = Color.rgb(231, 224, 241)
+    val success = Color.rgb(83, 151, 125)
 
     fun dp(c: Context, v: Int) = (v * c.resources.displayMetrics.density).toInt()
 

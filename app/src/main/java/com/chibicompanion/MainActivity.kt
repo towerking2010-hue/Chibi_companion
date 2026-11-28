@@ -21,12 +21,15 @@ import java.util.Date
 import java.util.Locale
 
 class MainActivity : Activity() {
+    companion object { private const val ACTION_SUMMON_MIKO = "com.chibicompanion.action.SUMMON_MIKO" }
+
     private val importSpritesRequest = 802
 
     private var waitingForOverlayPermission = false
     private var waitingForAssistantSettings = false
     private var pendingOpenChat = false
     private lateinit var setupButton: TextView
+    private lateinit var floatingToggleButton: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,16 +80,41 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
         })
         root.addView(hero)
-        root.addView(CompanionUi.button(this, "♡  Start floating companion", true) { toggleFloatingCompanion() })
+        floatingToggleButton = CompanionUi.button(this, "♡  Summon Miko", true) { toggleFloatingCompanion() }
+        root.addView(floatingToggleButton)
+
+        val quickControl = CompanionUi.card(this, 15)
+        quickControl.addView(CompanionUi.eyebrow(this, "Always within reach"))
+        quickControl.addView(CompanionUi.text(this, "Control Miko without opening this app", 15f, CompanionUi.ink, true))
+        quickControl.addView(CompanionUi.text(this,
+            "Fastest: long-press the Miko app icon and tap Summon Miko. Or add the Quick Settings tile once to summon or hide her from anywhere.",
+            12f, CompanionUi.muted))
+        quickControl.addView(CompanionUi.button(this, "How to add the Quick Settings tile") {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Add Miko to Quick Settings")
+                .setMessage("1. Swipe down from the top of your screen twice.\n\n2. Tap the pencil or Edit button.\n\n3. Find the Miko tile in available tiles.\n\n4. Drag it into your active tiles and tap Done.\n\nNow you can summon or hide Miko without opening her app.")
+                .setPositiveButton("Got it", null)
+                .show()
+        })
+        quickControl.addView(CompanionUi.button(this, "How to use the fast summon shortcut") {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Summon Miko faster")
+                .setMessage("From your home screen, press and hold the Miko app icon. Tap the Summon Miko shortcut.\n\nFor a control available from any app, swipe down twice and tap Edit. Drag the Miko tile into your active Quick Settings tiles. Tap it once to summon Miko, and again to hide her.")
+                .setPositiveButton("Got it", null)
+                .show()
+        })
+        root.addView(quickControl)
         root.addView(CompanionUi.button(this, "Import Miko mouth images") { pickMikoImages() })
         val quickLinks = CompanionUi.row(this)
         quickLinks.addView(CompanionUi.button(this, "Chat & AI settings") {
             startActivity(Intent(this, ChatActivity::class.java))
         }, LinearLayout.LayoutParams(0, -2, 1f))
-        quickLinks.addView(CompanionUi.button(this, "Stop floating") {
+        quickLinks.addView(CompanionUi.button(this, "Hide Miko") {
             stopService(Intent(this, FloatingCompanionService::class.java))
+            getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", false).apply()
             refreshSetupButton()
-            Toast.makeText(this, "Floating companion stopped", Toast.LENGTH_SHORT).show()
+            refreshFloatingButton()
+            Toast.makeText(this, "Miko is hidden", Toast.LENGTH_SHORT).show()
         }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = CompanionUi.dp(this@MainActivity, 8) })
         root.addView(quickLinks)
         val productivity = CompanionUi.row(this)
@@ -131,6 +159,25 @@ class MainActivity : Activity() {
             10f, CompanionUi.muted).apply { gravity = Gravity.CENTER; setPadding(0, CompanionUi.dp(this@MainActivity, 4), 0, 0) })
         setContentView(scroll)
         refreshSetupButton()
+        refreshFloatingButton()
+        if (intent?.action == ACTION_SUMMON_MIKO) {
+            window.decorView.post { summonMikoFromShortcut() }
+        }
+    }
+
+    private fun summonMikoFromShortcut() {
+        val running = getSharedPreferences("miko_companion_state", MODE_PRIVATE)
+            .getBoolean("floating", false)
+        if (running) {
+            Toast.makeText(this, "Miko is already here ♡", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!Settings.canDrawOverlays(this)) {
+            waitingForOverlayPermission = true
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+            return
+        }
+        startMikoFloating()
     }
 
 
@@ -200,6 +247,13 @@ class MainActivity : Activity() {
             if (isMikoDefaultAssistant()) "✓  Miko is your assistant" else "Set up phone assistant"
     }
 
+    private fun refreshFloatingButton() {
+        if (::floatingToggleButton.isInitialized) {
+            val running = getSharedPreferences("miko_companion_state", MODE_PRIVATE).getBoolean("floating", false)
+            floatingToggleButton.text = if (running) "♡  Hide floating Miko" else "♡  Summon Miko"
+        }
+    }
+
     private fun beginMikoSetup() {
         if (Build.VERSION.SDK_INT >= 29 && isMikoDefaultAssistant()) {
             continueMikoSetup()
@@ -249,6 +303,7 @@ class MainActivity : Activity() {
             startMikoFloating()
         }
         refreshSetupButton()
+        refreshFloatingButton()
     }
 
     private fun openFloatingChat() {
@@ -268,6 +323,7 @@ class MainActivity : Activity() {
         getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", true).apply()
         Toast.makeText(this, "Miko is ready ♡", Toast.LENGTH_SHORT).show()
         refreshSetupButton()
+        refreshFloatingButton()
     }
 
     @Deprecated("Deprecated by Android; retained for compatibility with assistant setup and ZIP import")
@@ -286,6 +342,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         refreshSetupButton()
+        refreshFloatingButton()
         if (waitingForAssistantSettings) {
             waitingForAssistantSettings = false
             if (isMikoDefaultAssistant()) continueMikoSetup()
