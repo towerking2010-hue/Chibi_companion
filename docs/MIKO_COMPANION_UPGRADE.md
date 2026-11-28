@@ -23,14 +23,13 @@ This document records the agreed Miko experience and separates working code from
 - Keep normal companion replies to about 1–2 short sentences. If Romaji is ambiguous, ask a short clarification rather than guessing.
 - A small offline phrase fallback handles common greetings and simple expressions. It is not a local LLM; full open-ended conversation still requires a configured cloud provider.
 
-## Animation system
-- The animation library is based on generated transparent animated WebP files created from the user's Miko LoRA-generated MP4s.
-- Each animation starts from and returns to one identical master idle pose. The action happens between those matching idle poses.
-- The app plays idle continuously, plays a requested reaction once, then returns to idle. Queued reactions should be allowed to transition without forcing a visible idle pause between every queued action.
-- Use consistent character scale, framing, camera, outfit, colours and transparent canvas across every animation.
-- Target animation set includes idle, thinking, waving, happy/excited, laughing, shy/blushing, annoyed/angry, sad, sleepy/yawn, surprised, and future reactions.
-- Assets should be loadable without rebuilding the APK where Android storage permissions and the app's import mechanism allow it. The app must fall back to the lightweight Canvas avatar if an animation asset is missing.
-- Do not treat the image-generation LoRA as a video model. Use it for consistent start/end stills; use a separate video model for motion.
+## Character visual scope — fixed to three supplied images
+- Miko uses only the user's three supplied full-character mouth-state images: closed, half-open and open.
+- Do not add LoRA-generated animation clips, animated WebP mood libraries, extra facial expressions, or replacement character artwork unless the user explicitly changes this instruction.
+- Closed mouth is used while idle/listening; while TTS speaks, cycle closed → half-open → open → half-open at approximately 115 ms per frame; return to closed on completion or error.
+- Keep transparency and consistent image dimensions. Decode to a bounded 640×900 maximum with alpha preserved for Galaxy A31 memory limits.
+- The same three mouth images are used by the home preview, floating overlay, quick-chat speech, and full-chat TTS when the overlay is running.
+- The three files are imported once through the home-screen ZIP importer and stored privately as `miko_mouth_closed.webp`, `miko_mouth_half.webp`, and `miko_mouth_open.webp`.
 
 ## Current implementation status on this branch
 - Existing app already has a native Android overlay service, a Canvas chibi, double-tap handling, local shared chat transcript, cloud-provider failover, screen capture with explicit consent, TTS, and a dedicated chat activity.
@@ -63,6 +62,7 @@ This document records the agreed Miko experience and separates working code from
 ## Three-image WebP lip-sync (November 2026)
 - The user's three supplied mouth states are imported from the prepared ZIP using **Import Miko mouth images** on the home screen.
 - The import accepts the exact files `miko_mouth_closed.webp`, `miko_mouth_half.webp`, and `miko_mouth_open.webp`, and stores them in app-private storage.
-- The floating companion and home-screen preview use the imported full-character sprites. If the images are absent or invalid, the Canvas avatar remains available.
-- While Android TextToSpeech is speaking, the floating sprite cycles closed → half-open → open → half-open at a light 115 ms interval, then returns to closed when speech ends or errors.
-- This is lightweight three-frame mouth-flap lip sync, not phoneme-accurate viseme matching or audio-amplitude analysis. It requires no animation/video assets.
+- Only these three images are used; no animated WebP expression library or alternative avatar is included.
+- While Android TextToSpeech is speaking, the floating sprite cycles closed → half-open → open → half-open at a 115 ms interval, then returns to closed when speech ends or errors.
+- Full-chat TTS notifies the floating service so the same mouth frames animate during full-chat replies when the floating companion is active.
+- This is lightweight three-frame mouth-flap lip sync, not phoneme-accurate viseme matching or audio-amplitude analysis.
