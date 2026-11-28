@@ -2,7 +2,7 @@ name: Android Debug APK
 
 on:
   push:
-    branches: [main, feature/miko-full-companion]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
