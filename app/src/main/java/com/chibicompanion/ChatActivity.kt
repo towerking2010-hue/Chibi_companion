@@ -135,6 +135,17 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         }
         assistantCard.addView(CompanionUi.text(this, "PHONE AWARENESS & MEMORY  ✦", 12f, CompanionUi.ink, true))
         assistantCard.addView(CompanionUi.text(this, "Optional permissions stay under your control.", 11f, CompanionUi.muted))
+        assistantCard.addView(CompanionUi.button(this, "Reply language: " + MikoLanguage.label(MikoLanguage.selected(this))) {
+            val values = arrayOf(MikoLanguage.NATURAL, MikoLanguage.ROMAJI, MikoLanguage.ENGLISH)
+            val labels = arrayOf("Natural bilingual — English with occasional Japanese", "Japanese / Romaji — mainly short Romaji replies", "English — understand Japanese, reply in English")
+            val selected = values.indexOf(MikoLanguage.selected(this)).coerceAtLeast(0)
+            AlertDialog.Builder(this@ChatActivity).setTitle("How should Miko reply?")
+                .setSingleChoiceItems(labels, selected) { dialog, which ->
+                    MikoLanguage.set(this@ChatActivity, values[which])
+                    dialog.dismiss()
+                    recreate()
+                }.setNegativeButton("Cancel", null).show()
+        })
         assistantCard.addView(CompanionUi.button(this, "Enable / manage Screen Awareness") {
             AssistantPreferences.setScreenAwarenessEnabled(this@ChatActivity, true)
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
