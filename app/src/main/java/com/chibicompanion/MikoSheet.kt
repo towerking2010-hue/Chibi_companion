@@ -86,7 +86,7 @@ object MikoSheet {
                 setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
                 setGravity(Gravity.BOTTOM)
                 addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                attributes = attributes.apply { dimAmount = .34f; windowAnimations = android.R.style.Animation_InputMethod }
+                attributes = attributes.apply { dimAmount = .34f }
             }
         }
         dialog.setCanceledOnTouchOutside(true)
