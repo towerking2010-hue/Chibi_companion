@@ -300,7 +300,6 @@ class MainActivity : Activity() {
     }
 
     private fun toggleFloatingCompanion() {
-        val prefs = getSharedPreferences("miko_companion_state", MODE_PRIVATE)
         if (MikoPresenceStore.isVisible(this)) {
             stopService(Intent(this, FloatingCompanionService::class.java))
             MikoPresenceStore.setVisible(this, false)
