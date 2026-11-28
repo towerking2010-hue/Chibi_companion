@@ -67,7 +67,7 @@ class MainActivity : Activity() {
 
         val hero = CompanionUi.column(this, 14).apply {
             gravity = Gravity.CENTER
-            background = CompanionUi.gradient(this@MainActivity, Color.rgb(255, 237, 246), Color.rgb(235, 231, 251), 30)
+            background = CompanionUi.gradient(this@MainActivity, Color.rgb(18, 48, 112), Color.rgb(74, 35, 142), 30)
             setPadding(CompanionUi.dp(this@MainActivity, 14), CompanionUi.dp(this@MainActivity, 12),
                 CompanionUi.dp(this@MainActivity, 14), CompanionUi.dp(this@MainActivity, 18))
             elevation = CompanionUi.dp(this@MainActivity, 2).toFloat()
@@ -76,7 +76,7 @@ class MainActivity : Activity() {
         heroTop.addView(CompanionUi.eyebrow(this, "YOUR LITTLE WORLD"))
         heroTop.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
         val status = CompanionUi.text(this, "●  HERE WITH YOU", 10f, CompanionUi.success, true).apply {
-            background = CompanionUi.panel(this@MainActivity, Color.rgb(255, 255, 255), 20)
+            background = CompanionUi.panel(this@MainActivity, Color.rgb(22, 29, 61), 20)
             setPadding(CompanionUi.dp(this@MainActivity, 10), CompanionUi.dp(this@MainActivity, 7),
                 CompanionUi.dp(this@MainActivity, 10), CompanionUi.dp(this@MainActivity, 7))
         }
@@ -97,7 +97,7 @@ class MainActivity : Activity() {
 
         root.addView(CompanionUi.eyebrow(this, "YOUR SPACE"))
         val actions = CompanionUi.row(this)
-        val chatTile = CompanionUi.card(this, 15, Color.WHITE).apply {
+        val chatTile = CompanionUi.card(this, 15, CompanionUi.surfaceRaised).apply {
             isClickable = true; isFocusable = true
             setOnClickListener { startActivity(Intent(this@MainActivity, ChatActivity::class.java)) }
         }
@@ -134,7 +134,7 @@ class MainActivity : Activity() {
         secondActions.addView(controlsTile, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = CompanionUi.dp(this@MainActivity, 6) })
         root.addView(secondActions)
 
-        val presenceCard = CompanionUi.card(this, 18, Color.WHITE)
+        val presenceCard = CompanionUi.card(this, 18, CompanionUi.surface)
         presenceCard.addView(CompanionUi.eyebrow(this, "ALWAYS WITHIN REACH"))
         presenceCard.addView(CompanionUi.heading(this, "Miko can stay above your apps", 17f))
         presenceCard.addView(CompanionUi.text(this,
@@ -144,7 +144,7 @@ class MainActivity : Activity() {
         presenceCard.addView(CompanionUi.button(this, "Import Miko's three mouth images") { pickMikoImages() })
         root.addView(presenceCard)
 
-        val setupCard = CompanionUi.card(this, 18, Color.rgb(246, 242, 251))
+        val setupCard = CompanionUi.card(this, 18, Color.rgb(16, 26, 58))
         setupCard.addView(CompanionUi.eyebrow(this, "OPTIONAL"))
         setupCard.addView(CompanionUi.text(this,
             "Choose Miko as your phone's digital assistant if your Android version and device support it. The floating shortcut works separately.",
