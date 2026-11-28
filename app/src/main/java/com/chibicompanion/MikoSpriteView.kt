@@ -1,103 +1,100 @@
 package com.chibicompanion
 
 import android.content.Context
-import android.graphics.Canvas
-import kotlin.math.abs
-import kotlin.math.sin
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.TextView
+import java.io.File
 
-/** Gesture-aware motion layer around the crisp vector Miko renderer. */
-class MikoSpriteView(context: Context) : ChibiView(context) {
-    private var interaction = ""
-    private var interactionUntil = 0L
-    private var dragTilt = 0f
-    private var dragStretch = 1f
-    private var releaseTilt = 0f
-    private var releaseStretch = 1f
-    private var releasedAt = 0L
-    private var moodBeforeInteraction = "excited"
-
-    fun setInteraction(state: String) {
-        if (interaction.isEmpty() && state != "released") moodBeforeInteraction = currentMood
-        interaction = state
-        val now = System.currentTimeMillis()
-        interactionUntil = when (state) {
-            "picked_up" -> now + 850L
-            "tap" -> now + 620L
-            "double_tap" -> now + 1100L
-            "long_tap" -> now + 950L
-            "released" -> now + 480L
-            else -> 0L
+/** Displays only the owner's three supplied Miko mouth images. */
+class MikoSpriteView(context: Context) : FrameLayout(context) {
+    private val image = ImageView(context).apply {
+        scaleType = ImageView.ScaleType.FIT_CENTER
+        contentDescription = "Miko"
+    }
+    private val hint = TextView(context).apply {
+        text = "Import Miko's three mouth images to show her ♡"
+        textSize = 12f
+        gravity = Gravity.CENTER
+        setTextColor(CompanionUi.muted)
+    }
+    private val handler = Handler(Looper.getMainLooper())
+    private var frames: List<Bitmap> = emptyList()
+    private var frameIndex = 0
+    private var talking = false
+    private val sequence = intArrayOf(0, 1, 2, 1)
+    private val mouthTick = object : Runnable {
+        override fun run() {
+            if (!talking || frames.size != 3) return
+            image.setImageBitmap(frames[sequence[frameIndex % sequence.size]])
+            frameIndex++
+            handler.postDelayed(this, 115L)
         }
-        if (state == "released") {
-            releaseTilt = dragTilt
-            releaseStretch = dragStretch
-            releasedAt = now
-        }
-        when (state) {
-            "picked_up" -> setMood("surprised")
-            "dragging" -> setMood("happy")
-            "tap" -> setMood("happy")
-            "double_tap" -> setMood("affectionate")
-            "long_tap" -> setMood("shy")
-            "released" -> setMood("excited")
-        }
-        invalidate()
     }
 
-    fun setDragMotion(dx: Float, dy: Float) {
-        dragTilt = (dx * .10f).coerceIn(-11f, 11f)
-        dragStretch = (1f + abs(dy) / 2300f).coerceIn(1f, 1.035f)
-        interaction = "dragging"
-        interactionUntil = 0L
-        setMood("happy")
-        invalidate()
+    init {
+        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        addView(image, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, Gravity.CENTER))
+        addView(hint, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+        loadSuppliedImages()
     }
 
-    fun clearDragMotion() {
-        setInteraction("released")
+    private fun loadSuppliedImages() {
+        val directory = File(context.filesDir, "miko_assets")
+        val names = listOf("miko_mouth_closed.webp", "miko_mouth_half.webp", "miko_mouth_open.webp")
+        val loaded = names.map { name ->
+            val file = File(directory, name)
+            if (!file.isFile || file.length() == 0L) null else decodeForDevice(file)
+        }
+        if (loaded.all { it != null } && loaded.filterNotNull().map { it.width to it.height }.distinct().size == 1) {
+            frames = loaded.filterNotNull()
+            image.setImageBitmap(frames[0])
+            hint.visibility = View.GONE
+        } else {
+            loaded.filterNotNull().forEach { it.recycle() }
+            image.setImageDrawable(null)
+            hint.visibility = View.VISIBLE
+        }
     }
 
-    override fun onDraw(canvas: Canvas) {
-        val now = System.currentTimeMillis()
-        if (interaction.isNotEmpty() && interactionUntil > 0L && now > interactionUntil) {
-            interaction = ""
-            interactionUntil = 0L
-            setMood(moodBeforeInteraction)
-        }
+    private fun decodeForDevice(file: File): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        var sample = 1
+        while (bounds.outWidth / sample > 640 || bounds.outHeight / sample > 900) sample *= 2
+        return BitmapFactory.decodeFile(file.absolutePath, BitmapFactory.Options().apply {
+            inSampleSize = sample
+            inPreferredConfig = Bitmap.Config.ARGB_8888
+        })
+    }
 
-        val t = now / 1000f
-        val dragging = interaction == "dragging"
-        val bob = sin(t * 2.0f) * height * if (dragging) .0015f else .006f
-        val sway = sin(t * .8f) * if (dragging) .25f else 1.1f
-        val breathe = 1f + sin(t * 1.65f) * if (dragging) .002f else .005f
-        val pickup = if (interaction == "picked_up") 1.025f + sin(t * 14f) * .008f else 1f
-        val tapBounce = when (interaction) {
-            "tap" -> 1f + abs(sin(t * 9f)) * .018f
-            "double_tap" -> 1f + abs(sin(t * 13f)) * .025f
-            "long_tap" -> 1f + sin(t * 4f) * .008f
-            else -> 1f
-        }
+    fun setMood(value: String) {
+        if (value.equals("neutral", true) || value.equals("normal", true) || value.equals("idle", true)) stopTalking()
+    }
 
-        val releaseAge = if (releasedAt == 0L) 1f
-            else ((now - releasedAt) / 420f).coerceIn(0f, 1f)
-        val spring = (1f - releaseAge)
-        val returningTilt = if (interaction == "released") releaseTilt * spring * spring else dragTilt
-        val returningStretch = if (interaction == "released") 1f + (releaseStretch - 1f) * spring else dragStretch
-        if (releaseAge >= 1f) {
-            dragTilt = 0f
-            dragStretch = 1f
-            releaseTilt = 0f
-            releaseStretch = 1f
-            releasedAt = 0L
-        }
+    fun startTalking() {
+        if (frames.size != 3 || talking) return
+        talking = true
+        frameIndex = 0
+        handler.removeCallbacks(mouthTick)
+        mouthTick.run()
+    }
 
-        canvas.save()
-        canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
-        canvas.translate(width / 2f, height / 2f + bob)
-        canvas.rotate(sway + returningTilt)
-        canvas.scale(breathe * pickup * tapBounce, breathe * returningStretch * pickup * tapBounce)
-        canvas.translate(-width / 2f, -height / 2f)
-        super.onDraw(canvas)
-        canvas.restore()
+    fun stopTalking() {
+        talking = false
+        handler.removeCallbacks(mouthTick)
+        if (frames.size == 3) image.setImageBitmap(frames[0])
+    }
+
+    override fun onDetachedFromWindow() {
+        stopTalking()
+        super.onDetachedFromWindow()
     }
 }
