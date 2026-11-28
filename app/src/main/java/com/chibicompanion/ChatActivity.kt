@@ -130,7 +130,14 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             maxWidth = CompanionUi.dp(this@ChatActivity, 292)
         })
         line.addView(bubble, LinearLayout.LayoutParams(-2, -2))
+        line.alpha = 0f
+        line.translationY = CompanionUi.dp(this, 12).toFloat()
+        line.scaleX = .98f
+        line.scaleY = .98f
         transcriptList.addView(line, LinearLayout.LayoutParams(-1, -2))
+        line.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+            .setDuration(if (isThinking) 180 else 240)
+            .setInterpolator(android.view.animation.DecelerateInterpolator()).start()
     }
 
     private fun sendMessage() {
