@@ -7,10 +7,16 @@ import android.view.View
 import android.widget.*
 import android.text.InputType
 import android.graphics.Color
+import android.content.Intent
+import android.net.Uri
+import java.io.File
+import java.io.FileOutputStream
+import java.util.zip.ZipInputStream
 
 class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListener {
     private lateinit var tts: android.speech.tts.TextToSpeech
     private lateinit var providerList: TextView
+    private val importAnimationsRequest = 811
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -18,30 +24,51 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
         tts = android.speech.tts.TextToSpeech(this, this)
 
         val scroll = ScrollView(this).apply { setBackgroundColor(CompanionUi.bg); isFillViewport = true }
-        val root = CompanionUi.column(this, 18).apply {
-            setPadding(CompanionUi.dp(this@SettingsActivity, 20), CompanionUi.dp(this@SettingsActivity, 18),
-                CompanionUi.dp(this@SettingsActivity, 20), CompanionUi.dp(this@SettingsActivity, 26))
+        val root = CompanionUi.column(this, 0).apply {
+            setPadding(CompanionUi.dp(this@SettingsActivity, 24), CompanionUi.dp(this@SettingsActivity, 26),
+                CompanionUi.dp(this@SettingsActivity, 24), CompanionUi.dp(this@SettingsActivity, 40))
         }
         scroll.addView(root)
         root.addView(CompanionUi.eyebrow(this, "Personalise"))
-        root.addView(CompanionUi.heading(this, "Make her yours ♡", 26f))
-        root.addView(CompanionUi.text(this, "Your choices stay on this phone unless a feature says otherwise.", 12f, CompanionUi.muted))
+        root.addView(CompanionUi.heading(this, "Make her yours ♡", 30f))
+        root.addView(CompanionUi.text(this, "Your choices stay on this phone unless a feature says otherwise.", 14f, CompanionUi.muted))
         root.addView(CompanionUi.spacer(this, 8))
 
         val voice = card("VOICE")
-        voice.addView(CompanionUi.text(this, "Choose how Miko sounds", 14f, CompanionUi.ink, true))
-        voice.addView(CompanionUi.button(this, "Choose Miko's voice ♡") { showVoicePicker() })
-        voice.addView(CompanionUi.button(this, "Test Miko's voice") {
+        voice.addView(CompanionUi.text(this, "Choose how Miko sounds", 16f, CompanionUi.ink, true))
+        addSpaced(voice, CompanionUi.button(this, "Choose Miko's voice ♡") { showVoicePicker() }, 12)
+        addSpaced(voice, CompanionUi.button(this, "Test Miko's voice") {
             if (::tts.isInitialized) {
                 CompanionVoice.configure(this, tts)
                 tts.speak("H-hello! It's me, Miko. How do I sound?", android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "miko-voice-test")
             }
-        })
-        voice.addView(CompanionUi.button(this, "Install more voice options") {
+        }, 10)
+        addSpaced(voice, CompanionUi.button(this, "Install more voice options") {
             runCatching { startActivity(android.content.Intent(android.speech.tts.TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) }
                 .onFailure { toast("Open your phone's Text-to-speech settings to install voices") }
-        })
-        root.addView(voice)
+        }, 10)
+        addSection(root, voice)
+
+        val animations = card("MIKO'S EXPRESSIONS")
+        animations.addView(CompanionUi.text(this,
+            "Give her a little life. Preview her expressions here, then install the transparent animation pack.",
+            13f, CompanionUi.muted))
+        val preview = MikoSpriteView(this)
+        animations.addSpaced(preview, 8, 230)
+        val previewActions = CompanionUi.row(this)
+        listOf("idle" to "Idle", "thinking" to "Think", "happy" to "Happy").forEach { (mood, label) ->
+            val action = CompanionUi.button(this, label) { preview.setMood(mood) }
+            previewActions.addView(action, LinearLayout.LayoutParams(0, CompanionUi.dp(this, 52), 1f).apply {
+                marginStart = CompanionUi.dp(this@SettingsActivity, 4)
+                marginEnd = CompanionUi.dp(this@SettingsActivity, 4)
+            })
+        }
+        animations.addSpaced(previewActions, 8)
+        animations.addSpaced(CompanionUi.text(this, animationStatus(), 12f, CompanionUi.muted), 8)
+        addSpaced(animations, CompanionUi.button(this, "Install / update Miko's 11 animations", true) {
+            pickAnimations()
+        }, 12)
+        addSection(root, animations)
 
         val ai = card("AI CONNECTIONS")
         ai.addView(CompanionUi.text(this, "Cloud AI is optional. No provider is called until you add your own key.", 12f, CompanionUi.muted))
@@ -55,8 +82,8 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
         providerList = CompanionUi.text(this, "", 11f, CompanionUi.muted)
         ai.addView(providerList)
         providerList.setOnClickListener { showProviderManager() }
-        ai.addView(CompanionUi.button(this, "Manage saved providers") { showProviderManager() })
-        ai.addView(CompanionUi.button(this, "Save provider", true) {
+        addSpaced(ai, CompanionUi.button(this, "Manage saved providers") { showProviderManager() }, 12)
+        addSpaced(ai, CompanionUi.button(this, "Save provider", true) {
             val p=provider.text.toString().trim().lowercase()
             val k=key.text.toString().trim()
             val url=endpoint.text.toString().trim()
@@ -66,49 +93,134 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
                 ProviderStore.add(this,p,k,model.text.toString().trim(),url)
                 key.text.clear(); refreshProviders(); toast("Provider saved securely ♡")
             }
-        })
-        ai.addView(CompanionUi.button(this, "Clear saved providers") {
+        }, 10)
+        addSpaced(ai, CompanionUi.button(this, "Clear saved providers") {
             MikoSheet.show(this, "AI CONNECTIONS", "Remove saved providers?", "This removes every saved cloud API credential from this phone. No provider will be called until you add one again.", actionLabel = "Clear saved providers") {
                 ProviderStore.clear(this)
                 refreshProviders()
                 toast("Saved provider keys cleared")
             }
-        })
+        }, 10)
         refreshProviders()
-        root.addView(ai)
+        addSection(root, ai)
 
         val memory = card("MEMORY")
         memory.addView(CompanionUi.text(this, "Miko's memories are stored locally and encrypted.", 12f, CompanionUi.muted))
-        memory.addView(CompanionUi.button(this, "View and manage memories") { showMemoryManager() })
-        root.addView(memory)
+        addSpaced(memory, CompanionUi.button(this, "View and manage memories") { showMemoryManager() }, 12)
+        addSection(root, memory)
 
         val behavior = card("BEHAVIOUR")
         behavior.addView(CompanionUi.text(this, "Choose how proactive Miko should be.", 12f, CompanionUi.muted))
-        behavior.addView(CompanionUi.button(this, "Proactive mode: " + AssistantPreferences.proactiveMode(this).uppercase()) {
+        addSpaced(behavior, CompanionUi.button(this, "Proactive mode: " + AssistantPreferences.proactiveMode(this).uppercase()) {
             val modes=arrayOf("Quiet — only respond when I interact","Optional — occasional helpful check-ins","Active — proactively suggest useful actions")
             val values=arrayOf(AssistantPreferences.QUIET,AssistantPreferences.OPTIONAL,AssistantPreferences.ACTIVE)
             AlertDialog.Builder(this).setTitle("How proactive should she be?")
                 .setSingleChoiceItems(modes,values.indexOf(AssistantPreferences.proactiveMode(this))) { d,w ->
                     AssistantPreferences.setProactiveMode(this,values[w]); d.dismiss(); recreate()
                 }.setNegativeButton("Cancel",null).show()
-        })
-        root.addView(behavior)
-        root.addView(CompanionUi.button(this, "←  Back to Miko") { finish() })
+        }, 12)
+        addSection(root, behavior)
+        addSpaced(root, CompanionUi.button(this, "←  Back to Miko") { finish() }, 22)
         setContentView(scroll)
     }
 
-    private fun card(label: String) = CompanionUi.column(this,14).apply {
+    private fun card(label: String) = CompanionUi.column(this,22).apply {
         background=CompanionUi.panel(this@SettingsActivity,CompanionUi.surface,20)
-        addView(CompanionUi.text(this@SettingsActivity,label,10f,CompanionUi.pink,true))
+        addView(CompanionUi.text(this@SettingsActivity,label,11f,CompanionUi.pink,true))
         addView(CompanionUi.spacer(this@SettingsActivity,4))
     }
     private fun field(hintText: String) = android.widget.EditText(this).apply {
         hint=hintText; setSingleLine(); textSize=13f
         setTextColor(CompanionUi.ink); setHintTextColor(CompanionUi.muted)
-        setPadding(CompanionUi.dp(this@SettingsActivity,12),CompanionUi.dp(this@SettingsActivity,11),CompanionUi.dp(this@SettingsActivity,12),CompanionUi.dp(this@SettingsActivity,11))
+        setPadding(CompanionUi.dp(this@SettingsActivity,16),CompanionUi.dp(this@SettingsActivity,16),CompanionUi.dp(this@SettingsActivity,16),CompanionUi.dp(this@SettingsActivity,16))
+        minHeight=CompanionUi.dp(this@SettingsActivity,58)
         background=CompanionUi.panel(this@SettingsActivity,CompanionUi.surfaceRaised,14)
-        val lp=android.widget.LinearLayout.LayoutParams(-1,-2); lp.topMargin=CompanionUi.dp(this@SettingsActivity,6); layoutParams=lp
+        val lp=android.widget.LinearLayout.LayoutParams(-1,-2); lp.topMargin=CompanionUi.dp(this@SettingsActivity,12); layoutParams=lp
     }
+    private fun addSection(root: LinearLayout, section: View) {
+        root.addView(section, LinearLayout.LayoutParams(-1, -2).apply {
+            bottomMargin = CompanionUi.dp(this@SettingsActivity, 20)
+        })
+    }
+
+    private fun addSpaced(parent: LinearLayout, child: View, top: Int = 10, fixedHeight: Int? = null) {
+        val params = LinearLayout.LayoutParams(-1, fixedHeight?.let { CompanionUi.dp(this, it) } ?: -2)
+        params.topMargin = CompanionUi.dp(this, top)
+        parent.addView(child, params)
+    }
+
+    private fun animationStatus(): String {
+        val dir = File(filesDir, "miko_animations")
+        val expected = listOf("idle.webp", "happy.webp", "laughing.webp", "annoyed.webp",
+            "astonished.webp", "blush.webp", "sad.webp", "sleepy.webp", "thinking.webp", "wave.webp", "little dance.webp")
+        val count = expected.count { File(dir, it).isFile && File(dir, it).length() > 0L }
+        return if (count == expected.size) "✓ All 11 transparent animations are installed."
+            else "$count of 11 animations installed. Import the ZIP to unlock idle, thinking, happy, wave and more."
+    }
+
+    private fun pickAnimations() {
+        val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/zip"
+        }
+        startActivityForResult(pick, importAnimationsRequest)
+    }
+
+    @Deprecated("Android document picker callback")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != importAnimationsRequest || resultCode != RESULT_OK || data?.data == null) return
+        installAnimations(data.data!!)
+    }
+
+    private fun installAnimations(uri: Uri) {
+        val expected = setOf("idle.webp", "happy.webp", "laughing.webp", "annoyed.webp", "astonished.webp",
+            "blush.webp", "sad.webp", "sleepy.webp", "thinking.webp", "wave.webp", "little dance.webp")
+        val staging = File(cacheDir, "miko_animation_import").apply { deleteRecursively(); mkdirs() }
+        val imported = mutableSetOf<String>()
+        try {
+            contentResolver.openInputStream(uri)?.use { input ->
+                ZipInputStream(input).use { zip ->
+                    var totalBytes = 0L
+                    var entry = zip.nextEntry
+                    while (entry != null) {
+                        val name = entry.name.substringAfterLast('/')
+                        if (!entry.isDirectory && name in expected) {
+                            val target = File(staging, name)
+                            FileOutputStream(target).use { output ->
+                                val buffer = ByteArray(8192)
+                                var entryBytes = 0L
+                                while (true) {
+                                    val count = zip.read(buffer)
+                                    if (count < 0) break
+                                    entryBytes += count
+                                    totalBytes += count
+                                    require(entryBytes <= 8L * 1024 * 1024 && totalBytes <= 50L * 1024 * 1024) {
+                                        "Animation pack exceeds the safe import size"
+                                    }
+                                    output.write(buffer, 0, count)
+                                }
+                            }
+                            imported.add(name)
+                        }
+                        zip.closeEntry()
+                        entry = zip.nextEntry
+                    }
+                }
+            } ?: error("Unable to open the selected ZIP")
+            require(imported.containsAll(expected)) { "This ZIP contains \${imported.size} of the 11 required animations." }
+            val destination = File(filesDir, "miko_animations").apply { mkdirs() }
+            expected.forEach { name -> File(staging, name).copyTo(File(destination, name), overwrite = true) }
+            startService(Intent(this, FloatingCompanionService::class.java).setAction("RELOAD_MIKO_ASSETS"))
+            Toast.makeText(this, "All 11 Miko animations installed ♡", Toast.LENGTH_LONG).show()
+            recreate()
+        } catch (error: Exception) {
+            Toast.makeText(this, "Animation import failed: \${error.message ?: "invalid ZIP"}", Toast.LENGTH_LONG).show()
+        } finally {
+            staging.deleteRecursively()
+        }
+    }
+
     private fun refreshProviders() {
         val list=ProviderStore.all(this)
         providerList.text=if(list.isEmpty()) "No providers saved • basic offline fallback only" else
