@@ -57,13 +57,21 @@ object CompanionUi {
     fun button(c: Context, value: String, primary: Boolean = false, onClick: () -> Unit): TextView =
         text(c, value, 14f, if (primary) Color.WHITE else ink, true).apply {
             gravity = Gravity.CENTER
-            minHeight = dp(c, 48)
+            minHeight = dp(c, 56)
             background = if (primary) gradient(c, Color.rgb(32, 125, 255), Color.rgb(139, 65, 255), 16)
                 else panel(c, surfaceRaised, 16)
-            setPadding(dp(c, 16), dp(c, 12), dp(c, 16), dp(c, 12))
+            setPadding(dp(c, 18), dp(c, 16), dp(c, 18), dp(c, 16))
             isClickable = true
             isFocusable = true
             elevation = dp(c, if (primary) 4 else 0).toFloat()
+            setOnTouchListener { view, event ->
+                when (event.action) {
+                    android.view.MotionEvent.ACTION_DOWN -> view.animate().scaleX(.985f).scaleY(.985f).setDuration(90).start()
+                    android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL ->
+                        view.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
+                }
+                false
+            }
             setOnClickListener { onClick() }
         }
 
