@@ -433,7 +433,6 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     }
     override fun onDestroy() {
         MikoPresenceStore.setVisible(this, false)
-        refreshQuickSettingsTile()
         hideChat(); hideReplyBubble(); avatar?.stopTalking(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
         worker.shutdownNow(); if(::tts.isInitialized) { tts.stop(); tts.shutdown() }
         super.onDestroy()
