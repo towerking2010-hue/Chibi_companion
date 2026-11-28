@@ -16,6 +16,8 @@ import java.util.zip.ZipInputStream
 
 class MainActivity : Activity() {
     private val importSpritesRequest = 802
+    private val importAnimationsRequest = 803
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= 33 &&
@@ -61,12 +63,19 @@ class MainActivity : Activity() {
         })
         root.addView(CompanionUi.spacer(this, 8))
         root.addView(CompanionUi.button(this, "Import Miko mouth images") {
-            val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                addCategory(Intent.CATEGORY_OPENABLE)
-                type = "application/zip"
-            }
-            startActivityForResult(pick, importSpritesRequest)
+            pickZip(importSpritesRequest)
         })
+        root.addView(CompanionUi.spacer(this, 8))
+        root.addView(CompanionUi.button(this, "Import Miko animation pack (.zip)") {
+            pickZip(importAnimationsRequest)
+        })
+        val installed = MikoAnimationStore.installed(this)
+        root.addView(CompanionUi.text(
+            this,
+            if (installed.isEmpty()) "No animated WebP clips installed yet." else
+                "Installed animations: " + installed.joinToString(", "),
+            11f, CompanionUi.muted
+        ))
         root.addView(CompanionUi.spacer(this, 9))
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         row.addView(CompanionUi.button(this, "Chat & AI settings") {
@@ -83,15 +92,29 @@ class MainActivity : Activity() {
         setContentView(root)
     }
 
+    private fun pickZip(requestCode: Int) {
+        val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/zip"
+        }
+        startActivityForResult(pick, requestCode)
+    }
+
     @Deprecated("Activity result API retained for compatibility with the current project")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != importSpritesRequest || resultCode != RESULT_OK || data?.data == null) return
+        if (resultCode != RESULT_OK || data?.data == null) return
+        when (requestCode) {
+            importSpritesRequest -> importMouthSprites(data.data!!)
+            importAnimationsRequest -> importAnimationPack(data.data!!)
+        }
+    }
+
+    private fun importMouthSprites(uri: Uri) {
         val expected = setOf("miko_mouth_closed.webp", "miko_mouth_half.webp", "miko_mouth_open.webp")
         val destination = File(filesDir, "miko_assets").apply { mkdirs() }
-        var imported = 0
         try {
-            contentResolver.openInputStream(data.data!!)?.use { input ->
+            contentResolver.openInputStream(uri)?.use { input ->
                 ZipInputStream(input).use { zip ->
                     var entry = zip.nextEntry
                     while (entry != null) {
@@ -103,26 +126,37 @@ class MainActivity : Activity() {
                                 var total = 0
                                 while (true) {
                                     val count = zip.read(buffer)
-                                    if (count <= 0) break
+                                    if (count < 0) break
                                     total += count
                                     require(total <= 5 * 1024 * 1024) { "Miko sprite is unexpectedly large" }
                                     output.write(buffer, 0, count)
                                 }
                             }
-                            imported++
                         }
                         zip.closeEntry()
                         entry = zip.nextEntry
                     }
                 }
             } ?: error("Unable to open selected ZIP")
-            val complete = expected.all { File(destination, it).isFile && File(destination, it).length() > 0L }
-            if (!complete) error("ZIP must contain all three Miko mouth WebP images")
+            require(expected.all { File(destination, it).isFile && File(destination, it).length() > 0L }) {
+                "ZIP must contain all three Miko mouth WebP images"
+            }
             Toast.makeText(this, "Miko's three mouth images imported ♡", Toast.LENGTH_LONG).show()
             recreate()
         } catch (error: Exception) {
             expected.forEach { File(destination, it).delete() }
             Toast.makeText(this, "Import failed: ${error.message ?: "invalid ZIP"}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun importAnimationPack(uri: Uri) {
+        try {
+            val count = contentResolver.openInputStream(uri)?.use { MikoAnimationStore.importZip(this, it) }
+                ?: error("Unable to open selected ZIP")
+            Toast.makeText(this, "Imported $count Miko animation clips ♡", Toast.LENGTH_LONG).show()
+            recreate()
+        } catch (error: Exception) {
+            Toast.makeText(this, "Animation import failed: ${error.message ?: "invalid ZIP"}", Toast.LENGTH_LONG).show()
         }
     }
 }
