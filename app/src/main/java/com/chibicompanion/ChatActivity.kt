@@ -48,7 +48,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         header.addView(CompanionUi.button(this,"Clear") {
             MikoSheet.show(this, "CHAT", "Start fresh?", "This clears the saved conversation from this phone. You can keep chatting with Miko afterwards.", actionLabel = "Clear conversation") {
                 ChatHistory.clear(this)
-                transcript.text = "Miko: Hiii! A fresh start. What would you like to do? ✦"
+                renderTranscript()
             }
         })
         header.addView(CompanionUi.button(this,"Done") { finish() })
