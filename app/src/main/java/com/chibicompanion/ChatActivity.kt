@@ -22,6 +22,7 @@ import java.util.concurrent.Executors
 
 class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var log: TextView
+    private lateinit var chatScroll: ScrollView
     private lateinit var entry: EditText
     private var speechRecognizer: SpeechRecognizer? = null
     private lateinit var tts: TextToSpeech
@@ -47,7 +48,8 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         val chatCard = CompanionUi.column(this, 15).apply { background = CompanionUi.panel(this@ChatActivity, Color.WHITE, 24) }
         log = CompanionUi.text(this, ChatHistory.read(this), 15f)
         log.setLineSpacing(CompanionUi.dp(this,3).toFloat(), 1f)
-        chatCard.addView(ScrollView(this).apply { isFillViewport = true; addView(log) }, LinearLayout.LayoutParams(-1,0,1f))
+        chatScroll = ScrollView(this).apply { isFillViewport = true; addView(log) }
+        chatCard.addView(chatScroll, LinearLayout.LayoutParams(-1,0,1f))
         root.addView(chatCard, LinearLayout.LayoutParams(-1,0,1f))
         root.addView(CompanionUi.spacer(this, 12))
 
@@ -126,6 +128,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                     ChatHistory.add(this@ChatActivity, "Her", answer)
                     runOnUiThread {
                         log.text = ChatHistory.read(this@ChatActivity)
+                        chatScroll.post { chatScroll.fullScroll(View.FOCUS_DOWN) }
                         tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "reply")
                     }
                 }
@@ -291,7 +294,10 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
 
     override fun onResume() {
         super.onResume()
-        if (::log.isInitialized) log.text = ChatHistory.read(this)
+        if (::log.isInitialized) {
+            log.text = ChatHistory.read(this)
+            chatScroll.post { chatScroll.fullScroll(View.FOCUS_DOWN) }
+        }
     }
 
     private fun startVoiceInput() {
