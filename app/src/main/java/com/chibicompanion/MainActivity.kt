@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -176,8 +177,7 @@ class MainActivity : Activity() {
         )
     }
     private fun summonMikoFromShortcut() {
-        val running = getSharedPreferences("miko_companion_state", MODE_PRIVATE)
-            .getBoolean("floating", false)
+        val running = MikoPresenceStore.isVisible(this)
         if (running) {
             Toast.makeText(this, "Miko is already here ♡", Toast.LENGTH_SHORT).show()
             return
@@ -259,7 +259,7 @@ class MainActivity : Activity() {
 
     private fun refreshFloatingButton() {
         if (::floatingToggleButton.isInitialized) {
-            val running = getSharedPreferences("miko_companion_state", MODE_PRIVATE).getBoolean("floating", false)
+            val running = MikoPresenceStore.isVisible(this)
             floatingToggleButton.text = if (running) "♡  Hide floating Miko" else "♡  Summon Miko"
         }
     }
@@ -301,9 +301,9 @@ class MainActivity : Activity() {
 
     private fun toggleFloatingCompanion() {
         val prefs = getSharedPreferences("miko_companion_state", MODE_PRIVATE)
-        if (prefs.getBoolean("floating", false)) {
+        if (MikoPresenceStore.isVisible(this)) {
             stopService(Intent(this, FloatingCompanionService::class.java))
-            prefs.edit().putBoolean("floating", false).apply()
+            MikoPresenceStore.setVisible(this, false)
         } else {
             if (!Settings.canDrawOverlays(this)) {
                 waitingForOverlayPermission = true
@@ -330,7 +330,7 @@ class MainActivity : Activity() {
     private fun startMikoFloating() {
         val intent = Intent(this, FloatingCompanionService::class.java)
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
-        getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", true).apply()
+        MikoPresenceStore.setVisible(this, true)
         Toast.makeText(this, "Miko is ready ♡", Toast.LENGTH_SHORT).show()
         refreshSetupButton()
         refreshFloatingButton()
