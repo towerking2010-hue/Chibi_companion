@@ -54,7 +54,7 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
             "Give her a little life. Preview her expressions here, then install the transparent animation pack.",
             13f, CompanionUi.muted))
         val preview = MikoSpriteView(this)
-        animations.addSpaced(preview, 8, 230)
+        addSpaced(animations, preview, 8, 230)
         val previewActions = CompanionUi.row(this)
         listOf("idle" to "Idle", "thinking" to "Think", "happy" to "Happy").forEach { (mood, label) ->
             val action = CompanionUi.button(this, label) { preview.setMood(mood) }
@@ -63,8 +63,8 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
                 marginEnd = CompanionUi.dp(this@SettingsActivity, 4)
             })
         }
-        animations.addSpaced(previewActions, 8)
-        animations.addSpaced(CompanionUi.text(this, animationStatus(), 12f, CompanionUi.muted), 8)
+        addSpaced(animations, previewActions, 8)
+        addSpaced(animations, CompanionUi.text(this, animationStatus(), 12f, CompanionUi.muted), 8)
         addSpaced(animations, CompanionUi.button(this, "Install / update Miko's 11 animations", true) {
             pickAnimations()
         }, 12)
@@ -208,14 +208,14 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
                     }
                 }
             } ?: error("Unable to open the selected ZIP")
-            require(imported.containsAll(expected)) { "This ZIP contains \${imported.size} of the 11 required animations." }
+            require(imported.containsAll(expected)) { "This ZIP contains ${imported.size} of the 11 required animations." }
             val destination = File(filesDir, "miko_animations").apply { mkdirs() }
             expected.forEach { name -> File(staging, name).copyTo(File(destination, name), overwrite = true) }
-            startService(Intent(this, FloatingCompanionService::class.java).setAction("RELOAD_MIKO_ASSETS"))
+            if (MikoPresenceStore.isVisible(this)) startService(Intent(this, FloatingCompanionService::class.java).setAction("RELOAD_MIKO_ASSETS"))
             Toast.makeText(this, "All 11 Miko animations installed ♡", Toast.LENGTH_LONG).show()
             recreate()
         } catch (error: Exception) {
-            Toast.makeText(this, "Animation import failed: \${error.message ?: "invalid ZIP"}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Animation import failed: ${error.message ?: "invalid ZIP"}", Toast.LENGTH_LONG).show()
         } finally {
             staging.deleteRecursively()
         }
