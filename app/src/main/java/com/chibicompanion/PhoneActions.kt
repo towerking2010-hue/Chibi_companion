@@ -137,7 +137,9 @@ object PhoneActions {
             return "Taking you to the home screen. ♡"
         }
         if (lower.startsWith("close ") || lower.startsWith("quit ") || lower.startsWith("force stop ")) {
-            return "Android doesn't let ordinary apps force-close another app. I can take you to the home screen, then you can swipe it away from Recent apps."
+            ctx.startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return "I took you back to the home screen. Android won't let Miko force-stop another app; swipe it away from Recent apps to close it completely."
         }
         val navigation = when {
             lower in listOf("go back", "press back", "back") -> "back"
