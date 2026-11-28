@@ -14,17 +14,17 @@ import android.widget.TextView
  * Kept dependency-free so the app stays light on mid-range devices.
  */
 object CompanionUi {
-    val ink = Color.rgb(246, 245, 255)
-    val muted = Color.rgb(164, 170, 196)
-    val pink = Color.rgb(255, 143, 190)
-    val lavender = Color.rgb(173, 151, 255)
-    val cyan = Color.rgb(129, 213, 236)
-    val bg = Color.rgb(12, 15, 29)
-    val white = Color.rgb(27, 31, 51)
-    val surface = Color.rgb(23, 27, 45)
-    val surfaceRaised = Color.rgb(34, 39, 62)
-    val stroke = Color.rgb(54, 59, 86)
-    val success = Color.rgb(137, 218, 183)
+    val ink = Color.rgb(61, 57, 80)
+    val muted = Color.rgb(135, 132, 151)
+    val pink = Color.rgb(237, 151, 187)
+    val lavender = Color.rgb(181, 164, 226)
+    val cyan = Color.rgb(132, 190, 218)
+    val bg = Color.rgb(250, 248, 253)
+    val white = Color.rgb(255, 255, 255)
+    val surface = Color.rgb(248, 245, 252)
+    val surfaceRaised = Color.rgb(243, 239, 249)
+    val stroke = Color.rgb(237, 231, 244)
+    val success = Color.rgb(75, 154, 123)
 
     fun dp(c: Context, v: Int) = (v * c.resources.displayMetrics.density).toInt()
 
@@ -57,7 +57,7 @@ object CompanionUi {
         text(c, value, size, ink, true)
 
     fun button(c: Context, value: String, primary: Boolean = false, onClick: () -> Unit): TextView =
-        text(c, value, 14f, if (primary) Color.rgb(22, 19, 39) else ink, true).apply {
+        text(c, value, 14f, if (primary) Color.WHITE else ink, true).apply {
             gravity = Gravity.CENTER
             minHeight = dp(c, 48)
             background = if (primary) gradient(c, pink, lavender, 16)
