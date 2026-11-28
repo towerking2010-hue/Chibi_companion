@@ -2,7 +2,6 @@ package com.chibicompanion
 
 import android.app.*
 import android.content.*
-import android.service.quicksettings.TileService
 import android.graphics.PixelFormat
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -64,16 +63,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         tts = TextToSpeech(this, this)
         startForeground(41, notification())
         MikoPresenceStore.setVisible(this, true)
-        refreshQuickSettingsTile()
         showAvatar()
-    }
-
-    private fun refreshQuickSettingsTile() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            runCatching {
-                TileService.requestListeningState(this, ComponentName(this, MikoQuickSettingsTileService::class.java))
-            }
-        }
     }
 
     private fun notification(): Notification {
