@@ -165,13 +165,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                         ChatHistory.add(this@FloatingCompanionService, "Her", answer)
                         mainThread {
                             showBubble(answer)
-                            val mood = when {
-                                answer.contains("sorry", true) || answer.contains("sad", true) -> "shy"
-                                answer.contains("baka", true) || answer.contains("annoy", true) -> "angry"
-                                answer.contains("happy", true) || answer.contains("glad", true) || answer.contains("♡") -> "happy"
-                                else -> "talking"
-                            }
-                            avatar?.setMood(mood)
+                            avatar?.setMood(MikoEmotion.fromReply(answer))
                             if (::tts.isInitialized) {
                                 CompanionVoice.configure(this@FloatingCompanionService, tts)
                                 tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "miko-quick-reply")
