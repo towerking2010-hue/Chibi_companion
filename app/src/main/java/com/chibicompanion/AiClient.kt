@@ -10,7 +10,7 @@ import java.net.URL
 object AiClient {
     fun reply(ctx: Context, message: String): String {
         val providers = ProviderStore.all(ctx)
-        if (providers.isEmpty()) return OfflineCompanion.reply(message)
+        if (providers.isEmpty()) return OfflineCompanion.reply(message, ctx)
         val errors = mutableListOf<String>()
         for (p in providers) {
             try {
