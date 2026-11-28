@@ -347,7 +347,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                 showReplyBubble(answer)
                 if (::tts.isInitialized) {
                     CompanionVoice.configure(this@FloatingCompanionService, tts)
-                    tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "miko-quick-reply")
+                    tts.speak(SpeechText.forTts(answer), TextToSpeech.QUEUE_FLUSH, null, "miko-quick-reply")
                 }
             }
         }
@@ -401,11 +401,27 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         }, LinearLayout.LayoutParams(0, -2, 1f))
         header.addView(TextView(this).apply { text = "×"; textSize = 20f; setTextColor(CompanionUi.muted); setOnClickListener { hideReplyBubble() } })
         bubble.addView(header)
-        bubble.addView(TextView(this).apply {
-            text = message; textSize = 14f; setTextColor(CompanionUi.ink); maxLines = 8
+        val replyText = TextView(this).apply {
+            text = if (message.contains("thinking", true)) message else ""
+            textSize = 14f; setTextColor(CompanionUi.ink); maxLines = 8
             setLineSpacing(CompanionUi.dp(this@FloatingCompanionService, 2).toFloat(), 1f)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        })
+        }
+        bubble.addView(replyText)
+        if (message.contains("thinking", true)) {
+            android.animation.ObjectAnimator.ofFloat(replyText, View.ALPHA, .48f, 1f).apply {
+                duration = 650L; repeatCount = android.animation.ValueAnimator.INFINITE
+                repeatMode = android.animation.ValueAnimator.REVERSE; start()
+            }
+        } else {
+            replyText.post {
+                android.animation.ValueAnimator.ofInt(0, message.length).apply {
+                    duration = (message.length * 13L).coerceIn(260L, 1500L)
+                    addUpdateListener { value -> replyText.text = message.substring(0, value.animatedValue as Int) }
+                    start()
+                }
+            }
+        }
         val screenW = resources.displayMetrics.widthPixels
         val avatarY = avatarParams?.y ?: CompanionUi.dp(this, 150)
         val bubbleW = (screenW - CompanionUi.dp(this, 24)).coerceAtLeast(CompanionUi.dp(this, 240))
@@ -448,7 +464,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             mainThread {
                 if (::tts.isInitialized) {
                     CompanionVoice.configure(this@FloatingCompanionService, tts)
-                    tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "screen-vision")
+                    tts.speak(SpeechText.forTts(answer), TextToSpeech.QUEUE_FLUSH, null, "screen-vision")
                 }
             }
         }
