@@ -124,9 +124,23 @@ object PhoneActions {
             ctx.startActivity(event)
             return "I opened a calendar reminder draft for '$task'. Choose its date and time, then save it."
         }
+        if (lower in setOf("see my screen", "look at my screen", "what's on my screen", "what is on my screen", "read my screen", "inspect my screen")) {
+            val capture = Intent(ctx, ScreenCaptureActivity::class.java)
+                .putExtra(ScreenCaptureActivity.EXTRA_NOTIFY_SERVICE, MikoPresenceStore.isVisible(ctx))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            ctx.startActivity(capture)
+            return "Android will ask you to share your screen for this capture. Approve it and I'll take a look."
+        }
+        if (lower in setOf("go home", "home screen", "press home", "go to home screen")) {
+            ctx.startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return "Taking you to the home screen. ♡"
+        }
+        if (lower.startsWith("close ") || lower.startsWith("quit ") || lower.startsWith("force stop ")) {
+            return "Android doesn't let ordinary apps force-close another app. I can take you to the home screen, then you can swipe it away from Recent apps."
+        }
         val navigation = when {
             lower in listOf("go back", "press back", "back") -> "back"
-            lower in listOf("go home", "home screen", "press home") -> "home"
             lower in listOf("open notifications", "show notifications") -> "notifications"
             lower in listOf("open quick settings", "show quick settings") -> "quick_settings"
             lower in listOf("scroll down", "swipe down") -> "scroll_down"
@@ -134,7 +148,7 @@ object PhoneActions {
             else -> null
         }
         if (navigation != null) {
-            return "System-wide navigation control is not included in this safer build. You can use Android's Back, Home, notifications, and Quick Settings controls directly."
+            return "I can't control system navigation without Android's Accessibility permission. You can use the phone's Back, Home, notifications and Quick Settings gestures directly."
         }
         if (lower == "open folder" || lower == "choose folder" || lower.startsWith("browse folder")) {
             val i=Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -198,23 +212,37 @@ object PhoneActions {
             ctx.startActivity(i); return "There! I opened a search for $term. Don't get distracted, okay?"
         }
         if (lower.startsWith("open ") || lower.startsWith("launch ")) {
-            val name=q.substringAfter(' ').trim()
-            if (name.isBlank()) return "Which app should I open?"
-            val pm=ctx.packageManager
-            val launcher=Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-            val matches=pm.queryIntentActivities(launcher,0)
-            val app=matches.firstOrNull { it.loadLabel(pm).toString().contains(name,true) }
-            if(app!=null) {
-                val intent=Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            val requested = q.substringAfter(' ').trim()
+            if (requested.isBlank()) return "Which app should I open?"
+            val names = requested.split(Regex("\\s*(?:,|&|\\band\\b|\\bthen\\b)\\s*", RegexOption.IGNORE_CASE))
+                .map { it.trim() }.filter { it.isNotBlank() }
+            val pm = ctx.packageManager
+            val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            val matches = pm.queryIntentActivities(launcher, 0)
+            fun findApp(name: String) = matches.firstOrNull {
+                it.loadLabel(pm).toString().equals(name, true)
+            } ?: matches.firstOrNull {
+                it.loadLabel(pm).toString().contains(name, true)
+            }
+            val found = names.mapNotNull { name -> findApp(name)?.let { name to it } }
+                .distinctBy { it.second.activityInfo.packageName }
+            val missing = names.filter { wanted -> found.none { it.first.equals(wanted, true) } }
+            if (found.isEmpty()) {
+                if (requested.equals("settings", true)) {
+                    ctx.startActivity(Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    return "Opening Android Settings."
+                }
+                return "I couldn't find an installed app named $requested. Check its name and try again."
+            }
+            val launchIntents = found.map { (_, app) ->
+                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
                     .setClassName(app.activityInfo.packageName, app.activityInfo.name)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                ctx.startActivity(intent); return "Opening ${app.loadLabel(pm)}. I knew that already, baka."
-            }
-            if(name.equals("settings",true)) {
-                ctx.startActivity(Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                return "Settings, coming right up."
-            }
-            return "I couldn't find an app named $name. Check its name and try again."
+            }.toTypedArray()
+            ctx.startActivities(launchIntents)
+            val opened = found.joinToString(" and ") { it.second.loadLabel(pm).toString() }
+            return if (missing.isEmpty()) "Opened $opened. There you go. ♡"
+                else "I opened $opened, but couldn't find ${missing.joinToString(" and ")}."
         }
         null
         } catch (e: Exception) {
