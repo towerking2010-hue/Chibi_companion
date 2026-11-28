@@ -18,7 +18,10 @@
         <item name="android:colorAccent">#AB94D8</item>
         <item name="android:colorControlActivated">#AB94D8</item>
         <item name="android:colorBackground">#FFFFFF</item>
-        <item name="android:windowBackground">#FFFFFF</item>
+        <item name="android:windowBackground">@drawable/miko_dialog_background</item>
+        <item name="android:windowMinWidthMajor">88%</item>
+        <item name="android:windowMinWidthMinor">88%</item>
+        <item name="android:backgroundDimAmount">0.24</item>
         <item name="android:textColorPrimary">#362E48</item>
         <item name="android:textColorSecondary">#7E7591</item>
         <item name="android:textColorHint">#9B93AA</item>
