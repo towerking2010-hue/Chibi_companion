@@ -237,6 +237,19 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }
         }
+        var swipeStartX = 0f
+        bubble.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> { swipeStartX = event.rawX; false }
+                MotionEvent.ACTION_UP -> {
+                    if (kotlin.math.abs(event.rawX - swipeStartX) > 70f) {
+                        hideBubble()
+                        true
+                    } else false
+                }
+                else -> false
+            }
+        }
         val avatarY = avatarParams?.y ?: 220
         val bubbleWidth = (resources.displayMetrics.widthPixels * 0.68f).toInt().coerceAtLeast(210)
         val screenWidth = resources.displayMetrics.widthPixels
