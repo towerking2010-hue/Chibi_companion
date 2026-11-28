@@ -212,12 +212,14 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                     recreate()
                 }.setNegativeButton("Cancel", null).show()
         })
-        assistantCard.addView(CompanionUi.button(this, "Enable / manage Screen Awareness") {
-            AssistantPreferences.setScreenAwarenessEnabled(this@ChatActivity, true)
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        assistantCard.addView(CompanionUi.button(this, "Screen Awareness — unavailable in this diagnostic build") {
+            AlertDialog.Builder(this@ChatActivity)
+                .setTitle("Screen Awareness temporarily disabled")
+                .setMessage("This test version removes Android's Accessibility service to check whether it caused Google Play Protect to block installation. Floating Miko, chat, voice and the three mouth images remain available.")
+                .setPositiveButton("OK", null)
+                .show()
         })
-        assistantCard.addView(CompanionUi.text(this, "To inspect another app, double-tap your floating chibi and choose 'Look at the app behind me'.", 11f, CompanionUi.muted))
-        assistantCard.addView(CompanionUi.text(this, "For visual screen analysis, use the floating chibi button: Look at the app behind me.", 11f, CompanionUi.muted))
+        assistantCard.addView(CompanionUi.text(this, "Screen Awareness and Accessibility navigation are disabled in this reduced-permission test build.", 11f, CompanionUi.muted))
         assistantCard.addView(CompanionUi.button(this, "View and manage my memories") { showMemoryManager() })
         assistantCard.addView(CompanionUi.button(this, "Proactive behavior: " + AssistantPreferences.proactiveMode(this).uppercase()) {
             val modes = arrayOf("Quiet — only respond when I interact", "Optional — occasional helpful check-ins", "Active — proactively suggest useful actions")
