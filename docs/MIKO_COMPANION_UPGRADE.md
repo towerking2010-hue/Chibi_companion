@@ -58,3 +58,11 @@ This document records the agreed Miko experience and separates working code from
 - Screen capture remains one-time and opt-in.
 - Keep API keys encrypted using Android Keystore. Do not embed keys in source control.
 - Never claim that a phone action, attachment inspection or screen analysis succeeded unless it actually did.
+
+
+## Three-image WebP lip-sync (November 2026)
+- The user's three supplied mouth states are imported from the prepared ZIP using **Import Miko mouth images** on the home screen.
+- The import accepts the exact files `miko_mouth_closed.webp`, `miko_mouth_half.webp`, and `miko_mouth_open.webp`, and stores them in app-private storage.
+- The floating companion and home-screen preview use the imported full-character sprites. If the images are absent or invalid, the Canvas avatar remains available.
+- While Android TextToSpeech is speaking, the floating sprite cycles closed → half-open → open → half-open at a light 115 ms interval, then returns to closed when speech ends or errors.
+- This is lightweight three-frame mouth-flap lip sync, not phoneme-accurate viseme matching or audio-amplitude analysis. It requires no animation/video assets.
