@@ -19,12 +19,13 @@ class QuickCameraActivity : Activity() {
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             if (Build.VERSION.SDK_INT >= 29) put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Miko")
         }
-        output = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        if (output == null) { Toast.makeText(this, "Couldn't prepare the camera photo", Toast.LENGTH_SHORT).show(); finish(); return }
+        val photoUri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        if (photoUri == null) { Toast.makeText(this, "Could not prepare the camera photo", Toast.LENGTH_SHORT).show(); finish(); return }
+        output = photoUri
         val camera = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-            putExtra(MediaStore.EXTRA_OUTPUT, output)
+            putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
             addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            clipData = android.content.ClipData.newUri(contentResolver, "Miko photo", output)
+            clipData = android.content.ClipData.newUri(contentResolver, "Miko photo", photoUri)
         }
         try { startActivityForResult(camera, REQUEST_CAMERA) }
         catch (_: Exception) { output?.let { contentResolver.delete(it, null, null) }; Toast.makeText(this, "No camera app is available", Toast.LENGTH_SHORT).show(); finish() }
