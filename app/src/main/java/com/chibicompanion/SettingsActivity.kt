@@ -122,6 +122,16 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
         addSection(root, behavior)
         addSpaced(root, CompanionUi.button(this, "←  Back to Miko") { finish() }, 22)
         setContentView(scroll)
+        for (index in 0 until root.childCount) {
+            val child = root.getChildAt(index)
+            child.alpha = 0f
+            child.translationY = CompanionUi.dp(this, 14).toFloat()
+            child.animate().alpha(1f).translationY(0f)
+                .setStartDelay((index * 45L).coerceAtMost(360L))
+                .setDuration(300)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        }
     }
 
     private fun card(label: String) = CompanionUi.column(this,22).apply {
