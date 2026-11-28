@@ -13,11 +13,16 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import java.io.File
+import java.io.FileOutputStream
+import java.util.zip.ZipInputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class MainActivity : Activity() {
+    private val importSpritesRequest = 802
+
     private var waitingForOverlayPermission = false
     private var waitingForAssistantSettings = false
     private var pendingOpenChat = false
@@ -65,11 +70,13 @@ class MainActivity : Activity() {
             setPadding(CompanionUi.dp(this@MainActivity, 12), CompanionUi.dp(this@MainActivity, 10),
                 CompanionUi.dp(this@MainActivity, 12), CompanionUi.dp(this@MainActivity, 16))
         }
-        hero.addView(ModelSlotView(this), LinearLayout.LayoutParams(-1, CompanionUi.dp(this, 278)))
+        val heroAvatar = MikoSpriteView(this)
+        hero.addView(heroAvatar, LinearLayout.LayoutParams(-1, CompanionUi.dp(this, 390)))
         hero.addView(CompanionUi.text(this, "A little company, whenever you need it.", 13f, Color.rgb(222, 220, 244)).apply {
             gravity = Gravity.CENTER
         })
         root.addView(hero)
+        root.addView(CompanionUi.button(this, "Import Miko mouth images") { pickMikoImages() })
 
         val quick = CompanionUi.card(this, 16)
         quick.addView(CompanionUi.eyebrow(this, "Quick access"))
@@ -140,6 +147,66 @@ class MainActivity : Activity() {
             10f, CompanionUi.muted).apply { gravity = Gravity.CENTER; setPadding(0, CompanionUi.dp(this@MainActivity, 4), 0, 0) })
         setContentView(scroll)
         refreshSetupButton()
+    }
+
+
+    private fun pickMikoImages() {
+        val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/zip"
+        }
+        startActivityForResult(pick, importSpritesRequest)
+    }
+
+    @Deprecated("Activity result API retained for compatibility")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != importSpritesRequest || resultCode != RESULT_OK || data?.data == null) return
+        importMouthSprites(data.data!!)
+    }
+
+    private fun importMouthSprites(uri: Uri) {
+        val expected = setOf("miko_mouth_closed.webp", "miko_mouth_half.webp", "miko_mouth_open.webp")
+        val destination = File(filesDir, "miko_assets").apply { mkdirs() }
+        try {
+            contentResolver.openInputStream(uri)?.use { input ->
+                ZipInputStream(input).use { zip ->
+                    var entry = zip.nextEntry
+                    while (entry != null) {
+                        val name = entry.name.substringAfterLast('/')
+                        if (!entry.isDirectory && name in expected) {
+                            val target = File(destination, name)
+                            FileOutputStream(target).use { output ->
+                                val buffer = ByteArray(8192)
+                                var total = 0
+                                while (true) {
+                                    val count = zip.read(buffer)
+                                    if (count < 0) break
+                                    total += count
+                                    require(total <= 5 * 1024 * 1024) { "Miko sprite is unexpectedly large" }
+                                    output.write(buffer, 0, count)
+                                }
+                            }
+                        }
+                        zip.closeEntry()
+                        entry = zip.nextEntry
+                    }
+                }
+            } ?: error("Unable to open selected ZIP")
+            require(expected.all { File(destination, it).isFile && File(destination, it).length() > 0L }) {
+                "ZIP must contain all three Miko mouth WebP images"
+            }
+            Toast.makeText(this, "Miko's three mouth images imported ♡", Toast.LENGTH_LONG).show()
+            val manager = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+            val running = manager.getRunningServices(Int.MAX_VALUE).any {
+                it.service.className == FloatingCompanionService::class.java.name
+            }
+            if (running) startService(Intent(this, FloatingCompanionService::class.java).setAction("RELOAD_MIKO_ASSETS"))
+            recreate()
+        } catch (error: Exception) {
+            expected.forEach { File(destination, it).delete() }
+            Toast.makeText(this, "Import failed: ${error.message ?: "invalid ZIP"}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun greeting(): String = when (java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)) {
