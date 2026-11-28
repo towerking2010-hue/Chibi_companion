@@ -87,9 +87,10 @@ class NotesActivity : Activity() {
             val footer = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
             footer.addView(CompanionUi.text(this, date, 10f, CompanionUi.muted), LinearLayout.LayoutParams(0, -2, 1f))
             footer.addView(CompanionUi.button(this, "Delete") {
-                AlertDialog.Builder(this).setTitle("Delete note?")
-                    .setMessage(note.title).setNegativeButton("Keep", null)
-                    .setPositiveButton("Delete") { _, _ -> NoteStore.delete(this, note.id); render() }.show()
+                MikoSheet.show(this, "PRIVATE NOTES", "Delete this note?", note.title, actionLabel = "Delete note") {
+                    NoteStore.delete(this, note.id)
+                    render()
+                }
             })
             card.addView(footer)
             val lp = LinearLayout.LayoutParams(-1, -2)
