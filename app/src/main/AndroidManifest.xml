@@ -20,6 +20,9 @@
         <activity android:name=".ScreenCaptureActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".TasksActivity" android:exported="false" />
         <activity android:name=".NotesActivity" android:exported="false" />
+        <activity android:name=".QuickAttachmentActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity android:name=".QuickVoiceActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity android:name=".QuickCameraActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".ChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
         <activity android:name=".SettingsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
         <activity android:name=".MikoAssistActivity" android:exported="true" android:label="Miko" android:icon="@drawable/miko_launcher_icon" android:description="@string/assist_description">

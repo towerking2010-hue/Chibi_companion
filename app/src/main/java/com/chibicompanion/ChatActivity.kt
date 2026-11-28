@@ -22,6 +22,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     private var recognizer: SpeechRecognizer? = null
     private val worker = Executors.newSingleThreadExecutor()
     private var replySequence = 0
+    private lateinit var avatar: MikoSpriteView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +48,8 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         header.addView(CompanionUi.button(this,"Done") { finish() })
         header.addView(CompanionUi.button(this,"⚙") { startActivity(Intent(this,SettingsActivity::class.java)) }, LinearLayout.LayoutParams(CompanionUi.dp(this,48),CompanionUi.dp(this,48)))
         root.addView(header)
-        root.addView(ModelSlotView(this), LinearLayout.LayoutParams(-1, CompanionUi.dp(this,112)).apply {
+        avatar = MikoSpriteView(this)
+        root.addView(avatar, LinearLayout.LayoutParams(-1, CompanionUi.dp(this,170)).apply {
             topMargin=CompanionUi.dp(this@ChatActivity,8)
         })
         val transcriptCard=CompanionUi.column(this,16).apply { background=CompanionUi.panel(this@ChatActivity,CompanionUi.surface,22) }
@@ -140,7 +142,14 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         else if(requestCode==VOICE_PERMISSION) toast("Microphone permission is needed for voice input")
     }
     override fun onInit(status:Int) {
-        if(status==TextToSpeech.SUCCESS) CompanionVoice.configure(this,tts)
+        if(status==TextToSpeech.SUCCESS) {
+            CompanionVoice.configure(this,tts)
+            tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) { runOnUiThread { if (::avatar.isInitialized) avatar.startTalking() } }
+                override fun onDone(utteranceId: String?) { runOnUiThread { if (::avatar.isInitialized) avatar.stopTalking() } }
+                override fun onError(utteranceId: String?) { runOnUiThread { if (::avatar.isInitialized) avatar.stopTalking() } }
+            })
+        }
     }
     private fun toast(s:String)=Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
     override fun onDestroy(){
