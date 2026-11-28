@@ -270,7 +270,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                             message.ifBlank { "Please look at this image and help me with it." }, out.toByteArray())
                     }
                     mime.startsWith("text/") || name.endsWith(".txt", true) || name.endsWith(".md", true) || name.endsWith(".csv", true) -> {
-                        val text = contentResolver.openInputStream(uri).bufferedReader().use { it.readText().take(24000) }
+                        val text = (contentResolver.openInputStream(uri) ?: throw IllegalStateException("Could not open file")).bufferedReader().use { it.readText().take(24000) }
                         AiClient.reply(this@FloatingCompanionService,
                             (message + "\\n\\nAttached file ($name):\\n" + text).trim())
                     }
