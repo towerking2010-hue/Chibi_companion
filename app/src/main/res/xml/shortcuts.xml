@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="summon_miko"
+        android:enabled="true"
+        android:icon="@drawable/miko_launcher_icon"
+        android:shortcutShortLabel="@string/shortcut_summon_miko"
+        android:shortcutLongLabel="@string/shortcut_summon_miko_long">
+        <intent
+            android:action="com.chibicompanion.action.SUMMON_MIKO"
+            android:targetPackage="com.chibicompanion"
+            android:targetClass="com.chibicompanion.MainActivity" />
+    </shortcut>
+</shortcuts>
