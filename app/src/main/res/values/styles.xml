@@ -1,27 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="MikoTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:colorAccent">#AB94D8</item>
-        <item name="android:colorControlActivated">#AB94D8</item>
-        <item name="android:colorControlHighlight">#33AB94D8</item>
-        <item name="android:colorBackground">#F8F6FC</item>
-        <item name="android:windowBackground">#F8F6FC</item>
-        <item name="android:textColorPrimary">#362E48</item>
-        <item name="android:textColorSecondary">#7E7591</item>
-        <item name="android:textColorHint">#9B93AA</item>
-        <item name="android:editTextColor">#362E48</item>
-        <item name="android:windowLightStatusBar">true</item>
+    <style name="MikoTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:colorAccent">#29CFFF</item>
+        <item name="android:colorControlActivated">#29CFFF</item>
+        <item name="android:colorControlHighlight">#443B78FF</item>
+        <item name="android:colorBackground">#080C1F</item>
+        <item name="android:windowBackground">#080C1F</item>
+        <item name="android:textColorPrimary">#F5F7FF</item>
+        <item name="android:textColorSecondary">#A9B8DE</item>
+        <item name="android:textColorHint">#8798C4</item>
+        <item name="android:editTextColor">#F5F7FF</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">#080C1F</item>
+        <item name="android:statusBarColor">#080C1F</item>
         <item name="android:alertDialogTheme">@style/MikoAlertDialogTheme</item>
     </style>
-
-    <style name="MikoAlertDialogTheme" parent="@android:style/Theme.Material.Light.Dialog.Alert">
-        <item name="android:colorAccent">#AB94D8</item>
-        <item name="android:colorControlActivated">#AB94D8</item>
-        <item name="android:colorBackground">#FFFFFF</item>
-        <item name="android:windowBackground">#FFFFFF</item>
-        <item name="android:textColorPrimary">#362E48</item>
-        <item name="android:textColorSecondary">#7E7591</item>
-        <item name="android:textColorHint">#9B93AA</item>
-        <item name="android:editTextColor">#362E48</item>
+    <style name="MikoAlertDialogTheme" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">#29CFFF</item>
+        <item name="android:colorControlActivated">#29CFFF</item>
+        <item name="android:colorBackground">#161D3D</item>
+        <item name="android:windowBackground">#161D3D</item>
+        <item name="android:windowMinWidthMajor">88%</item>
+        <item name="android:windowMinWidthMinor">88%</item>
+        <item name="android:backgroundDimAmount">0.62</item>
+        <item name="android:textColorPrimary">#F5F7FF</item>
+        <item name="android:textColorSecondary">#A9B8DE</item>
+        <item name="android:textColorHint">#8798C4</item>
+        <item name="android:editTextColor">#F5F7FF</item>
     </style>
 </resources>

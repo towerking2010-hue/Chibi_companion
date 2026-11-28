@@ -1,8 +1,10 @@
 package com.chibicompanion
 
 import android.app.Activity
+import android.animation.ValueAnimator
 import android.Manifest
 import android.content.Intent
+import android.graphics.Color
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.RecognizerIntent
@@ -16,12 +18,14 @@ import android.widget.*
 import java.util.concurrent.Executors
 
 class ChatActivity : Activity(), TextToSpeech.OnInitListener {
-    private lateinit var transcript: TextView
+    private lateinit var transcriptList: LinearLayout
+    private lateinit var transcriptScroll: ScrollView
     private lateinit var input: EditText
     private lateinit var tts: TextToSpeech
     private var recognizer: SpeechRecognizer? = null
     private val worker = Executors.newSingleThreadExecutor()
     private var replySequence = 0
+    private var screenVisionInProgress = false
     private lateinit var avatar: MikoSpriteView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,11 +48,10 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         titles.addView(CompanionUi.heading(this,"Chat with Miko ♡",22f))
         header.addView(titles,LinearLayout.LayoutParams(0,-2,1f))
         header.addView(CompanionUi.button(this,"Clear") {
-            android.app.AlertDialog.Builder(this).setTitle("Clear chat history?")
-                .setMessage("This removes the saved conversation from this phone.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Clear") { _, _ -> ChatHistory.clear(this); transcript.text = "Miko: Hiii! A fresh start. What would you like to do? ✦" }
-                .show()
+            MikoSheet.show(this, "CHAT", "Start fresh?", "This clears the saved conversation from this phone. You can keep chatting with Miko afterwards.", actionLabel = "Clear conversation") {
+                ChatHistory.clear(this)
+                renderTranscript()
+            }
         })
         header.addView(CompanionUi.button(this,"Done") { finish() })
         header.addView(CompanionUi.button(this,"⚙") { startActivity(Intent(this,SettingsActivity::class.java)) }, LinearLayout.LayoutParams(CompanionUi.dp(this,48),CompanionUi.dp(this,48)))
@@ -61,10 +64,14 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             background=CompanionUi.panel(this@ChatActivity,CompanionUi.white,24)
             elevation=CompanionUi.dp(this@ChatActivity,2).toFloat()
         }
-        transcript=CompanionUi.text(this,ChatHistory.read(this).ifBlank { "Miko: Hiii! I'm here. What can I help you with? ✦" },14f,CompanionUi.ink)
-        transcript.setLineSpacing(CompanionUi.dp(this,4).toFloat(),1f)
-        val scroll=ScrollView(this).apply { isFillViewport=true; addView(transcript) }
-        transcriptCard.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
+        transcriptList = CompanionUi.column(this, 4)
+        transcriptScroll = ScrollView(this).apply {
+            isFillViewport = true
+            clipToPadding = false
+            setPadding(0, 0, 0, CompanionUi.dp(this@ChatActivity, 8))
+            addView(transcriptList)
+        }
+        transcriptCard.addView(transcriptScroll,LinearLayout.LayoutParams(-1,0,1f))
         val cardLp=LinearLayout.LayoutParams(-1,0,1f); cardLp.topMargin=CompanionUi.dp(this,12); cardLp.bottomMargin=CompanionUi.dp(this,10)
         root.addView(transcriptCard,cardLp)
         val composer=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; orientation=LinearLayout.HORIZONTAL }
@@ -76,16 +83,104 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             setPadding(CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12),CompanionUi.dp(this@ChatActivity,14),CompanionUi.dp(this@ChatActivity,12))
         }
         composer.addView(input,LinearLayout.LayoutParams(0,-2,1f))
-        composer.addView(CompanionUi.button(this,"🎙") { startVoiceInput() },LinearLayout.LayoutParams(CompanionUi.dp(this,54),CompanionUi.dp(this,52)).apply { leftMargin=CompanionUi.dp(this@ChatActivity,6) })
+        composer.addView(CompanionUi.button(this,"▣") { startScreenCapture() },LinearLayout.LayoutParams(CompanionUi.dp(this,50),CompanionUi.dp(this,52)).apply { leftMargin=CompanionUi.dp(this@ChatActivity,6) })
+        composer.addView(CompanionUi.button(this,"🎙") { startVoiceInput() },LinearLayout.LayoutParams(CompanionUi.dp(this,50),CompanionUi.dp(this,52)).apply { leftMargin=CompanionUi.dp(this@ChatActivity,6) })
         composer.addView(CompanionUi.button(this,"➤",true) { sendMessage() },LinearLayout.LayoutParams(CompanionUi.dp(this,54),CompanionUi.dp(this,52)).apply { leftMargin=CompanionUi.dp(this@ChatActivity,6) })
         root.addView(composer)
         root.addView(CompanionUi.text(this,"Voice uses your phone's speech services. Cloud AI is optional; offline replies are basic.",10f,CompanionUi.muted).apply {
             gravity=Gravity.CENTER; setPadding(0,CompanionUi.dp(this@ChatActivity,8),0,0)
         })
         setContentView(root)
+        for (index in 0 until root.childCount) {
+            val child = root.getChildAt(index)
+            child.alpha = 0f
+            child.translationY = CompanionUi.dp(this, 10).toFloat()
+            child.animate().alpha(1f).translationY(0f)
+                .setStartDelay((index * 45L).coerceAtMost(220L))
+                .setDuration(260)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        }
+        renderTranscript()
         intent.getStringExtra(EXTRA_PROMPT)?.let { prompt ->
             input.setText(prompt); input.setSelection(input.text.length)
             if (prompt.endsWith(" ")) input.requestFocus() else input.post { sendMessage() }
+        }
+    }
+
+    private fun renderTranscript(showThinking: Boolean = false, animateLastMiko: Boolean = false) {
+        if (!::transcriptList.isInitialized) return
+        transcriptList.removeAllViews()
+        val saved = ChatHistory.read(this)
+        val entries = saved.split("\n\n").filter { it.isNotBlank() }
+        if (entries.isEmpty()) {
+            addMessageBubble("Miko", "Hiii! I'm here. What can I help you with? ✦")
+        } else {
+            entries.forEachIndexed { index, entry ->
+                val separator = entry.indexOf(": ")
+                val role = if (separator > 0) entry.substring(0, separator).trim() else "Miko"
+                val message = if (separator > 0) entry.substring(separator + 2).trim() else entry
+                addMessageBubble(role, message, animateText = animateLastMiko && index == entries.lastIndex && role.equals("Miko", true))
+            }
+        }
+        if (showThinking) addMessageBubble("Miko", "Thinking…", isThinking = true)
+        transcriptScroll.post { transcriptScroll.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    private fun addMessageBubble(role: String, message: String, isThinking: Boolean = false, animateText: Boolean = false) {
+        val fromUser = role.equals("You", true)
+        val line = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = if (fromUser) Gravity.END else Gravity.START
+            setPadding(0, CompanionUi.dp(this@ChatActivity, 4), 0, CompanionUi.dp(this@ChatActivity, 4))
+        }
+        val bubble = CompanionUi.column(this, 12).apply {
+            background = if (fromUser) CompanionUi.panel(this@ChatActivity, Color.rgb(28, 39, 78), 18)
+                else CompanionUi.gradient(this@ChatActivity, Color.rgb(27, 78, 150), Color.rgb(88, 45, 150), 18)
+        }
+        bubble.addView(CompanionUi.eyebrow(this, if (fromUser) "YOU" else "MIKO"))
+        val messageView = CompanionUi.text(this, if (animateText) "" else message, 14f, CompanionUi.ink, isThinking).apply {
+            maxWidth = CompanionUi.dp(this@ChatActivity, 292)
+        }
+        bubble.addView(messageView)
+        if (animateText) {
+            messageView.post {
+                ValueAnimator.ofInt(0, message.length).apply {
+                    duration = (message.length * 14L).coerceIn(240L, 1700L)
+                    addUpdateListener { value ->
+                        val count = value.animatedValue as Int
+                        messageView.text = message.substring(0, count)
+                    }
+                    start()
+                }
+            }
+        }
+        line.addView(bubble, LinearLayout.LayoutParams(-2, -2))
+        line.alpha = 0f
+        line.translationY = CompanionUi.dp(this, 12).toFloat()
+        line.scaleX = .98f
+        line.scaleY = .98f
+        transcriptList.addView(line, LinearLayout.LayoutParams(-1, -2))
+        line.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+            .setDuration(if (isThinking) 180 else 240)
+            .setInterpolator(android.view.animation.DecelerateInterpolator()).start()
+    }
+
+    private fun moodForText(userText: String, reply: String): String {
+        val user = userText.lowercase()
+        val answer = reply.lowercase()
+        return when {
+            "dance" in user -> "little dance"
+            "wave" in user || "say hello" in user || user.trim() in setOf("hello", "hi", "hey") -> "wave"
+            listOf("haha", "lol", "that's funny", "😂", "🤣").any { it in answer } -> "laughing"
+            listOf("sorry", "sad", "unfortunately", "that sounds hard").any { it in answer } -> "sad"
+            listOf("wow", "surprise", "astonishing", "amazing news").any { it in answer } -> "astonished"
+            listOf("tired", "sleepy", "good night").any { it in user } -> "sleepy"
+            listOf("thinking", "let me think", "consider").any { it in answer } -> "thinking"
+            listOf("angry", "annoyed", "irritating").any { it in answer } -> "annoyed"
+            listOf("blush", "shy", "embarrass").any { it in answer } -> "blush"
+            answer.isNotBlank() -> "happy"
+            else -> "idle"
         }
     }
 
@@ -93,8 +188,9 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         val message=input.text.toString().trim()
         if(message.isEmpty()) return
         input.text.clear()
+        avatar.setMood("thinking")
         ChatHistory.add(this,"You",message)
-        transcript.text=ChatHistory.read(this)+"\n\nMiko: thinking…"
+        renderTranscript(showThinking = true)
         val sequence=++replySequence
         worker.execute {
             val answer=CompanionMemory.handleExplicitRequest(this,message)
@@ -106,11 +202,44 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             ChatHistory.add(this,"Miko",answer)
             runOnUiThread {
                 if(isFinishing || isDestroyed) return@runOnUiThread
-                transcript.text=ChatHistory.read(this)
-                (transcript.parent as? ScrollView)?.post { (transcript.parent as? ScrollView)?.fullScroll(View.FOCUS_DOWN) }
+                avatar.setMood(moodForText(message, answer))
+                renderTranscript(animateLastMiko = true)
                 if(::tts.isInitialized) {
                     CompanionVoice.configure(this,tts)
-                    tts.speak(answer,TextToSpeech.QUEUE_FLUSH,null,"miko-"+sequence)
+                    tts.speak(SpeechText.forTts(answer),TextToSpeech.QUEUE_FLUSH,null,"miko-"+sequence)
+                }
+            }
+        }
+    }
+
+    private fun startScreenCapture() {
+        if (screenVisionInProgress) return
+        startActivity(Intent(this, ScreenCaptureActivity::class.java)
+            .putExtra(ScreenCaptureActivity.EXTRA_NOTIFY_SERVICE, false))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val screenshot = ScreenCaptureStore.latestJpeg ?: return
+        ScreenCaptureStore.latestJpeg = null
+        if (screenVisionInProgress) return
+        screenVisionInProgress = true
+        ChatHistory.add(this, "You", "[Shared a screen capture]")
+        renderTranscript(showThinking = true)
+        worker.execute {
+            val answer = runCatching {
+                AiClient.replyWithImage(this, "Describe what is visible on my phone screen and help me understand it. Do not claim to tap or control anything.", screenshot)
+            }.getOrElse {
+                "I captured the screen, but I couldn't analyse it. Connect a vision-capable provider such as Gemini and try again."
+            }
+            screenshot.fill(0)
+            ChatHistory.add(this, "Miko", answer)
+            runOnUiThread {
+                screenVisionInProgress = false
+                if (!isFinishing && !isDestroyed) {
+                    avatar.setMood("thinking")
+                    renderTranscript(animateLastMiko = true)
+                    if (::tts.isInitialized) tts.speak(SpeechText.forTts(answer), TextToSpeech.QUEUE_FLUSH, null, "miko-screen")
                 }
             }
         }

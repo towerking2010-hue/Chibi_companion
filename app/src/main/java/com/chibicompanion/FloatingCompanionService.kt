@@ -2,7 +2,6 @@ package com.chibicompanion
 
 import android.app.*
 import android.content.*
-import android.service.quicksettings.TileService
 import android.graphics.PixelFormat
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -30,6 +29,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private var chatParams: WindowManager.LayoutParams? = null
     private var replyBubble: LinearLayout? = null
     private var replyParams: WindowManager.LayoutParams? = null
+    private var replyPulse: android.animation.ObjectAnimator? = null
     private var pendingAttachment: Uri? = null
     private var pendingAttachmentName: String = ""
     private var pendingAttachmentMime: String = ""
@@ -63,17 +63,8 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
         tts = TextToSpeech(this, this)
         startForeground(41, notification())
-        getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", true).apply()
-        refreshQuickSettingsTile()
+        MikoPresenceStore.setVisible(this, true)
         showAvatar()
-    }
-
-    private fun refreshQuickSettingsTile() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            runCatching {
-                TileService.requestListeningState(this, ComponentName(this, MikoQuickSettingsTileService::class.java))
-            }
-        }
     }
 
     private fun notification(): Notification {
@@ -194,9 +185,9 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             setPadding(CompanionUi.dp(this@FloatingCompanionService, 10), CompanionUi.dp(this@FloatingCompanionService, 8),
                 CompanionUi.dp(this@FloatingCompanionService, 10), CompanionUi.dp(this@FloatingCompanionService, 8))
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                intArrayOf(Color.rgb(255, 250, 255), Color.rgb(239, 237, 255))).apply {
+                intArrayOf(Color.rgb(18, 25, 55), Color.rgb(28, 39, 78))).apply {
                 cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 24).toFloat()
-                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), Color.rgb(220, 211, 244))
+                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), CompanionUi.stroke)
             }
             elevation = CompanionUi.dp(this@FloatingCompanionService, 14).toFloat()
         }
@@ -207,21 +198,21 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         }
         top.addView(TextView(this).apply {
             text = "✦  MIKO  ·  QUICK CHAT"; textSize = 11f; letterSpacing = .08f
-            setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(Color.rgb(112, 94, 157))
+            setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(CompanionUi.cyan)
         }, LinearLayout.LayoutParams(0, -2, 1f))
         top.addView(TextView(this).apply {
             text = "FULL CHAT ↗"; textSize = 10f; setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(Color.rgb(122, 105, 177)); setPadding(8, 7, 8, 7)
+            setTextColor(CompanionUi.muted); setPadding(8, 7, 8, 7)
             setOnClickListener { hideChat(); startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         })
         top.addView(TextView(this).apply {
-            text = "×"; textSize = 21f; setTextColor(Color.rgb(103, 91, 133)); setPadding(12, 0, 4, 0)
+            text = "×"; textSize = 21f; setTextColor(CompanionUi.muted); setPadding(12, 0, 4, 0)
             setOnClickListener { hideChat() }
         })
         panel.addView(top)
 
         val attachment = TextView(this).apply {
-            tag = "miko_attachment"; textSize = 11f; setTextColor(Color.rgb(190, 215, 255))
+            tag = "miko_attachment"; textSize = 11f; setTextColor(CompanionUi.muted)
             visibility = if (pendingAttachment != null) View.VISIBLE else View.GONE
             text = if (pendingAttachment != null) "📎 $pendingAttachmentName" else ""
             setPadding(8, 4, 8, 4)
@@ -231,27 +222,37 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
 
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val attach = TextView(this).apply {
-            text = "＋"; textSize = 24f; setTextColor(Color.rgb(139, 116, 190)); gravity = Gravity.CENTER
+            text = "＋"; textSize = 24f; setTextColor(CompanionUi.lavender); gravity = Gravity.CENTER
             setPadding(6, 0, 10, 0)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickAttachmentActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
         row.addView(attach, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
         val camera = TextView(this).apply {
-            text = "📷"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(Color.rgb(139, 116, 190))
+            text = "📷"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(CompanionUi.lavender)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickCameraActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
         row.addView(camera, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
+        val screen = TextView(this).apply {
+            text = "▣"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(CompanionUi.cyan)
+            contentDescription = "Share screen with Miko"
+            setOnClickListener {
+                startActivity(Intent(this@FloatingCompanionService, ScreenCaptureActivity::class.java)
+                    .putExtra(ScreenCaptureActivity.EXTRA_NOTIFY_SERVICE, true)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+        }
+        row.addView(screen, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
         val voice = TextView(this).apply {
-            text = "🎙"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(Color.rgb(139, 116, 190))
+            text = "🎙"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(CompanionUi.lavender)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, QuickVoiceActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
         row.addView(voice, LinearLayout.LayoutParams(CompanionUi.dp(this, 34), CompanionUi.dp(this, 48)))
         val input = EditText(this).apply {
             hint = "Say something to Miko…"; textSize = 14f; maxLines = 3
-            setTextColor(Color.rgb(64, 57, 83)); setHintTextColor(Color.rgb(157, 148, 177))
+            setTextColor(CompanionUi.ink); setHintTextColor(CompanionUi.muted)
             background = GradientDrawable().apply {
-                setColor(Color.WHITE); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 17).toFloat()
-                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), Color.rgb(231, 224, 243))
+                setColor(CompanionUi.surfaceRaised); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 17).toFloat()
+                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), CompanionUi.stroke)
             }
             setPadding(CompanionUi.dp(this@FloatingCompanionService, 12), CompanionUi.dp(this@FloatingCompanionService, 9),
                 CompanionUi.dp(this@FloatingCompanionService, 12), CompanionUi.dp(this@FloatingCompanionService, 9))
@@ -261,7 +262,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         val send = TextView(this).apply {
             text = "➤"; textSize = 21f; gravity = Gravity.CENTER; setTextColor(Color.WHITE)
             background = GradientDrawable().apply {
-                setColor(Color.rgb(169, 143, 211)); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 16).toFloat()
+                setColor(CompanionUi.lavender); cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 16).toFloat()
             }
             setPadding(8, 0, 8, 0)
             setOnClickListener {
@@ -289,8 +290,14 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             y = CompanionUi.dp(this@FloatingCompanionService, 18)
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
+        panel.alpha = 0f
+        panel.translationY = CompanionUi.dp(this, 30).toFloat()
+        panel.scaleX = .97f
+        panel.scaleY = .97f
         runCatching {
             wm.addView(panel, lp); chatPanel = panel; chatParams = lp
+            panel.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+                .setDuration(260).setInterpolator(android.view.animation.DecelerateInterpolator()).start()
             input.requestFocus()
             input.post { (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input, InputMethodManager.SHOW_IMPLICIT) }
         }
@@ -302,6 +309,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             if (uri != null) { if (isNotEmpty()) append("\n"); append("[Attachment: ").append(name).append("]") }
         }
         ChatHistory.add(this, "You", userLine)
+        avatar?.setMood("thinking")
         showReplyBubble("Miko is thinking…")
         worker.execute {
             val answer = try {
@@ -346,10 +354,11 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             }
             ChatHistory.add(this@FloatingCompanionService, "Miko", answer)
             mainThread {
+                avatar?.setMood(moodForText(message, answer))
                 showReplyBubble(answer)
                 if (::tts.isInitialized) {
                     CompanionVoice.configure(this@FloatingCompanionService, tts)
-                    tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "miko-quick-reply")
+                    tts.speak(SpeechText.forTts(answer), TextToSpeech.QUEUE_FLUSH, null, "miko-quick-reply")
                 }
             }
         }
@@ -363,32 +372,69 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         } finally { bitmap.recycle() }
     }
 
+    private fun moodForText(userText: String, reply: String): String {
+        val user = userText.lowercase()
+        val answer = reply.lowercase()
+        return when {
+            "dance" in user -> "little dance"
+            "wave" in user || "say hello" in user -> "wave"
+            "hello" in user || user.trim() == "hi" || user.trim() == "hey" -> "wave"
+            listOf("haha", "lol", "that's funny", "😂", "🤣").any { it in answer } -> "laughing"
+            listOf("sorry", "sad", "unfortunately", "that sounds hard").any { it in answer } -> "sad"
+            listOf("wow", "surprise", "astonishing", "amazing news").any { it in answer } -> "astonished"
+            listOf("tired", "sleepy", "good night").any { it in user } -> "sleepy"
+            listOf("thinking", "let me think", "consider").any { it in answer } -> "thinking"
+            listOf("angry", "annoyed", "irritating").any { it in answer } -> "annoyed"
+            listOf("blush", "shy", "embarrass").any { it in answer } -> "blush"
+            answer.isNotBlank() -> "happy"
+            else -> "idle"
+        }
+    }
+
     /** A separate coloured reply card, positioned clear of Miko where screen space allows. */
     private fun showReplyBubble(message: String) {
+        replyPulse?.cancel()
+        replyPulse = null
         replyBubble?.let { runCatching { wm.removeView(it) } }
         val bubble = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(CompanionUi.dp(this@FloatingCompanionService, 14), CompanionUi.dp(this@FloatingCompanionService, 10),
                 CompanionUi.dp(this@FloatingCompanionService, 10), CompanionUi.dp(this@FloatingCompanionService, 10))
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                intArrayOf(Color.rgb(255, 245, 251), Color.rgb(235, 232, 255))).apply {
+                intArrayOf(Color.rgb(27, 45, 88), Color.rgb(39, 37, 82))).apply {
                 cornerRadius = CompanionUi.dp(this@FloatingCompanionService, 22).toFloat()
-                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), Color.rgb(218, 207, 241))
+                setStroke(CompanionUi.dp(this@FloatingCompanionService, 1), CompanionUi.stroke)
             }
             elevation = CompanionUi.dp(this@FloatingCompanionService, 10).toFloat()
         }
         val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         header.addView(TextView(this).apply {
             text = "✦  MIKO'S REPLY"; textSize = 10f; letterSpacing = .08f
-            setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(Color.rgb(105, 87, 153))
+            setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(CompanionUi.cyan)
         }, LinearLayout.LayoutParams(0, -2, 1f))
-        header.addView(TextView(this).apply { text = "×"; textSize = 20f; setTextColor(Color.rgb(86, 78, 150)); setOnClickListener { hideReplyBubble() } })
+        header.addView(TextView(this).apply { text = "×"; textSize = 20f; setTextColor(CompanionUi.muted); setOnClickListener { hideReplyBubble() } })
         bubble.addView(header)
-        bubble.addView(TextView(this).apply {
-            text = message; textSize = 14f; setTextColor(Color.rgb(57, 48, 77)); maxLines = 8
+        val replyText = TextView(this).apply {
+            text = if (message.contains("thinking", true)) message else ""
+            textSize = 14f; setTextColor(CompanionUi.ink); maxLines = 8
             setLineSpacing(CompanionUi.dp(this@FloatingCompanionService, 2).toFloat(), 1f)
             setOnClickListener { startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        })
+        }
+        bubble.addView(replyText)
+        if (message.contains("thinking", true)) {
+            replyPulse = android.animation.ObjectAnimator.ofFloat(replyText, View.ALPHA, .48f, 1f).apply {
+                duration = 650L; repeatCount = android.animation.ValueAnimator.INFINITE
+                repeatMode = android.animation.ValueAnimator.REVERSE; start()
+            }
+        } else {
+            replyText.post {
+                android.animation.ValueAnimator.ofInt(0, message.length).apply {
+                    duration = (message.length * 13L).coerceIn(260L, 1500L)
+                    addUpdateListener { value -> replyText.text = message.substring(0, value.animatedValue as Int) }
+                    start()
+                }
+            }
+        }
         val screenW = resources.displayMetrics.widthPixels
         val avatarY = avatarParams?.y ?: CompanionUi.dp(this, 150)
         val bubbleW = (screenW - CompanionUi.dp(this, 24)).coerceAtLeast(CompanionUi.dp(this, 240))
@@ -400,10 +446,20 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                 (avatarY - CompanionUi.dp(this@FloatingCompanionService, 120)).coerceAtLeast(CompanionUi.dp(this@FloatingCompanionService, 28))
             else avatarY + CompanionUi.dp(this@FloatingCompanionService, 280)
         }
-        runCatching { wm.addView(bubble, lp); replyBubble = bubble; replyParams = lp }
+        bubble.alpha = 0f
+        bubble.translationY = CompanionUi.dp(this, 18).toFloat()
+        bubble.scaleX = .94f
+        bubble.scaleY = .94f
+        runCatching {
+            wm.addView(bubble, lp); replyBubble = bubble; replyParams = lp
+            bubble.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+                .setDuration(300).setInterpolator(android.view.animation.OvershootInterpolator(0.85f)).start()
+        }
     }
 
     private fun hideReplyBubble() {
+        replyPulse?.cancel()
+        replyPulse = null
         replyBubble?.let { runCatching { wm.removeView(it) } }
         replyBubble = null; replyParams = null
     }
@@ -419,11 +475,13 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                 "I captured the screen, but I couldn't understand the image. Connect a vision-capable provider such as Gemini and try again."
             }
             screenshot.fill(0)
-            ChatHistory.add(this@FloatingCompanionService, "Her", answer)
+            ChatHistory.add(this@FloatingCompanionService, "Miko", answer)
             mainThread {
+                avatar?.setMood("thinking")
+                showReplyBubble(answer)
                 if (::tts.isInitialized) {
                     CompanionVoice.configure(this@FloatingCompanionService, tts)
-                    tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "screen-vision")
+                    tts.speak(SpeechText.forTts(answer), TextToSpeech.QUEUE_FLUSH, null, "screen-vision")
                 }
             }
         }
@@ -442,8 +500,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         }
     }
     override fun onDestroy() {
-        getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", false).apply()
-        refreshQuickSettingsTile()
+        MikoPresenceStore.setVisible(this, false)
         hideChat(); hideReplyBubble(); avatar?.stopTalking(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
         worker.shutdownNow(); if(::tts.isInitialized) { tts.stop(); tts.shutdown() }
         super.onDestroy()

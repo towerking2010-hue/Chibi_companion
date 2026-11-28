@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -24,6 +25,7 @@ class MainActivity : Activity() {
     companion object { private const val ACTION_SUMMON_MIKO = "com.chibicompanion.action.SUMMON_MIKO" }
 
     private val importSpritesRequest = 802
+    private val importAnimationsRequest = 803
 
     private var waitingForOverlayPermission = false
     private var waitingForAssistantSettings = false
@@ -44,120 +46,133 @@ class MainActivity : Activity() {
             clipToPadding = false
             setBackgroundColor(CompanionUi.bg)
         }
-        val root = CompanionUi.column(this, 20).apply {
-            setPadding(CompanionUi.dp(this@MainActivity, 20), CompanionUi.dp(this@MainActivity, 18),
-                CompanionUi.dp(this@MainActivity, 20), CompanionUi.dp(this@MainActivity, 28))
+        val root = CompanionUi.column(this, 18).apply {
+            setPadding(CompanionUi.dp(this@MainActivity, 24), CompanionUi.dp(this@MainActivity, 22),
+                CompanionUi.dp(this@MainActivity, 24), CompanionUi.dp(this@MainActivity, 42))
         }
         scroll.addView(root)
 
         val header = CompanionUi.row(this)
         val brand = CompanionUi.column(this, 0)
-        brand.addView(CompanionUi.eyebrow(this, "CHIBI COMPANION"))
-        brand.addView(CompanionUi.heading(this, "Your little world ♡", 25f))
-        brand.addView(CompanionUi.text(this, "A tiny friend, always nearby.", 13f, CompanionUi.muted))
+        brand.addView(CompanionUi.eyebrow(this, "MIKO  /  YOUR COMPANION"))
+        brand.addView(CompanionUi.heading(this, "A little closer ♡", 27f))
+        brand.addView(CompanionUi.text(this, "Your day, with Miko by your side.", 13f, CompanionUi.muted))
         header.addView(brand, LinearLayout.LayoutParams(0, -2, 1f))
         header.addView(CompanionUi.button(this, "⚙") {
             startActivity(Intent(this, SettingsActivity::class.java))
         }, LinearLayout.LayoutParams(CompanionUi.dp(this, 52), CompanionUi.dp(this, 48)))
         root.addView(header)
 
-        val date = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
-        root.addView(CompanionUi.text(this, date, 12f, CompanionUi.muted))
+        val date = SimpleDateFormat("EEEE  ·  d MMMM", Locale.getDefault()).format(Date())
+        root.addView(CompanionUi.text(this, date, 11f, CompanionUi.muted))
 
-        // Miko is rendered from the three owner-supplied mouth images.
         val hero = CompanionUi.column(this, 14).apply {
             gravity = Gravity.CENTER
-            background = CompanionUi.gradient(this@MainActivity, Color.rgb(255, 235, 244), Color.rgb(239, 234, 255), 30)
-            setPadding(CompanionUi.dp(this@MainActivity, 12), CompanionUi.dp(this@MainActivity, 10),
-                CompanionUi.dp(this@MainActivity, 12), CompanionUi.dp(this@MainActivity, 16))
+            background = CompanionUi.gradient(this@MainActivity, Color.rgb(18, 48, 112), Color.rgb(74, 35, 142), 30)
+            setPadding(CompanionUi.dp(this@MainActivity, 14), CompanionUi.dp(this@MainActivity, 12),
+                CompanionUi.dp(this@MainActivity, 14), CompanionUi.dp(this@MainActivity, 18))
+            elevation = CompanionUi.dp(this@MainActivity, 2).toFloat()
         }
+        val heroTop = CompanionUi.row(this)
+        heroTop.addView(CompanionUi.eyebrow(this, "YOUR LITTLE WORLD"))
+        heroTop.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+        val status = CompanionUi.text(this, "●  HERE WITH YOU", 10f, CompanionUi.success, true).apply {
+            background = CompanionUi.panel(this@MainActivity, Color.rgb(22, 29, 61), 20)
+            setPadding(CompanionUi.dp(this@MainActivity, 10), CompanionUi.dp(this@MainActivity, 7),
+                CompanionUi.dp(this@MainActivity, 10), CompanionUi.dp(this@MainActivity, 7))
+        }
+        heroTop.addView(status)
+        hero.addView(heroTop)
         val heroAvatar = MikoSpriteView(this)
-        hero.addView(heroAvatar, LinearLayout.LayoutParams(-1, CompanionUi.dp(this, 390)))
-        hero.addView(CompanionUi.text(this, "Hmph… I was waiting for you!", 17f, CompanionUi.ink, true).apply {
+        hero.addView(heroAvatar, LinearLayout.LayoutParams(-1, CompanionUi.dp(this, 350)))
+        hero.addView(CompanionUi.heading(this, "Hmph… I was waiting for you!", 18f).apply {
             gravity = Gravity.CENTER
         })
-        hero.addView(CompanionUi.text(this, "A tiny friend, always nearby.", 13f, CompanionUi.muted).apply {
+        hero.addView(CompanionUi.text(this, "Come on, tell me what's happening.", 13f, CompanionUi.muted).apply {
             gravity = Gravity.CENTER
         })
         root.addView(hero)
+
         floatingToggleButton = CompanionUi.button(this, "♡  Summon Miko", true) { toggleFloatingCompanion() }
         root.addView(floatingToggleButton)
 
-        val quickControl = CompanionUi.card(this, 15)
-        quickControl.addView(CompanionUi.eyebrow(this, "Always within reach"))
-        quickControl.addView(CompanionUi.text(this, "Control Miko without opening this app", 15f, CompanionUi.ink, true))
-        quickControl.addView(CompanionUi.text(this,
-            "Fastest: long-press the Miko app icon and tap Summon Miko. Or add the Quick Settings tile once to summon or hide her from anywhere.",
+        root.addView(CompanionUi.eyebrow(this, "YOUR SPACE"))
+        val actions = CompanionUi.row(this)
+        val chatTile = CompanionUi.card(this, 15, CompanionUi.surfaceRaised).apply {
+            isClickable = true; isFocusable = true
+            setOnClickListener { startActivity(Intent(this@MainActivity, ChatActivity::class.java)) }
+        }
+        chatTile.addView(CompanionUi.heading(this, "✦", 23f))
+        chatTile.addView(CompanionUi.text(this, "Chat with Miko", 14f, CompanionUi.ink, true))
+        chatTile.addView(CompanionUi.text(this, "Talk, ask, explore", 11f, CompanionUi.muted))
+        val tasksTile = CompanionUi.card(this, 15, CompanionUi.surface).apply {
+            isClickable = true; isFocusable = true
+            setOnClickListener { startActivity(Intent(this@MainActivity, TasksActivity::class.java)) }
+        }
+        tasksTile.addView(CompanionUi.heading(this, "☼", 23f))
+        tasksTile.addView(CompanionUi.text(this, "Tasks & plans", 14f, CompanionUi.ink, true))
+        tasksTile.addView(CompanionUi.text(this, "${TaskStore.all(this).count { !it.done }} still to do", 11f, CompanionUi.muted))
+        actions.addView(chatTile, LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = CompanionUi.dp(this@MainActivity, 6) })
+        actions.addView(tasksTile, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = CompanionUi.dp(this@MainActivity, 6) })
+        root.addView(actions)
+
+        val secondActions = CompanionUi.row(this)
+        val notesTile = CompanionUi.card(this, 15, CompanionUi.surface).apply {
+            isClickable = true; isFocusable = true
+            setOnClickListener { startActivity(Intent(this@MainActivity, NotesActivity::class.java)) }
+        }
+        notesTile.addView(CompanionUi.heading(this, "▤", 23f))
+        notesTile.addView(CompanionUi.text(this, "Private notes", 14f, CompanionUi.ink, true))
+        notesTile.addView(CompanionUi.text(this, "${NoteStore.all(this).size} saved", 11f, CompanionUi.muted))
+        val controlsTile = CompanionUi.card(this, 15, CompanionUi.surface).apply {
+            isClickable = true; isFocusable = true
+            setOnClickListener { showSummonOptions() }
+        }
+        controlsTile.addView(CompanionUi.heading(this, "⌁", 23f))
+        controlsTile.addView(CompanionUi.text(this, "Summon anywhere", 14f, CompanionUi.ink, true))
+        controlsTile.addView(CompanionUi.text(this, "Quick Settings & shortcut", 11f, CompanionUi.muted))
+        secondActions.addView(notesTile, LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = CompanionUi.dp(this@MainActivity, 6) })
+        secondActions.addView(controlsTile, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = CompanionUi.dp(this@MainActivity, 6) })
+        root.addView(secondActions)
+
+        val presenceCard = CompanionUi.card(this, 18, CompanionUi.surface)
+        presenceCard.addView(CompanionUi.eyebrow(this, "ALWAYS WITHIN REACH"))
+        presenceCard.addView(CompanionUi.heading(this, "Miko can stay above your apps", 17f))
+        presenceCard.addView(CompanionUi.text(this,
+            "Use the launcher shortcut for a fast summon, or keep her Quick Settings tile available while using your phone.",
             12f, CompanionUi.muted))
-        quickControl.addView(CompanionUi.button(this, "How to add the Quick Settings tile") {
-            android.app.AlertDialog.Builder(this)
-                .setTitle("Add Miko to Quick Settings")
-                .setMessage("1. Swipe down from the top of your screen twice.\n\n2. Tap the pencil or Edit button.\n\n3. Find the Miko tile in available tiles.\n\n4. Drag it into your active tiles and tap Done.\n\nNow you can summon or hide Miko without opening her app.")
-                .setPositiveButton("Got it", null)
-                .show()
-        })
-        quickControl.addView(CompanionUi.button(this, "How to use the fast summon shortcut") {
-            android.app.AlertDialog.Builder(this)
-                .setTitle("Summon Miko faster")
-                .setMessage("From your home screen, press and hold the Miko app icon. Tap the Summon Miko shortcut.\n\nFor a control available from any app, swipe down twice and tap Edit. Drag the Miko tile into your active Quick Settings tiles. Tap it once to summon Miko, and again to hide her.")
-                .setPositiveButton("Got it", null)
-                .show()
-        })
-        root.addView(quickControl)
-        root.addView(CompanionUi.button(this, "Import Miko mouth images") { pickMikoImages() })
-        val quickLinks = CompanionUi.row(this)
-        quickLinks.addView(CompanionUi.button(this, "Chat & AI settings") {
-            startActivity(Intent(this, ChatActivity::class.java))
-        }, LinearLayout.LayoutParams(0, -2, 1f))
-        quickLinks.addView(CompanionUi.button(this, "Hide Miko") {
-            stopService(Intent(this, FloatingCompanionService::class.java))
-            getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", false).apply()
-            refreshSetupButton()
-            refreshFloatingButton()
-            Toast.makeText(this, "Miko is hidden", Toast.LENGTH_SHORT).show()
-        }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = CompanionUi.dp(this@MainActivity, 8) })
-        root.addView(quickLinks)
-        val productivity = CompanionUi.row(this)
-        productivity.addView(CompanionUi.button(this, "Tasks") {
-            startActivity(Intent(this, TasksActivity::class.java))
-        }, LinearLayout.LayoutParams(0, -2, 1f))
-        productivity.addView(CompanionUi.button(this, "Notes") {
-            startActivity(Intent(this, NotesActivity::class.java))
-        }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = CompanionUi.dp(this@MainActivity, 8) })
-        root.addView(productivity)
+        presenceCard.addView(CompanionUi.button(this, "Set up summon & Quick Settings") { showSummonOptions() })
+        presenceCard.addView(CompanionUi.button(this, "Import Miko's three mouth images") { pickMikoImages() })
+        presenceCard.addView(CompanionUi.button(this, "Import Miko's 11 animations") { pickMikoAnimations() })
+        root.addView(presenceCard)
 
-        val overview = CompanionUi.card(this, 16)
-        overview.addView(CompanionUi.eyebrow(this, "A little overview"))
-        overview.addView(CompanionUi.spacer(this, 8))
-        val overviewRow = CompanionUi.row(this)
-        val taskCount = TaskStore.all(this).count { !it.done }
-        val noteCount = NoteStore.all(this).size
-        val tasksSummary = CompanionUi.column(this, 0)
-        tasksSummary.addView(CompanionUi.heading(this, taskCount.toString(), 23f))
-        tasksSummary.addView(CompanionUi.text(this, "Tasks left", 11f, CompanionUi.muted))
-        val notesSummary = CompanionUi.column(this, 0)
-        notesSummary.addView(CompanionUi.heading(this, noteCount.toString(), 23f))
-        notesSummary.addView(CompanionUi.text(this, "Private notes", 11f, CompanionUi.muted))
-        overviewRow.addView(tasksSummary, LinearLayout.LayoutParams(0, -2, 1f))
-        overviewRow.addView(notesSummary, LinearLayout.LayoutParams(0, -2, 1f))
-        overview.addView(overviewRow)
-        root.addView(overview)
-
-        val setupCard = CompanionUi.card(this, 16)
-        setupCard.addView(CompanionUi.eyebrow(this, "Optional setup"))
-        setupCard.addView(CompanionUi.spacer(this, 5))
+        val setupCard = CompanionUi.card(this, 18, Color.rgb(16, 26, 58))
+        setupCard.addView(CompanionUi.eyebrow(this, "OPTIONAL"))
         setupCard.addView(CompanionUi.text(this,
             "Choose Miko as your phone's digital assistant if your Android version and device support it. The floating shortcut works separately.",
             12f, CompanionUi.muted))
         setupButton = CompanionUi.button(this, "Set up phone assistant") { beginMikoSetup() }
-        setupCard.addView(setupButton, LinearLayout.LayoutParams(-1, -2).apply {
-            topMargin = CompanionUi.dp(this@MainActivity, 10)
-        })
+        setupCard.addView(setupButton)
         root.addView(setupCard)
 
-        root.addView(CompanionUi.text(this, "Private by default  •  No paid AI calls unless you add a provider key",
-            10f, CompanionUi.muted).apply { gravity = Gravity.CENTER; setPadding(0, CompanionUi.dp(this@MainActivity, 4), 0, 0) })
+        root.addView(CompanionUi.text(this, "Private by default  ·  No paid AI calls unless you configure a provider",
+            10f, CompanionUi.muted).apply { gravity = Gravity.CENTER; setPadding(0, CompanionUi.dp(this@MainActivity, 8), 0, 0) })
         setContentView(scroll)
+        // Light staggered entrance: native ViewPropertyAnimator, no animation framework dependency.
+        for (index in 0 until root.childCount) {
+            val child = root.getChildAt(index)
+            (child.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+                params.bottomMargin = CompanionUi.dp(this, 16)
+                child.layoutParams = params
+            }
+            child.alpha = 0f
+            child.translationY = CompanionUi.dp(this, 12).toFloat()
+            child.animate().alpha(1f).translationY(0f)
+                .setStartDelay((index * 32L).coerceAtMost(320L))
+                .setDuration(260)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        }
         refreshSetupButton()
         refreshFloatingButton()
         if (intent?.action == ACTION_SUMMON_MIKO) {
@@ -165,9 +180,22 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun showSummonOptions() {
+        MikoSheet.show(
+            this,
+            "QUICK ACCESS",
+            "Bring Miko closer",
+            "Choose the fastest way to summon her. Both options work without navigating through the Miko app each time.",
+            listOf(
+                "Home screen: press and hold the Miko app icon, then tap Summon Miko.",
+                "Quick Settings: swipe down twice, tap Edit, and drag the Miko tile into your active tiles.",
+                "After setup, tap the Miko tile once to summon her and again to hide her."
+            ),
+            "Got it"
+        )
+    }
     private fun summonMikoFromShortcut() {
-        val running = getSharedPreferences("miko_companion_state", MODE_PRIVATE)
-            .getBoolean("floating", false)
+        val running = MikoPresenceStore.isVisible(this)
         if (running) {
             Toast.makeText(this, "Miko is already here ♡", Toast.LENGTH_SHORT).show()
             return
@@ -187,6 +215,66 @@ class MainActivity : Activity() {
             type = "application/zip"
         }
         startActivityForResult(pick, importSpritesRequest)
+    }
+
+    private fun pickMikoAnimations() {
+        val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/zip"
+        }
+        startActivityForResult(pick, importAnimationsRequest)
+    }
+
+    private fun importMikoAnimations(uri: Uri) {
+        val expected = setOf(
+            "idle.webp", "happy.webp", "laughing.webp", "annoyed.webp", "astonished.webp",
+            "blush.webp", "sad.webp", "sleepy.webp", "thinking.webp", "wave.webp", "little dance.webp"
+        )
+        val destination = File(filesDir, "miko_animations").apply { mkdirs() }
+        val imported = mutableSetOf<String>()
+        try {
+            contentResolver.openInputStream(uri)?.use { input ->
+                ZipInputStream(input).use { zip ->
+                    var entry = zip.nextEntry
+                    var totalBytes = 0L
+                    while (entry != null) {
+                        val name = entry.name.substringAfterLast('/')
+                        if (!entry.isDirectory && name in expected) {
+                            val target = File(destination, name)
+                            FileOutputStream(target).use { output ->
+                                val buffer = ByteArray(8192)
+                                var entryBytes = 0L
+                                while (true) {
+                                    val count = zip.read(buffer)
+                                    if (count < 0) break
+                                    entryBytes += count
+                                    totalBytes += count
+                                    require(entryBytes <= 8L * 1024 * 1024 && totalBytes <= 60L * 1024 * 1024) {
+                                        "Animation pack is unexpectedly large"
+                                    }
+                                    output.write(buffer, 0, count)
+                                }
+                            }
+                            imported.add(name)
+                        }
+                        zip.closeEntry()
+                        entry = zip.nextEntry
+                    }
+                }
+            } ?: error("Unable to open selected ZIP")
+            require(imported.containsAll(expected)) {
+                "The ZIP must contain all 11 Miko animations. Found ${imported.size} of 11."
+            }
+            Toast.makeText(this, "All 11 Miko animations imported ♡", Toast.LENGTH_LONG).show()
+            val manager = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+            val running = manager.getRunningServices(Int.MAX_VALUE).any {
+                it.service.className == FloatingCompanionService::class.java.name
+            }
+            if (running) startService(Intent(this, FloatingCompanionService::class.java).setAction("RELOAD_MIKO_ASSETS"))
+            recreate()
+        } catch (error: Exception) {
+            Toast.makeText(this, "Animation import failed: ${error.message ?: "invalid ZIP"}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun importMouthSprites(uri: Uri) {
@@ -249,7 +337,7 @@ class MainActivity : Activity() {
 
     private fun refreshFloatingButton() {
         if (::floatingToggleButton.isInitialized) {
-            val running = getSharedPreferences("miko_companion_state", MODE_PRIVATE).getBoolean("floating", false)
+            val running = MikoPresenceStore.isVisible(this)
             floatingToggleButton.text = if (running) "♡  Hide floating Miko" else "♡  Summon Miko"
         }
     }
@@ -290,10 +378,9 @@ class MainActivity : Activity() {
     }
 
     private fun toggleFloatingCompanion() {
-        val prefs = getSharedPreferences("miko_companion_state", MODE_PRIVATE)
-        if (prefs.getBoolean("floating", false)) {
+        if (MikoPresenceStore.isVisible(this)) {
             stopService(Intent(this, FloatingCompanionService::class.java))
-            prefs.edit().putBoolean("floating", false).apply()
+            MikoPresenceStore.setVisible(this, false)
         } else {
             if (!Settings.canDrawOverlays(this)) {
                 waitingForOverlayPermission = true
@@ -320,7 +407,7 @@ class MainActivity : Activity() {
     private fun startMikoFloating() {
         val intent = Intent(this, FloatingCompanionService::class.java)
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
-        getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", true).apply()
+        MikoPresenceStore.setVisible(this, true)
         Toast.makeText(this, "Miko is ready ♡", Toast.LENGTH_SHORT).show()
         refreshSetupButton()
         refreshFloatingButton()
@@ -331,6 +418,10 @@ class MainActivity : Activity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == importSpritesRequest) {
             if (resultCode == RESULT_OK && data?.data != null) importMouthSprites(data.data!!)
+            return
+        }
+        if (requestCode == importAnimationsRequest) {
+            if (resultCode == RESULT_OK && data?.data != null) importMikoAnimations(data.data!!)
             return
         }
         if (requestCode == 904) {

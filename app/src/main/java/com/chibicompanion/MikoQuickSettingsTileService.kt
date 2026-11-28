@@ -16,8 +16,7 @@ class MikoQuickSettingsTileService : TileService() {
 
     override fun onClick() {
         super.onClick()
-        val prefs = getSharedPreferences("miko_companion_state", MODE_PRIVATE)
-        val running = prefs.getBoolean("floating", false)
+        val running = MikoPresenceStore.isVisible(this)
         if (running) {
             stopService(Intent(this, FloatingCompanionService::class.java).setAction("STOP_COMPANION"))
         } else if (!Settings.canDrawOverlays(this)) {
@@ -34,7 +33,7 @@ class MikoQuickSettingsTileService : TileService() {
     }
 
     private fun refreshTile() {
-        val running = getSharedPreferences("miko_companion_state", MODE_PRIVATE).getBoolean("floating", false)
+        val running = MikoPresenceStore.isVisible(this)
         qsTile?.state = if (running) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         qsTile?.label = if (running) "Hide Miko" else "Summon Miko"
         qsTile?.updateTile()
