@@ -27,8 +27,6 @@ class MainActivity : Activity() {
     private var waitingForAssistantSettings = false
     private var pendingOpenChat = false
     private lateinit var setupButton: TextView
-    private lateinit var floatingButton: TextView
-    private lateinit var statusLabel: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,7 +61,7 @@ class MainActivity : Activity() {
         val date = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
         root.addView(CompanionUi.text(this, date, 12f, CompanionUi.muted))
 
-        // The owner's current model placeholder is intentionally unchanged.
+        // Miko is rendered from the three owner-supplied mouth images.
         val hero = CompanionUi.column(this, 14).apply {
             gravity = Gravity.CENTER
             background = CompanionUi.gradient(this@MainActivity, Color.rgb(255, 235, 244), Color.rgb(239, 234, 255), 30)
@@ -100,26 +98,6 @@ class MainActivity : Activity() {
         }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = CompanionUi.dp(this@MainActivity, 8) })
         root.addView(productivity)
 
-        val quick = CompanionUi.card(this, 16)
-        quick.addView(CompanionUi.eyebrow(this, "Quick access"))
-        quick.addView(CompanionUi.spacer(this, 10))
-        quick.addView(CompanionUi.button(this, "✦   Talk to Miko", true) {
-            startActivity(Intent(this, ChatActivity::class.java))
-        })
-        val quickRow = CompanionUi.row(this)
-        fun quickAction(label: String, action: () -> Unit) {
-            val view = CompanionUi.button(this, label, false, action)
-            val lp = LinearLayout.LayoutParams(0, CompanionUi.dp(this, 48), 1f).apply {
-                topMargin = CompanionUi.dp(this@MainActivity, 9)
-                marginEnd = CompanionUi.dp(this@MainActivity, 7)
-            }
-            quickRow.addView(view, lp)
-        }
-        quickAction("Tasks") { startActivity(Intent(this, TasksActivity::class.java)) }
-        quickAction("Notes") { startActivity(Intent(this, NotesActivity::class.java)) }
-        quick.addView(quickRow)
-        root.addView(quick)
-
         val overview = CompanionUi.card(this, 16)
         overview.addView(CompanionUi.eyebrow(this, "A little overview"))
         overview.addView(CompanionUi.spacer(this, 8))
@@ -136,22 +114,6 @@ class MainActivity : Activity() {
         overviewRow.addView(notesSummary, LinearLayout.LayoutParams(0, -2, 1f))
         overview.addView(overviewRow)
         root.addView(overview)
-
-        val companionCard = CompanionUi.card(this, 16)
-        companionCard.addView(CompanionUi.eyebrow(this, "Always within reach"))
-        companionCard.addView(CompanionUi.spacer(this, 5))
-        companionCard.addView(CompanionUi.text(this,
-            "Keep Miko floating above your other apps, or open her compact chat without leaving what you're doing.",
-            12f, CompanionUi.muted))
-        companionCard.addView(CompanionUi.spacer(this, 10))
-        statusLabel = CompanionUi.text(this, "Checking companion status…", 11f, CompanionUi.success)
-        companionCard.addView(statusLabel)
-        floatingButton = CompanionUi.button(this, "Show floating Miko", true) { toggleFloatingCompanion() }
-        companionCard.addView(floatingButton, LinearLayout.LayoutParams(-1, -2).apply {
-            topMargin = CompanionUi.dp(this@MainActivity, 10)
-        })
-        companionCard.addView(CompanionUi.button(this, "Open floating chat") { openFloatingChat() })
-        root.addView(companionCard)
 
         val setupCard = CompanionUi.card(this, 16)
         setupCard.addView(CompanionUi.eyebrow(this, "Optional setup"))
@@ -243,12 +205,6 @@ class MainActivity : Activity() {
     private fun refreshSetupButton() {
         if (::setupButton.isInitialized) setupButton.text =
             if (isMikoDefaultAssistant()) "✓  Miko is your assistant" else "Set up phone assistant"
-        if (::floatingButton.isInitialized) {
-            val active = getSharedPreferences("miko_companion_state", MODE_PRIVATE).getBoolean("floating", false)
-            floatingButton.text = if (active) "Hide floating Miko" else "Show floating Miko"
-            if (::statusLabel.isInitialized) statusLabel.text =
-                if (active) "●  Miko is floating" else "○  Miko is currently hidden"
-        }
     }
 
     private fun beginMikoSetup() {
