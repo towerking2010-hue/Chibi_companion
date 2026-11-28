@@ -37,10 +37,16 @@ This document records the agreed Miko experience and separates working code from
 - Added selectable response styles and a Romaji-aware personality instruction for cloud AI.
 - Added offline phrase responses for a small set of common Romaji expressions.
 - Replaced the large floating chat panel with a compact quick-chat bar and a separate tappable reply bubble. The full chat activity remains available from the quick bar and bubble.
-- The transcript remains shared between quick chat and the full chat.
+- The transcript remains shared between quick chat and the full chat; the full chat reloads it on entry/resume.
+- The full chat can import one photo, video, PDF, document or text attachment through Android's system document picker, and can capture a camera photo through the installed camera app.
+- Attachments are copied into app-private storage (50 MB maximum); image attachments are downscaled before vision requests, and small TXT/MD/CSV files can be passed as text to a configured provider.
+- Unsupported document/video formats are still saved and listed in the conversation, but are not falsely presented as understood by the AI.
+- The floating quick-chat bar offers Attach, Voice and Full chat shortcuts. Attach opens the full chat directly into the system picker; Voice opens it and starts speech recognition.
+- Reply bubbles can be tapped to expand, swiped away, and configured to disappear after 5, 9, 15 seconds or remain until dismissed.
+- Android 13 notification permission is requested before the floating service is started; target SDK was raised to 33 to clear the expired-target lint failure.
 
 ## Not yet implemented / needs assets
-- Attachment picker and multimodal handling for photos, videos and documents in both chat surfaces.
+- Full multimodal parsing of PDF/Office/video attachments (they can be stored, but only images and small text files are currently analysed by the AI).
 - Camera capture/preview flow.
 - Import/manage animation assets and the animated-WebP playback controller.
 - The actual transparent WebP animation files. They must be supplied/generated before the final Miko animations can appear in the app.
