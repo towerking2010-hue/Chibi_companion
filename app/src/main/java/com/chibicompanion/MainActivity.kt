@@ -104,7 +104,7 @@ class MainActivity : Activity() {
         chatTile.addView(CompanionUi.heading(this, "✦", 23f))
         chatTile.addView(CompanionUi.text(this, "Chat with Miko", 14f, CompanionUi.ink, true))
         chatTile.addView(CompanionUi.text(this, "Talk, ask, explore", 11f, CompanionUi.muted))
-        val tasksTile = CompanionUi.card(this, 15, Color.WHITE).apply {
+        val tasksTile = CompanionUi.card(this, 15, CompanionUi.surface).apply {
             isClickable = true; isFocusable = true
             setOnClickListener { startActivity(Intent(this@MainActivity, TasksActivity::class.java)) }
         }
@@ -116,14 +116,14 @@ class MainActivity : Activity() {
         root.addView(actions)
 
         val secondActions = CompanionUi.row(this)
-        val notesTile = CompanionUi.card(this, 15, Color.WHITE).apply {
+        val notesTile = CompanionUi.card(this, 15, CompanionUi.surface).apply {
             isClickable = true; isFocusable = true
             setOnClickListener { startActivity(Intent(this@MainActivity, NotesActivity::class.java)) }
         }
         notesTile.addView(CompanionUi.heading(this, "▤", 23f))
         notesTile.addView(CompanionUi.text(this, "Private notes", 14f, CompanionUi.ink, true))
         notesTile.addView(CompanionUi.text(this, "${NoteStore.all(this).size} saved", 11f, CompanionUi.muted))
-        val controlsTile = CompanionUi.card(this, 15, Color.WHITE).apply {
+        val controlsTile = CompanionUi.card(this, 15, CompanionUi.surface).apply {
             isClickable = true; isFocusable = true
             setOnClickListener { showSummonOptions() }
         }
