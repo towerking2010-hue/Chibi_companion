@@ -13,6 +13,7 @@ import android.text.InputType
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.graphics.Color
+import android.graphics.Bitmap
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -24,6 +25,8 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var entry: EditText
     private var speechRecognizer: SpeechRecognizer? = null
     private lateinit var tts: TextToSpeech
+    private var selectedAttachment: ChatAttachment? = null
+    private lateinit var attachmentLabel: TextView
     private val worker = Executors.newSingleThreadExecutor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,7 +45,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         root.addView(CompanionUi.spacer(this, 14))
 
         val chatCard = CompanionUi.column(this, 15).apply { background = CompanionUi.panel(this@ChatActivity, Color.WHITE, 24) }
-        log = CompanionUi.text(this, "Ayaya… you finally came to see me? ♡\n\nAdd an AI provider below when you're ready for cloud conversations.", 15f)
+        log = CompanionUi.text(this, ChatHistory.read(this), 15f)
         log.setLineSpacing(CompanionUi.dp(this,3).toFloat(), 1f)
         chatCard.addView(ScrollView(this).apply { isFillViewport = true; addView(log) }, LinearLayout.LayoutParams(-1,0,1f))
         root.addView(chatCard, LinearLayout.LayoutParams(-1,0,1f))
