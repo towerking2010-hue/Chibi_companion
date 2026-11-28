@@ -76,7 +76,6 @@ class MikoSpriteView(context: Context) : FrameLayout(context) {
         talking = false
         handler.removeCallbacks(talkTick)
         if (frames.size == 3) sprite.setImageBitmap(frames[0])
-        fallback.setMood("neutral")
     }
 
     override fun onDetachedFromWindow() {
