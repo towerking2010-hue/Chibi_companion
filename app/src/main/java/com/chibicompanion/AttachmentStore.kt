@@ -22,6 +22,8 @@ data class ChatAttachment(
 
 /** Copies user-selected attachments into app-private storage; no broad storage permission is needed. */
 object AttachmentStore {
+    private const val MAX_ATTACHMENT_BYTES = 50L * 1024L * 1024L
+
     private fun directory(context: Context): File =
         File(context.filesDir, "chat_attachments").apply { if (!exists()) mkdirs() }
 
@@ -42,9 +44,26 @@ object AttachmentStore {
         val safeName = if (extension.isBlank()) name else name.substringBeforeLast('.')
         val destination = File(directory(context), UUID.randomUUID().toString() + "_" + safeName +
             if (extension.isNotBlank()) ".$extension" else "")
-        resolver.openInputStream(uri).use { input ->
-            requireNotNull(input) { "Could not open the selected attachment" }
-            FileOutputStream(destination).use { output -> input.copyTo(output) }
+        val input = resolver.openInputStream(uri) ?: throw IllegalArgumentException("Could not open the selected attachment")
+        try {
+            input.use { source ->
+                FileOutputStream(destination).use { output ->
+                    val buffer = ByteArray(16 * 1024)
+                    var total = 0L
+                    while (true) {
+                        val count = source.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        if (total > MAX_ATTACHMENT_BYTES) {
+                            throw IllegalArgumentException("Attachments must be 50 MB or smaller")
+                        }
+                        output.write(buffer, 0, count)
+                    }
+                }
+            }
+        } catch (error: Exception) {
+            destination.delete()
+            throw error
         }
         return ChatAttachment(destination, name, mime, destination.length())
     }
