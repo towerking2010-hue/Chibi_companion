@@ -119,7 +119,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                     val answer = CompanionMemory.handleExplicitRequest(this@FloatingCompanionService, msg)
                         ?: PhoneActions.tryHandle(this@FloatingCompanionService,msg)
                         ?: runCatching { AiClient.reply(this@FloatingCompanionService,msg) }
-                            .getOrElse { OfflineCompanion.reply(msg) }
+                            .getOrElse { OfflineCompanion.reply(msg, this@FloatingCompanionService) }
                     ChatHistory.add(this@FloatingCompanionService,"Her",answer)
                     mainThread {
                         transcript.text=ChatHistory.read(this@FloatingCompanionService)
