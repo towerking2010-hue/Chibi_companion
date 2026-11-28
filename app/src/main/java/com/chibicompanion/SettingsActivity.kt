@@ -68,10 +68,11 @@ class SettingsActivity : Activity(), android.speech.tts.TextToSpeech.OnInitListe
             }
         })
         ai.addView(CompanionUi.button(this, "Clear saved providers") {
-            AlertDialog.Builder(this).setTitle("Clear provider keys?")
-                .setMessage("This removes all saved cloud provider credentials from this phone.")
-                .setNegativeButton("Cancel",null)
-                .setPositiveButton("Clear") { _,_ -> ProviderStore.clear(this); refreshProviders(); toast("Saved provider keys cleared") }.show()
+            MikoSheet.show(this, "AI CONNECTIONS", "Remove saved providers?", "This removes every saved cloud API credential from this phone. No provider will be called until you add one again.", actionLabel = "Clear saved providers") {
+                ProviderStore.clear(this)
+                refreshProviders()
+                toast("Saved provider keys cleared")
+            }
         })
         refreshProviders()
         root.addView(ai)
