@@ -44,11 +44,10 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         titles.addView(CompanionUi.heading(this,"Chat with Miko ♡",22f))
         header.addView(titles,LinearLayout.LayoutParams(0,-2,1f))
         header.addView(CompanionUi.button(this,"Clear") {
-            android.app.AlertDialog.Builder(this).setTitle("Clear chat history?")
-                .setMessage("This removes the saved conversation from this phone.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Clear") { _, _ -> ChatHistory.clear(this); transcript.text = "Miko: Hiii! A fresh start. What would you like to do? ✦" }
-                .show()
+            MikoSheet.show(this, "CHAT", "Start fresh?", "This clears the saved conversation from this phone. You can keep chatting with Miko afterwards.", actionLabel = "Clear conversation") {
+                ChatHistory.clear(this)
+                transcript.text = "Miko: Hiii! A fresh start. What would you like to do? ✦"
+            }
         })
         header.addView(CompanionUi.button(this,"Done") { finish() })
         header.addView(CompanionUi.button(this,"⚙") { startActivity(Intent(this,SettingsActivity::class.java)) }, LinearLayout.LayoutParams(CompanionUi.dp(this,48),CompanionUi.dp(this,48)))
