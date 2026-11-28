@@ -298,6 +298,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             if (uri != null) { if (isNotEmpty()) append("\n"); append("[Attachment: ").append(name).append("]") }
         }
         ChatHistory.add(this, "You", userLine)
+        avatar?.setMood("thinking")
         showReplyBubble("Miko is thinking…")
         worker.execute {
             val answer = try {
@@ -342,6 +343,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             }
             ChatHistory.add(this@FloatingCompanionService, "Miko", answer)
             mainThread {
+                avatar?.setMood(moodForText(message, answer))
                 showReplyBubble(answer)
                 if (::tts.isInitialized) {
                     CompanionVoice.configure(this@FloatingCompanionService, tts)
@@ -357,6 +359,25 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 82, out)
             return AiClient.replyWithImage(this, prompt, out.toByteArray())
         } finally { bitmap.recycle() }
+    }
+
+    private fun moodForText(userText: String, reply: String): String {
+        val user = userText.lowercase()
+        val answer = reply.lowercase()
+        return when {
+            "dance" in user -> "little dance"
+            "wave" in user || "say hello" in user -> "wave"
+            "hello" in user || user.trim() == "hi" || user.trim() == "hey" -> "wave"
+            listOf("haha", "lol", "that's funny", "😂", "🤣").any { it in answer } -> "laughing"
+            listOf("sorry", "sad", "unfortunately", "that sounds hard").any { it in answer } -> "sad"
+            listOf("wow", "surprise", "astonishing", "amazing news").any { it in answer } -> "astonished"
+            listOf("tired", "sleepy", "good night").any { it in user } -> "sleepy"
+            listOf("thinking", "let me think", "consider").any { it in answer } -> "thinking"
+            listOf("angry", "annoyed", "irritating").any { it in answer } -> "annoyed"
+            listOf("blush", "shy", "embarrass").any { it in answer } -> "blush"
+            answer.isNotBlank() -> "happy"
+            else -> "idle"
+        }
     }
 
     /** A separate coloured reply card, positioned clear of Miko where screen space allows. */
