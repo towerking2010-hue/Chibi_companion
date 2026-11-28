@@ -315,7 +315,7 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                         AiClient.reply(this@FloatingCompanionService,
                             (message + "\\n\\nAttached file ($name):\\n" + text).trim())
                     }
-                    else -> "I attached $name, but this build can only read images and text files. PDF and video understanding still needs to be added."
+                    else -> "I attached $name, but I can currently read images, text files, the first page of PDFs, and an opening video frame. Office documents and other binary formats are not readable yet."
                 }
             } catch (e: Exception) {
                 OfflineCompanion.reply(message.ifBlank { "I couldn't read that attachment." })
