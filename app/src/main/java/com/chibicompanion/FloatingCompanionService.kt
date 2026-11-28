@@ -17,7 +17,7 @@ import java.util.concurrent.Executors
 
 class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private lateinit var wm: WindowManager
-    private var avatar: ModelSlotView? = null
+    private var avatar: MikoSpriteView? = null
     private var chatPanel: LinearLayout? = null
     private var chatParams: WindowManager.LayoutParams? = null
     private var avatarParams: WindowManager.LayoutParams? = null
@@ -65,6 +65,12 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "STOP_COMPANION") { stopSelf(); return START_NOT_STICKY }
+        if (intent?.action == "RELOAD_MIKO_ASSETS") {
+            avatar?.let { runCatching { wm.removeView(it) } }
+            avatar = null
+            showAvatar()
+            return START_STICKY
+        }
         if (intent?.action == "OPEN_CHAT") {
             if (chatPanel == null) showChat()
             return START_STICKY
@@ -78,11 +84,11 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
 
     private fun overlayType() = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
     private fun showAvatar() {
-        val v = ModelSlotView(this)
+        val v = MikoSpriteView(this)
         // WindowManager.LayoutParams dimensions are pixels, so convert dp explicitly.
         // The old 136x164 raw-pixel window rendered Miko as a tiny sticker on high-density phones.
-        val overlayWidth = CompanionUi.dp(this, 136)
-        val overlayHeight = CompanionUi.dp(this, 178)
+        val overlayWidth = CompanionUi.dp(this, 190)
+        val overlayHeight = CompanionUi.dp(this, 270)
 
         // Load saved position
         val (savedX, savedY) = loadSavedPosition()
@@ -238,17 +244,15 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
         if(status==TextToSpeech.SUCCESS) {
             CompanionVoice.configure(this, tts)
             tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) { }
-                override fun onDone(utteranceId: String?) {
-                    
-                }
-                override fun onError(utteranceId: String?) { }
+                override fun onStart(utteranceId: String?) { mainThread { avatar?.startTalking() } }
+                override fun onDone(utteranceId: String?) { mainThread { avatar?.stopTalking() } }
+                override fun onError(utteranceId: String?) { mainThread { avatar?.stopTalking() } }
             })
         }
     }
     override fun onDestroy() {
         getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", false).apply()
-        hideChat(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
+        hideChat(); avatar?.stopTalking(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
         worker.shutdownNow(); if(::tts.isInitialized) { tts.stop(); tts.shutdown() }
         super.onDestroy()
     }
