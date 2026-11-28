@@ -1,6 +1,7 @@
 package com.chibicompanion
 
 import android.content.Context
+import android.animation.ValueAnimator
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
@@ -33,6 +34,7 @@ class MikoSpriteView(context: Context) : FrameLayout(context) {
     private var talking = false
     private var currentMood = "idle"
     private var animated: AnimatedImageDrawable? = null
+    private var breathing: ValueAnimator? = null
     private val sequence = intArrayOf(0, 1, 2, 1)
     private val mouthTick = object : Runnable {
         override fun run() {
@@ -96,6 +98,8 @@ class MikoSpriteView(context: Context) : FrameLayout(context) {
             val drawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(file))
             val animatedDrawable = drawable as? AnimatedImageDrawable ?: return@runCatching false
             animated?.stop()
+            breathing?.cancel(); breathing = null
+            scaleX = 1f; scaleY = 1f; translationY = 0f
             animated = animatedDrawable.apply {
                 repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
             }
@@ -129,6 +133,22 @@ class MikoSpriteView(context: Context) : FrameLayout(context) {
             animated?.stop()
             animated = null
             if (frames.isNotEmpty()) image.setImageBitmap(frames[0])
+            startBreathing()
+        }
+    }
+
+    private fun startBreathing() {
+        if (animated != null || frames.isEmpty() || breathing?.isRunning == true) return
+        breathing = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 2200L
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.REVERSE
+            addUpdateListener { animator ->
+                val amount = animator.animatedValue as Float
+                scaleY = 1f - (amount * .012f)
+                translationY = -CompanionUi.dp(context, 2) * amount
+            }
+            start()
         }
     }
 
@@ -150,10 +170,13 @@ class MikoSpriteView(context: Context) : FrameLayout(context) {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         animated?.start()
+        startBreathing()
     }
 
     override fun onDetachedFromWindow() {
         stopTalking()
+        breathing?.cancel(); breathing = null
+        scaleY = 1f; translationY = 0f
         animated?.stop()
         super.onDetachedFromWindow()
     }
