@@ -3,6 +3,7 @@ package com.chibicompanion
 import android.app.Activity
 import android.Manifest
 import android.content.Intent
+import android.graphics.Color
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.RecognizerIntent
@@ -123,10 +124,11 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
         val bubble = CompanionUi.column(this, 12).apply {
             background = if (fromUser) CompanionUi.panel(this@ChatActivity, Color.rgb(244, 240, 250), 18)
                 else CompanionUi.gradient(this@ChatActivity, Color.rgb(255, 237, 246), Color.rgb(239, 234, 255), 18)
-            maxWidth = CompanionUi.dp(this@ChatActivity, 292)
         }
         bubble.addView(CompanionUi.eyebrow(this, if (fromUser) "YOU" else "MIKO"))
-        bubble.addView(CompanionUi.text(this, message, 14f, CompanionUi.ink, isThinking))
+        bubble.addView(CompanionUi.text(this, message, 14f, CompanionUi.ink, isThinking).apply {
+            maxWidth = CompanionUi.dp(this@ChatActivity, 292)
+        })
         line.addView(bubble, LinearLayout.LayoutParams(-2, -2))
         transcriptList.addView(line, LinearLayout.LayoutParams(-1, -2))
     }
