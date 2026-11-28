@@ -104,6 +104,15 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             setTextColor(Color.rgb(53, 70, 111))
         }, LinearLayout.LayoutParams(0, -2, 1f))
         header.addView(Button(this).apply {
+            text = "Attach"
+            setOnClickListener {
+                hideChat()
+                startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java)
+                    .putExtra(ChatActivity.EXTRA_OPEN_ATTACHMENT_PICKER, true)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+        })
+        header.addView(Button(this).apply {
             text = "Full chat"
             setOnClickListener {
                 hideChat()
