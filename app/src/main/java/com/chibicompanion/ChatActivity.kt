@@ -140,10 +140,29 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             .setInterpolator(android.view.animation.DecelerateInterpolator()).start()
     }
 
+    private fun moodForText(userText: String, reply: String): String {
+        val user = userText.lowercase()
+        val answer = reply.lowercase()
+        return when {
+            "dance" in user -> "little dance"
+            "wave" in user || "say hello" in user || user.trim() in setOf("hello", "hi", "hey") -> "wave"
+            listOf("haha", "lol", "that's funny", "😂", "🤣").any { it in answer } -> "laughing"
+            listOf("sorry", "sad", "unfortunately", "that sounds hard").any { it in answer } -> "sad"
+            listOf("wow", "surprise", "astonishing", "amazing news").any { it in answer } -> "astonished"
+            listOf("tired", "sleepy", "good night").any { it in user } -> "sleepy"
+            listOf("thinking", "let me think", "consider").any { it in answer } -> "thinking"
+            listOf("angry", "annoyed", "irritating").any { it in answer } -> "annoyed"
+            listOf("blush", "shy", "embarrass").any { it in answer } -> "blush"
+            answer.isNotBlank() -> "happy"
+            else -> "idle"
+        }
+    }
+
     private fun sendMessage() {
         val message=input.text.toString().trim()
         if(message.isEmpty()) return
         input.text.clear()
+        avatar.setMood("thinking")
         ChatHistory.add(this,"You",message)
         renderTranscript(showThinking = true)
         val sequence=++replySequence
@@ -157,6 +176,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             ChatHistory.add(this,"Miko",answer)
             runOnUiThread {
                 if(isFinishing || isDestroyed) return@runOnUiThread
+                avatar.setMood(moodForText(message, answer))
                 renderTranscript()
                 if(::tts.isInitialized) {
                     CompanionVoice.configure(this,tts)
