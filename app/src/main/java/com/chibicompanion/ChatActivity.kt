@@ -85,14 +85,23 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                 attachmentLabel.text = "No attachment selected"
                 worker.execute {
                     val answer = when {
-                        attachment != null && attachment.isImage -> {
-                            val jpeg = AttachmentStore.jpegForVision(attachment)
-                            if (jpeg == null) "I saved the image, but couldn't open it for visual analysis. Could you try another image?"
+                        attachment != null && (attachment.isImage || attachment.isVideo || attachment.isPdf) -> {
+                            val jpeg = when {
+                                attachment.isImage -> AttachmentStore.jpegForVision(attachment)
+                                attachment.isVideo -> AttachmentStore.videoPreviewJpeg(attachment)
+                                else -> AttachmentStore.pdfPreviewJpeg(attachment)
+                            }
+                            val task = when {
+                                attachment.isVideo -> "This is a contact sheet of five frames sampled from the attached video. Describe the visible events and sequence. The preview contains no audio."
+                                attachment.isPdf -> "This image shows up to the first three pages of the attached PDF. Read the visible content and summarize it. Mention that only the first pages are shown."
+                                else -> "Please describe this image and help me understand it."
+                            }
+                            if (jpeg == null) "I saved the attachment, but couldn't create a preview for analysis. Please try another file."
                             else try {
                                 AiClient.replyWithImage(this@ChatActivity,
-                                    if (message.isBlank()) "Please describe this image and help me understand it." else message, jpeg)
+                                    if (message.isBlank()) task else message + "\\n\\n" + task, jpeg)
                             } catch (e: Exception) {
-                                "I saved your image, but couldn't reach the vision AI provider. " +
+                                "I saved your attachment, but couldn't reach the vision AI provider. " +
                                     (e.message ?: "Please check your connection and provider settings.")
                             } finally { jpeg.fill(0) }
                         }
@@ -105,7 +114,7 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
                             }.getOrElse { OfflineCompanion.reply(message, this@ChatActivity) }
                         }
                         attachment != null -> "I've saved " + attachment.displayName +
-                            " in this conversation. I can attach it here, but I can't inspect this file type yet. Images and small text files can be analysed."
+                            " in this conversation. I can attach it here, but this format cannot be previewed by Miko yet."
                         else -> {
                             val explicitMemory = CompanionMemory.handleExplicitRequest(this@ChatActivity, message)
                             val asksAboutScreen = message.contains("screen", true) || message.contains("what am I looking at", true) || message.contains("what is on", true)
