@@ -279,8 +279,14 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
             y = CompanionUi.dp(this@FloatingCompanionService, 18)
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
+        panel.alpha = 0f
+        panel.translationY = CompanionUi.dp(this, 30).toFloat()
+        panel.scaleX = .97f
+        panel.scaleY = .97f
         runCatching {
             wm.addView(panel, lp); chatPanel = panel; chatParams = lp
+            panel.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+                .setDuration(260).setInterpolator(android.view.animation.DecelerateInterpolator()).start()
             input.requestFocus()
             input.post { (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input, InputMethodManager.SHOW_IMPLICIT) }
         }
@@ -390,7 +396,15 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                 (avatarY - CompanionUi.dp(this@FloatingCompanionService, 120)).coerceAtLeast(CompanionUi.dp(this@FloatingCompanionService, 28))
             else avatarY + CompanionUi.dp(this@FloatingCompanionService, 280)
         }
-        runCatching { wm.addView(bubble, lp); replyBubble = bubble; replyParams = lp }
+        bubble.alpha = 0f
+        bubble.translationY = CompanionUi.dp(this, 18).toFloat()
+        bubble.scaleX = .94f
+        bubble.scaleY = .94f
+        runCatching {
+            wm.addView(bubble, lp); replyBubble = bubble; replyParams = lp
+            bubble.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+                .setDuration(300).setInterpolator(android.view.animation.OvershootInterpolator(0.85f)).start()
+        }
     }
 
     private fun hideReplyBubble() {
