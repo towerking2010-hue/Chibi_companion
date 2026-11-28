@@ -27,11 +27,25 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     private var downX = 0f; private var downY = 0f; private var originX = 0; private var originY = 0; private var dragging = false
     private val worker = Executors.newSingleThreadExecutor()
     private lateinit var tts: TextToSpeech
+    private val speechStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                ACTION_CHAT_TTS_STARTED -> avatar?.startTalking()
+                ACTION_CHAT_TTS_FINISHED -> avatar?.stopTalking()
+            }
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
         tts = TextToSpeech(this, this)
+        val speechFilter = IntentFilter().apply {
+            addAction(ACTION_CHAT_TTS_STARTED)
+            addAction(ACTION_CHAT_TTS_FINISHED)
+        }
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(speechStateReceiver, speechFilter, RECEIVER_NOT_EXPORTED)
+        else registerReceiver(speechStateReceiver, speechFilter)
         startForeground(41, notification())
         showAvatar()
     }
@@ -317,7 +331,13 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
     override fun onDestroy() {
         hideChat(); hideBubble(); avatar?.let { runCatching { wm.removeView(it) } }; avatar=null
         worker.shutdownNow(); if(::tts.isInitialized) { tts.stop(); tts.shutdown() }
+        runCatching { unregisterReceiver(speechStateReceiver) }
         super.onDestroy()
     }
     override fun onBind(intent:Intent?):IBinder?=null
+
+    companion object {
+        const val ACTION_CHAT_TTS_STARTED = "com.chibicompanion.action.CHAT_TTS_STARTED"
+        const val ACTION_CHAT_TTS_FINISHED = "com.chibicompanion.action.CHAT_TTS_FINISHED"
+    }
 }
