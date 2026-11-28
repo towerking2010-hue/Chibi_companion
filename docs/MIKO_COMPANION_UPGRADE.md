@@ -6,7 +6,7 @@ This document records the agreed Miko experience and separates working code from
 - Keep Miko as the same 2D chibi character: silver/white hair, bright blue eyes, blue bow/flower detail, navy and ice-blue outfit.
 - Personality: playful, affectionate, gently tsundere, protective and emotionally attentive; avoid repetitive catchphrases.
 - Keep rendering light for mid-range Android phones, including the Samsung Galaxy A31. Do not require a local GPU or a paid AI service.
-- The existing Canvas avatar is a temporary lightweight fallback, not the final generated animation set.
+- Miko's visible character is rendered from the user's three supplied transparent WebP mouth-state images; no alternative avatar is substituted.
 
 ## Floating companion and two chat surfaces
 - Miko remains a draggable floating overlay above other apps, with explicit Android overlay permission and a persistent foreground-service notification.
@@ -32,7 +32,7 @@ This document records the agreed Miko experience and separates working code from
 - The three files are imported once through the home-screen ZIP importer and stored privately as `miko_mouth_closed.webp`, `miko_mouth_half.webp`, and `miko_mouth_open.webp`.
 
 ## Current implementation status on this branch
-- Existing app already has a native Android overlay service, a Canvas chibi, double-tap handling, local shared chat transcript, cloud-provider failover, screen capture with explicit consent, TTS, and a dedicated chat activity.
+- Existing app has a native Android overlay service, the three-image Miko sprite view, double-tap handling, a local shared chat transcript, cloud-provider failover, screen capture with explicit consent, TTS, and a dedicated chat activity.
 - Added selectable response styles and a Romaji-aware personality instruction for cloud AI.
 - Added offline phrase responses for a small set of common Romaji expressions.
 - Replaced the large floating chat panel with a compact quick-chat bar and a separate tappable reply bubble. The full chat activity remains available from the quick bar and bubble.
@@ -47,7 +47,7 @@ This document records the agreed Miko experience and separates working code from
 ## Not yet implemented / needs assets
 - Full multi-page PDF and Office-format parsing, video audio/transcription support, and multi-attachment messages. PDF previews currently show up to three pages; video previews show five frames without audio.
 - Camera capture/preview flow.
-- Import/manage animation assets and the animated-WebP playback controller.
+- No additional visual assets are planned unless the user explicitly requests them.
 - The actual transparent WebP animation files. They must be supplied/generated before the final Miko animations can appear in the app.
 - Bubble placement collision avoidance, user-configurable dismissal timeout, and richer queued expression/animation state management.
 - End-to-end device testing and performance tuning on a physical Galaxy A31.
