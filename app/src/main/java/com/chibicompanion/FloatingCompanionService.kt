@@ -231,23 +231,22 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                 setStroke(2, Color.rgb(213, 196, 239))
             }
             elevation = 14f
-            setOnClickListener {
-                hideBubble()
-                startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            }
         }
         var swipeStartX = 0f
         bubble.setOnTouchListener { _, event ->
             when (event.action) {
-                MotionEvent.ACTION_DOWN -> { swipeStartX = event.rawX; false }
+                MotionEvent.ACTION_DOWN -> { swipeStartX = event.rawX; true }
                 MotionEvent.ACTION_UP -> {
                     if (kotlin.math.abs(event.rawX - swipeStartX) > 70f) {
                         hideBubble()
-                        true
-                    } else false
+                    } else {
+                        hideBubble()
+                        startActivity(Intent(this@FloatingCompanionService, ChatActivity::class.java)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                    true
                 }
-                else -> false
+                else -> true
             }
         }
         val avatarY = avatarParams?.y ?: 220
