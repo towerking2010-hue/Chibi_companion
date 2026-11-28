@@ -25,6 +25,7 @@ class MainActivity : Activity() {
     companion object { private const val ACTION_SUMMON_MIKO = "com.chibicompanion.action.SUMMON_MIKO" }
 
     private val importSpritesRequest = 802
+    private val importAnimationsRequest = 803
 
     private var waitingForOverlayPermission = false
     private var waitingForAssistantSettings = false
@@ -142,6 +143,7 @@ class MainActivity : Activity() {
             12f, CompanionUi.muted))
         presenceCard.addView(CompanionUi.button(this, "Set up summon & Quick Settings") { showSummonOptions() })
         presenceCard.addView(CompanionUi.button(this, "Import Miko's three mouth images") { pickMikoImages() })
+        presenceCard.addView(CompanionUi.button(this, "Import Miko's 11 animations") { pickMikoAnimations() })
         root.addView(presenceCard)
 
         val setupCard = CompanionUi.card(this, 18, Color.rgb(16, 26, 58))
@@ -209,6 +211,66 @@ class MainActivity : Activity() {
             type = "application/zip"
         }
         startActivityForResult(pick, importSpritesRequest)
+    }
+
+    private fun pickMikoAnimations() {
+        val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/zip"
+        }
+        startActivityForResult(pick, importAnimationsRequest)
+    }
+
+    private fun importMikoAnimations(uri: Uri) {
+        val expected = setOf(
+            "idle.webp", "happy.webp", "laughing.webp", "annoyed.webp", "astonished.webp",
+            "blush.webp", "sad.webp", "sleepy.webp", "thinking.webp", "wave.webp", "little dance.webp"
+        )
+        val destination = File(filesDir, "miko_animations").apply { mkdirs() }
+        val imported = mutableSetOf<String>()
+        try {
+            contentResolver.openInputStream(uri)?.use { input ->
+                ZipInputStream(input).use { zip ->
+                    var entry = zip.nextEntry
+                    var totalBytes = 0L
+                    while (entry != null) {
+                        val name = entry.name.substringAfterLast('/')
+                        if (!entry.isDirectory && name in expected) {
+                            val target = File(destination, name)
+                            FileOutputStream(target).use { output ->
+                                val buffer = ByteArray(8192)
+                                var entryBytes = 0L
+                                while (true) {
+                                    val count = zip.read(buffer)
+                                    if (count < 0) break
+                                    entryBytes += count
+                                    totalBytes += count
+                                    require(entryBytes <= 8L * 1024 * 1024 && totalBytes <= 60L * 1024 * 1024) {
+                                        "Animation pack is unexpectedly large"
+                                    }
+                                    output.write(buffer, 0, count)
+                                }
+                            }
+                            imported.add(name)
+                        }
+                        zip.closeEntry()
+                        entry = zip.nextEntry
+                    }
+                }
+            } ?: error("Unable to open selected ZIP")
+            require(imported.containsAll(expected)) {
+                "The ZIP must contain all 11 Miko animations. Found ${imported.size} of 11."
+            }
+            Toast.makeText(this, "All 11 Miko animations imported ♡", Toast.LENGTH_LONG).show()
+            val manager = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+            val running = manager.getRunningServices(Int.MAX_VALUE).any {
+                it.service.className == FloatingCompanionService::class.java.name
+            }
+            if (running) startService(Intent(this, FloatingCompanionService::class.java).setAction("RELOAD_MIKO_ASSETS"))
+            recreate()
+        } catch (error: Exception) {
+            Toast.makeText(this, "Animation import failed: ${error.message ?: "invalid ZIP"}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun importMouthSprites(uri: Uri) {
@@ -352,6 +414,10 @@ class MainActivity : Activity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == importSpritesRequest) {
             if (resultCode == RESULT_OK && data?.data != null) importMouthSprites(data.data!!)
+            return
+        }
+        if (requestCode == importAnimationsRequest) {
+            if (resultCode == RESULT_OK && data?.data != null) importMikoAnimations(data.data!!)
             return
         }
         if (requestCode == 904) {
