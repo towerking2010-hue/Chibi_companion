@@ -475,8 +475,10 @@ class FloatingCompanionService : Service(), TextToSpeech.OnInitListener {
                 "I captured the screen, but I couldn't understand the image. Connect a vision-capable provider such as Gemini and try again."
             }
             screenshot.fill(0)
-            ChatHistory.add(this@FloatingCompanionService, "Her", answer)
+            ChatHistory.add(this@FloatingCompanionService, "Miko", answer)
             mainThread {
+                avatar?.setMood("thinking")
+                showReplyBubble(answer)
                 if (::tts.isInitialized) {
                     CompanionVoice.configure(this@FloatingCompanionService, tts)
                     tts.speak(SpeechText.forTts(answer), TextToSpeech.QUEUE_FLUSH, null, "screen-vision")
