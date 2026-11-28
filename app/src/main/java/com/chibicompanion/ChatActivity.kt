@@ -122,8 +122,8 @@ class ChatActivity : Activity(), TextToSpeech.OnInitListener {
             setPadding(0, CompanionUi.dp(this@ChatActivity, 4), 0, CompanionUi.dp(this@ChatActivity, 4))
         }
         val bubble = CompanionUi.column(this, 12).apply {
-            background = if (fromUser) CompanionUi.panel(this@ChatActivity, Color.rgb(244, 240, 250), 18)
-                else CompanionUi.gradient(this@ChatActivity, Color.rgb(255, 237, 246), Color.rgb(239, 234, 255), 18)
+            background = if (fromUser) CompanionUi.panel(this@ChatActivity, Color.rgb(28, 39, 78), 18)
+                else CompanionUi.gradient(this@ChatActivity, Color.rgb(27, 78, 150), Color.rgb(88, 45, 150), 18)
         }
         bubble.addView(CompanionUi.eyebrow(this, if (fromUser) "YOU" else "MIKO"))
         bubble.addView(CompanionUi.text(this, message, 14f, CompanionUi.ink, isThinking).apply {
