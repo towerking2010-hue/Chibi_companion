@@ -27,6 +27,7 @@ class MainActivity : Activity() {
     private var waitingForAssistantSettings = false
     private var pendingOpenChat = false
     private lateinit var setupButton: TextView
+    private lateinit var floatingToggleButton: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +78,8 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
         })
         root.addView(hero)
-        root.addView(CompanionUi.button(this, "♡  Start / stop floating Miko", true) { toggleFloatingCompanion() })
+        floatingToggleButton = CompanionUi.button(this, "♡  Summon Miko", true) { toggleFloatingCompanion() }
+        root.addView(floatingToggleButton)
 
         val quickControl = CompanionUi.card(this, 15)
         quickControl.addView(CompanionUi.eyebrow(this, "Always within reach"))
@@ -146,6 +148,7 @@ class MainActivity : Activity() {
             10f, CompanionUi.muted).apply { gravity = Gravity.CENTER; setPadding(0, CompanionUi.dp(this@MainActivity, 4), 0, 0) })
         setContentView(scroll)
         refreshSetupButton()
+        refreshFloatingButton()
     }
 
 
@@ -215,6 +218,13 @@ class MainActivity : Activity() {
             if (isMikoDefaultAssistant()) "✓  Miko is your assistant" else "Set up phone assistant"
     }
 
+    private fun refreshFloatingButton() {
+        if (::floatingToggleButton.isInitialized) {
+            val running = getSharedPreferences("miko_companion_state", MODE_PRIVATE).getBoolean("floating", false)
+            floatingToggleButton.text = if (running) "♡  Hide floating Miko" else "♡  Summon Miko"
+        }
+    }
+
     private fun beginMikoSetup() {
         if (Build.VERSION.SDK_INT >= 29 && isMikoDefaultAssistant()) {
             continueMikoSetup()
@@ -264,6 +274,7 @@ class MainActivity : Activity() {
             startMikoFloating()
         }
         refreshSetupButton()
+        refreshFloatingButton()
     }
 
     private fun openFloatingChat() {
@@ -283,6 +294,7 @@ class MainActivity : Activity() {
         getSharedPreferences("miko_companion_state", MODE_PRIVATE).edit().putBoolean("floating", true).apply()
         Toast.makeText(this, "Miko is ready ♡", Toast.LENGTH_SHORT).show()
         refreshSetupButton()
+        refreshFloatingButton()
     }
 
     @Deprecated("Deprecated by Android; retained for compatibility with assistant setup and ZIP import")
@@ -301,6 +313,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         refreshSetupButton()
+        refreshFloatingButton()
         if (waitingForAssistantSettings) {
             waitingForAssistantSettings = false
             if (isMikoDefaultAssistant()) continueMikoSetup()
